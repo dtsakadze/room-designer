@@ -17,6 +17,7 @@ import {
   screenToSvgMatrix,
   svgPoint,
   toDesignY,
+  wheelZoomFactor,
 } from './view'
 
 type Gesture =
@@ -155,7 +156,7 @@ export function Canvas2D() {
       const cursor = svgPoint(inverse, event.clientX, event.clientY)
 
       setView((current) => {
-        const factor = event.deltaY > 0 ? 1.12 : 1 / 1.12
+        const factor = wheelZoomFactor(event)
         const w = clamp(current.w * factor, MIN_VIEW_WIDTH, MAX_VIEW_WIDTH)
         const ratio = w / current.w
         const h = current.h * ratio
