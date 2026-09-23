@@ -1,11 +1,11 @@
 import { Sidebar } from './ui/Sidebar'
-import { Viewport } from './scene/Viewport'
+import { Canvas2D } from './canvas/Canvas2D'
 
 export default function App() {
   return (
     <div className="app">
       <Sidebar />
-      <Viewport />
+      <Canvas2D />
     </div>
   )
 }

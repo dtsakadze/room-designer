@@ -1,6 +1,7 @@
 # room-designer
 
-A minimal browser tool for designing wardrobes, closets and shelving in 3D.
+A minimal browser tool for designing wardrobes, closets and shelving — a flat 2D elevation you
+assemble out of individual boards.
 
 ```bash
 pnpm install
@@ -9,23 +10,32 @@ pnpm dev
 
 ## Stack
 
-React 19 + Vite + TypeScript, Three.js via React Three Fiber / drei, Zustand (immer) for state.
+React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the drawing. No 3D and no
+drawing library.
 
 ## How it works
 
-- **Units:** the store is in millimetres, the scene is in metres. `src/lib/units.ts` holds the
-  conversion and it is applied only at the R3F boundary.
-- **Model** (`src/types.ts`): one `Cabinet` (outer W×H×D + panel thickness + optional back) owning
-  a list of `Part`s (`shelf`, `divider`, `rod`, `drawer`). A part's `x/y/z` is its min corner inside
-  the cavity, measured from the inner bottom-left-back corner.
-- **Geometry** (`src/lib/geometry.ts`): `innerSize`, `cavityOrigin`, `partToWorld` and `clampPart`
-  are the single source of truth for the coordinate convention. Every mutation runs through
-  `clampPart`, so the numeric inputs and the 3D drag can never disagree.
-- **Interaction:** sidebar buttons add a part; clicking selects; dragging a part moves it across the
-  horizontal plane it sits on (`src/scene/useDragOnFloor.ts`, which disables OrbitControls while
-  dragging). Height is edited numerically in the inspector.
+- **Units:** everything is millimetres, all the way through. SVG user units are mm, so the drawing
+  needs no scale conversion — only a zoom/pan `viewBox`.
+- **Model** (`src/types.ts`): the design is a flat list of `Piece`s. There is no built-in cabinet —
+  you assemble the carcass yourself from side / top-bottom / back panels, then add shelves,
+  dividers, rods and drawers. A piece's `x`/`y` is its bottom-left corner, `y` counts **up** from the
+  floor and `x = 0` is the middle of the drawing. `depth` is stored (for a cut list later) but is not
+  drawn in an elevation view.
+- **Coordinates** (`src/canvas/view.ts`): SVG counts y downwards and the design counts it upwards,
+  so every flip goes through `toSvgY` / `toDesignY`. Screen→drawing conversion uses the SVG's own
+  CTM, frozen at the start of a gesture so panning can't feed back into itself.
+- **Geometry** (`src/lib/geometry.ts`): `normalizePiece` (sane sizes, nothing below the floor) and
+  `contentBounds` are the single source of truth; the store runs every mutation through them.
+- **Interaction** (`src/canvas/Canvas2D.tsx`): sidebar components add a piece, dropped on the floor
+  clear of what is already there. Click to select, drag to move (snapped to 10mm), drag the
+  background to pan, wheel to zoom around the cursor, "Fit view" to frame everything. Arrow keys
+  nudge by 10mm (100mm with shift) and Delete removes. The inspector edits exact sizes and
+  positions, and has Duplicate / Delete.
+- **`NumberField`** is a text input, not `type="number"`: number inputs report a half-typed "-" as an
+  empty value, which made negative X coordinates impossible to enter.
 
 ## Not done yet
 
-Persistence, undo/redo, multiple cabinets, doors, materials, dimension lines, cut list / export,
-mobile layout.
+Persistence, undo/redo, snapping pieces to each other's edges, grouping, multiple views (plan /
+side), doors, dimension lines, cut list / export, mobile layout.

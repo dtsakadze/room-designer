@@ -33,13 +33,59 @@ body {
 }
 
 .viewport {
+  position: relative;
   flex: 1;
   min-width: 0;
 }
 
-.viewport canvas {
+.viewport-hint {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.canvas {
   display: block;
+  width: 100%;
+  height: 100%;
+  background: #f4f6f9;
   touch-action: none;
+  cursor: grab;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+.canvas-tools {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.canvas-tools .ghost-button {
+  width: auto;
+  padding: 7px 14px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.hint {
+  margin: -2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  opacity: 0.8;
 }
 
 .sidebar {
@@ -139,8 +185,24 @@ button {
   color: var(--muted);
 }
 
-.ghost-button:hover {
+.ghost-button:hover:not(:disabled) {
   background: #f5f7fa;
+}
+
+.ghost-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.button-row button {
+  margin-top: 0;
 }
 
 .danger-button {
