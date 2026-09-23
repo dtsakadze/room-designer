@@ -28,10 +28,13 @@ drawing library.
 - **Geometry** (`src/lib/geometry.ts`): `normalizePiece` (sane sizes, nothing below the floor) and
   `contentBounds` are the single source of truth; the store runs every mutation through them.
 - **Interaction** (`src/canvas/Canvas2D.tsx`): sidebar components add a piece, dropped on the floor
-  clear of what is already there. Click to select, drag to move (snapped to 10mm), drag the
-  background to pan, wheel to zoom around the cursor, "Fit view" to frame everything. Arrow keys
-  nudge by 10mm (100mm with shift) and Delete removes. The inspector edits exact sizes and
-  positions, and has Duplicate / Delete.
+  clear of what is already there. Click to select, drag to move (snapped to 10mm), drag a corner or
+  edge handle to resize, drag the background to pan, wheel to zoom around the cursor, "Fit view" to
+  frame everything. Arrow keys nudge by 10mm (100mm with shift) and Delete removes. The inspector
+  edits exact sizes and positions, and has Duplicate / Delete.
+- **Resizing** (`src/canvas/handles.ts`): eight handles, each owning the edges it drags while the
+  opposite edges stay put. Mid-edge handles are dropped on pieces too thin to fit them beside the
+  corners, and the floor is a hard stop for the bottom edge.
 - **`NumberField`** is a text input, not `type="number"`: number inputs report a half-typed "-" as an
   empty value, which made negative X coordinates impossible to enter.
 

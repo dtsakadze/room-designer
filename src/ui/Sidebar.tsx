@@ -22,8 +22,8 @@ export function Sidebar() {
           <PieceInspector />
         ) : (
           <p className="muted">
-            Add a component, then click it to size it or drag it around. Arrow keys nudge
-            by 10mm (hold shift for 100mm), Delete removes.
+            Add a component, then click it. Drag to move it, drag the blue handles to
+            resize it. Arrow keys nudge by 10mm (hold shift for 100mm), Delete removes.
           </p>
         )}
       </section>

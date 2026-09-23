@@ -6,6 +6,9 @@ import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
+import { ResizeHandles } from './ResizeHandles'
+import type { Handle } from './handles'
+import { resizePiece } from './handles'
 import {
   INITIAL_VIEW,
   MAX_VIEW_WIDTH,
@@ -27,6 +30,15 @@ type Gesture =
       originX: number
       originY: number
     }
+  | {
+      mode: 'resize'
+      inverse: DOMMatrix
+      id: string
+      startX: number
+      startY: number
+      handle: Handle
+      origin: Piece
+    }
 
 export function Canvas2D() {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -40,6 +52,7 @@ export function Canvas2D() {
   const removePiece = useDesignStore((s) => s.removePiece)
 
   const unit = view.w / 1400
+  const selected = pieces.find((piece) => piece.id === selectedId) ?? null
 
   const beginPan = (event: ReactPointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current
@@ -76,6 +89,24 @@ export function Canvas2D() {
     svg.setPointerCapture(event.pointerId)
   }
 
+  const beginResize = (event: ReactPointerEvent<SVGRectElement>, handle: Handle, piece: Piece) => {
+    event.stopPropagation()
+    const svg = svgRef.current
+    const inverse = svg && screenToSvgMatrix(svg)
+    if (!svg || !inverse) return
+    const point = svgPoint(inverse, event.clientX, event.clientY)
+    gesture.current = {
+      mode: 'resize',
+      inverse,
+      id: piece.id,
+      startX: point.x,
+      startY: point.y,
+      handle,
+      origin: piece,
+    }
+    svg.setPointerCapture(event.pointerId)
+  }
+
   const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     const active = gesture.current
     const svg = svgRef.current
@@ -91,10 +122,18 @@ export function Canvas2D() {
       return
     }
 
+    // SVG y grows down, design y grows up.
+    const dx = point.x - active.startX
+    const dy = toDesignY(point.y - active.startY)
+
+    if (active.mode === 'resize') {
+      updatePiece(active.id, resizePiece(active.origin, active.handle, dx, dy, snap))
+      return
+    }
+
     updatePiece(active.id, {
-      x: snap(active.originX + (point.x - active.startX)),
-      // SVG y grows down, design y grows up.
-      y: snap(active.originY + toDesignY(point.y - active.startY)),
+      x: snap(active.originX + dx),
+      y: snap(active.originY + dy),
     })
   }
 
@@ -210,6 +249,15 @@ export function Canvas2D() {
             onPointerDown={beginPieceDrag}
           />
         ))}
+
+        {/* Handles go last so they stay clickable above every piece. */}
+        {selected && (
+          <ResizeHandles
+            piece={selected}
+            unit={unit}
+            onPointerDown={(event, handle) => beginResize(event, handle, selected)}
+          />
+        )}
       </svg>
 
       <div className="canvas-tools">
