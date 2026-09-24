@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useDesignStore } from '../store/useDesignStore'
 
 type NumberFieldProps = {
   label: string
@@ -46,10 +47,13 @@ export function NumberField({
           value={text}
           onFocus={() => {
             editing.current = true
+            // Typing "1", "16", "160" is one edit, so it undoes as one step.
+            useDesignStore.getState().beginBatch()
           }}
           onChange={(event) => handleChange(event.target.value)}
           onBlur={() => {
             editing.current = false
+            useDesignStore.getState().endBatch()
             setText(String(Math.round(value)))
           }}
           onKeyDown={(event) => {

@@ -5,6 +5,7 @@ import { SNAP } from '../lib/defaults'
 import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
+import { HistoryButtons } from '../ui/HistoryButtons'
 import { Dimensions } from './Dimensions'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
@@ -55,6 +56,8 @@ export function Canvas2D() {
   const select = useDesignStore((s) => s.select)
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)
+  const beginBatch = useDesignStore((s) => s.beginBatch)
+  const endBatch = useDesignStore((s) => s.endBatch)
 
   const unit = view.w / 1400
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
@@ -92,6 +95,8 @@ export function Canvas2D() {
       originX: piece.x,
       originY: piece.y,
     }
+    // The whole drag undoes as one step.
+    beginBatch()
     setHoveredId(null)
     svg.setPointerCapture(event.pointerId)
   }
@@ -111,6 +116,7 @@ export function Canvas2D() {
       handle,
       origin: piece,
     }
+    beginBatch()
     setHoveredId(null)
     svg.setPointerCapture(event.pointerId)
   }
@@ -147,6 +153,7 @@ export function Canvas2D() {
 
   const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
     if (!gesture.current) return
+    if (gesture.current.mode !== 'pan') endBatch()
     gesture.current = null
     svgRef.current?.releasePointerCapture(event.pointerId)
   }
@@ -271,6 +278,8 @@ export function Canvas2D() {
           />
         )}
       </svg>
+
+      <HistoryButtons />
 
       <div className="canvas-tools">
         <button type="button" className="ghost-button" onClick={fitToContent}>

@@ -354,3 +354,27 @@ button {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+.history-tools {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.history-tools .ghost-button {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+.history-tools kbd {
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+}
