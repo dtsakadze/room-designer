@@ -47,6 +47,7 @@ export function Canvas2D() {
   const gesture = useRef<Gesture | null>(null)
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
   const [showCutList, setShowCutList] = useState(false)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const pieces = useDesignStore((s) => s.pieces)
   const selectedId = useDesignStore((s) => s.selectedId)
@@ -70,6 +71,7 @@ export function Canvas2D() {
       startY: point.y,
       startView: view,
     }
+    setHoveredId(null)
     svg.setPointerCapture(event.pointerId)
   }
 
@@ -89,6 +91,7 @@ export function Canvas2D() {
       originX: piece.x,
       originY: piece.y,
     }
+    setHoveredId(null)
     svg.setPointerCapture(event.pointerId)
   }
 
@@ -107,6 +110,7 @@ export function Canvas2D() {
       handle,
       origin: piece,
     }
+    setHoveredId(null)
     svg.setPointerCapture(event.pointerId)
   }
 
@@ -248,8 +252,10 @@ export function Canvas2D() {
             key={piece.id}
             piece={piece}
             selected={piece.id === selectedId}
+            hovered={piece.id === hoveredId}
             unit={unit}
             onPointerDown={beginPieceDrag}
+            onHoverChange={setHoveredId}
           />
         ))}
 
