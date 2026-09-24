@@ -5,6 +5,7 @@ import { SNAP } from '../lib/defaults'
 import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
+import { Dimensions } from './Dimensions'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
@@ -258,6 +259,8 @@ export function Canvas2D() {
             onHoverChange={setHoveredId}
           />
         ))}
+
+        <Dimensions pieces={pieces} selected={selected} unit={unit} />
 
         {/* Handles go last so they stay clickable above every piece. */}
         {selected && (
