@@ -15,14 +15,20 @@ export const FORMAT_VERSION = 1
 export type ProjectData = {
   formatVersion: typeof FORMAT_VERSION
   savedAt: string
+  /** Only in saved files, so opening one can name the new project. */
+  name?: string
   thickness: Thickness
   pieces: Piece[]
 }
 
-export function toProjectData(design: { pieces: Piece[]; thickness: Thickness }): ProjectData {
+export function toProjectData(
+  design: { pieces: Piece[]; thickness: Thickness },
+  name?: string,
+): ProjectData {
   return {
     formatVersion: FORMAT_VERSION,
     savedAt: new Date().toISOString(),
+    ...(name ? { name } : {}),
     thickness: design.thickness,
     pieces: design.pieces,
   }
@@ -65,6 +71,7 @@ export function parseProject(data: unknown): ProjectData | null {
   return {
     formatVersion: FORMAT_VERSION,
     savedAt: typeof data.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
+    ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
     thickness,
     pieces,
   }

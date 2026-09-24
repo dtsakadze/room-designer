@@ -6,7 +6,9 @@ export function downloadProject(project: ProjectData) {
   const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = `room-design-${localDate(new Date(project.savedAt))}.json`
+  // Named after the project, minus characters file systems reject.
+  const base = project.name?.replace(/[\\/:*?"<>|]+/g, ' ').trim()
+  link.download = `${base || `room-design-${localDate(new Date(project.savedAt))}`}.json`
   link.click()
   // Revoking straight away can cancel the download in some browsers.
   setTimeout(() => URL.revokeObjectURL(url), 1000)

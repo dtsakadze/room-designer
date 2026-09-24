@@ -1,15 +1,19 @@
+import { useEffect } from 'react'
 import { Sidebar } from './ui/Sidebar'
 import { Canvas2D } from './canvas/Canvas2D'
-import { useAutosave } from './ui/useAutosave'
 import { useUndoShortcuts } from './ui/useUndoShortcuts'
+import { useProjectsStore } from './store/useProjectsStore'
 
 export default function App() {
   useUndoShortcuts()
-  const saveStatus = useAutosave()
+
+  useEffect(() => {
+    void useProjectsStore.getState().init()
+  }, [])
 
   return (
     <div className="app">
-      <Sidebar saveStatus={saveStatus} />
+      <Sidebar />
       <Canvas2D />
     </div>
   )

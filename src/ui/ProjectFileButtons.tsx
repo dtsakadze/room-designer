@@ -2,24 +2,28 @@ import { useRef, useState } from 'react'
 import { toProjectData } from '../lib/project'
 import { downloadProject, readProjectFile } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
-import { UNDO_SHORTCUT } from './shortcuts'
+import { useProjectsStore } from '../store/useProjectsStore'
 
-/** Save the design to a JSON file, or open one. */
+/** Save the open project to a JSON file, or open a file as a new project. */
 export function ProjectFileButtons() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const isEmpty = useDesignStore((s) => s.pieces.length === 0)
 
   const save = () => {
-    downloadProject(toProjectData(useDesignStore.getState()))
+    const { projects, currentId } = useProjectsStore.getState()
+    const name = projects.find((project) => project.id === currentId)?.name
+    downloadProject(toProjectData(useDesignStore.getState(), name))
     setMessage(null)
   }
 
   const open = async (file: File | undefined) => {
     if (!file) return
     try {
-      useDesignStore.getState().openProject(await readProjectFile(file))
-      setMessage({ text: `Opened ${file.name}. ${UNDO_SHORTCUT} brings back what was here.`, error: false })
+      const design = await readProjectFile(file)
+      const name = design.name ?? file.name.replace(/\.json$/i, '')
+      await useProjectsStore.getState().createProject({ name, design })
+      setMessage({ text: `Opened ${file.name} as a new project.`, error: false })
     } catch (error) {
       setMessage({ text: (error as Error).message, error: true })
     }

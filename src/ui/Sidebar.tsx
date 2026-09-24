@@ -1,19 +1,27 @@
+import { useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PieceInspector } from './PieceInspector'
 import { ProjectFileButtons } from './ProjectFileButtons'
-import type { SaveStatus } from './useAutosave'
+import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
+import { EditableName } from './EditableName'
+import { ProjectsPanel } from './ProjectsPanel'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT, REDO_SHORTCUT, UNDO_SHORTCUT } from './shortcuts'
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
+  blocked: 'Updating storage: close other Room Designer tabs to continue',
   saving: 'Saving…',
   saved: 'Saved in this browser',
   unavailable: "Can't save: browser storage is unavailable",
 }
 
-export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
+export function Sidebar() {
+  const saveStatus = useProjectsStore((s) => s.saveStatus)
+  const current = useProjectsStore((s) => s.projects.find((project) => project.id === s.currentId))
+  const renameProject = useProjectsStore((s) => s.renameProject)
+  const [showProjects, setShowProjects] = useState(false)
   const selectedId = useDesignStore((s) => s.selectedId)
   const count = useDesignStore((s) => s.pieces.length)
   const clear = useDesignStore((s) => s.clear)
@@ -21,9 +29,33 @@ export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
   return (
     <aside className="sidebar">
       <header className="sidebar-header">
-        <h1>Room Designer</h1>
+        <div className="app-title">
+          <h1>Room Designer</h1>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setShowProjects(true)}
+            disabled={saveStatus !== 'saved' && saveStatus !== 'saving'}
+          >
+            Projects
+          </button>
+        </div>
+        {current && (
+          <EditableName
+            key={current.id}
+            className="project-title"
+            name={current.name}
+            onRename={(name) => renameProject(current.id, name)}
+          />
+        )}
         <p className="muted">{count} piece{count === 1 ? '' : 's'}</p>
-        <p className={saveStatus === 'unavailable' ? 'save-status save-status-error' : 'save-status'}>
+        <p
+          className={
+            saveStatus === 'unavailable' || saveStatus === 'blocked'
+              ? 'save-status save-status-error'
+              : 'save-status'
+          }
+        >
           {SAVE_LABELS[saveStatus]}
         </p>
       </header>
@@ -60,6 +92,8 @@ export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
           Clear all
         </button>
       </footer>
+
+      {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
     </aside>
   )
 }

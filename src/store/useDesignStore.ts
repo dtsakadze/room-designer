@@ -28,10 +28,8 @@ type DesignState = {
   select: (id: string | null) => void
   setThickness: (patch: Partial<Thickness>) => void
   clear: () => void
-  /** Replaces the whole design, e.g. from the autosave. Starts a fresh history. */
+  /** Replaces the whole design, e.g. when a project is opened. Starts a fresh history. */
   loadProject: (project: ProjectData) => void
-  /** Replaces the whole design with an opened file, as one undoable step. */
-  openProject: (project: ProjectData) => void
 
   undo: () => void
   redo: () => void
@@ -158,14 +156,6 @@ export const useDesignStore = create<DesignState>()(
           state.past = []
           state.future = []
           state.batch = { open: false, recorded: false }
-        }),
-
-      openProject: (project) =>
-        set((state) => {
-          record(state)
-          state.pieces = project.pieces
-          state.thickness = project.thickness
-          state.selectedId = null
         }),
 
       undo: () =>

@@ -410,3 +410,166 @@ button kbd {
   color: var(--danger);
   opacity: 1;
 }
+
+.app-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.app-title h1 {
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.app-title .ghost-button {
+  width: auto;
+  padding: 5px 10px;
+  color: var(--text);
+}
+
+.editable-name {
+  display: block;
+  max-width: 100%;
+  padding: 2px 4px;
+  margin: 0 -4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editable-name:hover {
+  border-color: var(--border);
+}
+
+.editable-name-input {
+  width: 100%;
+  padding: 2px 4px;
+  margin: 0 -4px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font: inherit;
+  color: var(--text);
+  outline: 0;
+}
+
+.project-title {
+  margin-top: 8px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10vh 16px 16px;
+  background: rgba(29, 36, 48, 0.25);
+}
+
+.projects-panel {
+  width: min(560px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(29, 36, 48, 0.18);
+}
+
+.projects-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.projects-header h2 {
+  margin: 0;
+  margin-right: auto;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.projects-header .icon-button {
+  margin-left: 0;
+}
+
+.project-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+}
+
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.project-row-open {
+  background: #f5f8fe;
+}
+
+.project-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-info .muted {
+  font-size: 12px;
+}
+
+.project-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-name:hover {
+  color: var(--accent);
+}
+
+.project-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.project-actions .ghost-button,
+.project-actions .danger-button {
+  width: auto;
+  margin: 0;
+  padding: 5px 10px;
+  font-size: 12px;
+}
