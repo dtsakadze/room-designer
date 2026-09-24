@@ -1,11 +1,6 @@
 import { useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
-
-/** Shortcut labels for buttons and hints, in the platform's own notation. */
-export const UNDO_SHORTCUT = IS_MAC ? '⌘Z' : 'Ctrl+Z'
-export const REDO_SHORTCUT = IS_MAC ? '⇧⌘Z' : 'Ctrl+Shift+Z'
+import { IS_MAC, hasModifier } from './shortcuts'
 
 /**
  * ⌘Z / ⌘⇧Z on a Mac, Ctrl+Z / Ctrl+Shift+Z (and Ctrl+Y) elsewhere. Inside a
@@ -14,8 +9,7 @@ export const REDO_SHORTCUT = IS_MAC ? '⇧⌘Z' : 'Ctrl+Shift+Z'
 export function useUndoShortcuts() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const modifier = IS_MAC ? event.metaKey : event.ctrlKey
-      if (!modifier || event.altKey) return
+      if (!hasModifier(event) || event.altKey) return
 
       const target = event.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return

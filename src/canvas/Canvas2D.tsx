@@ -6,6 +6,7 @@ import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
 import { HistoryButtons } from '../ui/HistoryButtons'
+import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
@@ -56,6 +57,7 @@ export function Canvas2D() {
   const select = useDesignStore((s) => s.select)
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)
+  const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const beginBatch = useDesignStore((s) => s.beginBatch)
   const endBatch = useDesignStore((s) => s.endBatch)
 
@@ -202,6 +204,13 @@ export function Canvas2D() {
         return
       }
 
+      // Also stops the browser's own ⌘D / Ctrl+D (bookmark this page).
+      if (hasModifier(event) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'd') {
+        event.preventDefault()
+        duplicatePiece(selectedId)
+        return
+      }
+
       const step = event.shiftKey ? SNAP * 10 : SNAP
       const nudge: Record<string, { x?: number; y?: number }> = {
         ArrowLeft: { x: -step },
@@ -223,7 +232,7 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, removePiece, updatePiece])
+  }, [selectedId, removePiece, duplicatePiece, updatePiece])
 
   const fitToContent = useCallback(() => {
     const bounds = contentBounds(useDesignStore.getState().pieces)

@@ -1,5 +1,5 @@
 import { useDesignStore } from '../store/useDesignStore'
-import { REDO_SHORTCUT, UNDO_SHORTCUT } from './useUndoShortcuts'
+import { REDO_SHORTCUT, UNDO_SHORTCUT } from './shortcuts'
 
 /** Undo / redo, with the keyboard shortcut shown on each button. */
 export function HistoryButtons() {

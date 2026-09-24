@@ -4,7 +4,7 @@ import { ComponentPalette } from './ComponentPalette'
 import { PieceInspector } from './PieceInspector'
 import { ProjectFileButtons } from './ProjectFileButtons'
 import type { SaveStatus } from './useAutosave'
-import { REDO_SHORTCUT, UNDO_SHORTCUT } from './useUndoShortcuts'
+import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT, REDO_SHORTCUT, UNDO_SHORTCUT } from './shortcuts'
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
@@ -44,8 +44,8 @@ export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
         ) : (
           <p className="muted">
             Add a component, then click it. Drag to move it, drag the blue handles to
-            resize it. Arrow keys nudge by 10mm (hold shift for 100mm), Delete removes,
-            {` ${UNDO_SHORTCUT} undoes and ${REDO_SHORTCUT} redoes.`}
+            resize it. Arrow keys nudge by 10mm (hold shift for 100mm).
+            {` ${DUPLICATE_SHORTCUT} duplicates, ${DELETE_SHORTCUT} deletes, ${UNDO_SHORTCUT} undoes and ${REDO_SHORTCUT} redoes.`}
           </p>
         )}
       </section>

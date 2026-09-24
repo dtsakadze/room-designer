@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { toProjectData } from '../lib/project'
 import { downloadProject, readProjectFile } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
-import { UNDO_SHORTCUT } from './useUndoShortcuts'
+import { UNDO_SHORTCUT } from './shortcuts'
 
 /** Save the design to a JSON file, or open one. */
 export function ProjectFileButtons() {

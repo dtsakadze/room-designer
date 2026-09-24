@@ -1,6 +1,7 @@
 import { BOARD, PIECE_LABELS } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { NumberField } from './NumberField'
+import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -69,11 +70,21 @@ export function PieceInspector() {
       />
 
       <div className="button-row">
-        <button type="button" className="add-button" onClick={() => duplicatePiece(piece.id)}>
-          Duplicate
+        <button
+          type="button"
+          className="add-button"
+          onClick={() => duplicatePiece(piece.id)}
+          title={`Duplicate (${DUPLICATE_SHORTCUT})`}
+        >
+          Duplicate <kbd>{DUPLICATE_SHORTCUT}</kbd>
         </button>
-        <button type="button" className="danger-button" onClick={() => removePiece(piece.id)}>
-          Delete
+        <button
+          type="button"
+          className="danger-button"
+          onClick={() => removePiece(piece.id)}
+          title={`Delete (${DELETE_SHORTCUT})`}
+        >
+          Delete <kbd>{DELETE_SHORTCUT}</kbd>
         </button>
       </div>
     </div>
