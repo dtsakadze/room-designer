@@ -3,6 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import type { Piece, PieceKind, Thickness } from '../types'
 import { contentBounds, normalizePiece } from '../lib/geometry'
 import { DEFAULT_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
+import type { ProjectData } from '../lib/project'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
 type Snapshot = { pieces: Piece[]; thickness: Thickness }
@@ -27,6 +28,8 @@ type DesignState = {
   select: (id: string | null) => void
   setThickness: (patch: Partial<Thickness>) => void
   clear: () => void
+  /** Replaces the whole design, e.g. from the autosave. Starts a fresh history. */
+  loadProject: (project: ProjectData) => void
 
   undo: () => void
   redo: () => void
@@ -143,6 +146,16 @@ export const useDesignStore = create<DesignState>()(
           record(state)
           state.pieces = []
           state.selectedId = null
+        }),
+
+      loadProject: (project) =>
+        set((state) => {
+          state.pieces = project.pieces
+          state.thickness = project.thickness
+          state.selectedId = null
+          state.past = []
+          state.future = []
+          state.batch = { open: false, recorded: false }
         }),
 
       undo: () =>

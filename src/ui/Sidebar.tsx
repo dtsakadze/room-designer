@@ -2,9 +2,17 @@ import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PieceInspector } from './PieceInspector'
+import type { SaveStatus } from './useAutosave'
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from './useUndoShortcuts'
 
-export function Sidebar() {
+const SAVE_LABELS: Record<SaveStatus, string> = {
+  loading: 'Loading…',
+  saving: 'Saving…',
+  saved: 'Saved in this browser',
+  unavailable: "Can't save: browser storage is unavailable",
+}
+
+export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
   const selectedId = useDesignStore((s) => s.selectedId)
   const count = useDesignStore((s) => s.pieces.length)
   const clear = useDesignStore((s) => s.clear)
@@ -14,6 +22,9 @@ export function Sidebar() {
       <header className="sidebar-header">
         <h1>room designer</h1>
         <p className="muted">{count} piece{count === 1 ? '' : 's'}</p>
+        <p className={saveStatus === 'unavailable' ? 'save-status save-status-error' : 'save-status'}>
+          {SAVE_LABELS[saveStatus]}
+        </p>
       </header>
 
       <BoardSettings />
