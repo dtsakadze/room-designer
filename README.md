@@ -1,46 +1,64 @@
-# room-designer
+# Room Designer
 
-A minimal browser tool for designing wardrobes, closets and shelving — a flat 2D elevation you
-assemble out of individual boards.
+A browser tool for designing wardrobes, closets and shelving: a flat 2D front view you build out of individual boards, with a cut list of everything to cut. It runs entirely in the browser: no server, no account, and your projects stay on your machine.
+
+## Features
+
+- Build in a front view from side, top/bottom and back panels, shelves, dividers, hanging rods and drawers. Drag to move, drag handles to resize, or type exact sizes.
+- Board thickness is a project setting (body and back), and every panel follows it.
+- Dimension lines for the overall size and the gaps around the selected part.
+- A cut list: every board as length × width × thickness, with identical parts counted together.
+- Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
+- Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).
+
+## Run it locally
+
+You need Node.js 20.19+ or 22.12+ and pnpm (`corepack enable` sets pnpm up from Node).
 
 ```bash
 pnpm install
-pnpm dev
+pnpm dev        # http://localhost:5173
 ```
+
+To try the production build locally: `pnpm build && pnpm preview` (http://localhost:4173).
+
+## Self-host
+
+The app is a plain static site. Build it and put the `dist/` folder on any static host:
+
+```bash
+pnpm install
+pnpm build      # outputs dist/
+```
+
+- Any static host works: nginx, Caddy, Apache, GitHub Pages, Netlify, Cloudflare Pages, an S3 bucket, and so on. No backend, database or environment variables are needed.
+- It works at a domain root or in a sub-folder (e.g. `https://example.com/tools/room-designer/`), because all asset paths are relative.
+- It must be served over `http(s)://`. Opening `dist/index.html` straight from disk (`file://`) doesn't work, because browsers block module scripts there.
+- For a quick local server: `npx serve dist` or `python3 -m http.server -d dist 8080`.
+- Caching: files in `dist/assets/` have content hashes in their names and can be cached forever. Serve `index.html` with `Cache-Control: no-cache` so people get updates.
+
+## Where your data lives
+
+Projects are stored in the browser's IndexedDB for the site's address, so:
+
+- Each browser, and each address the app is served from (domain and port), has its own separate projects. Moving the app to a new address starts empty.
+- Clearing site data in the browser deletes the projects.
+- Use **Save to file** to back up a project or move it to another browser or address, and **Open file…** to bring it back.
 
 ## Stack
 
-React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the drawing. No 3D and no
-drawing library.
+React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the drawing. No 3D and no drawing library.
 
 ## How it works
 
-- **Units:** everything is millimetres, all the way through. SVG user units are mm, so the drawing
-  needs no scale conversion — only a zoom/pan `viewBox`.
-- **Model** (`src/types.ts`): the design is a flat list of `Piece`s. There is no built-in cabinet —
-  you assemble the carcass yourself from side / top-bottom / back panels, then add shelves,
-  dividers, rods and drawers. A piece's `x`/`y` is its bottom-left corner, `y` counts **up** from the
-  floor and `x = 0` is the middle of the drawing. `depth` is stored (for a cut list later) but is not
-  drawn in an elevation view. A hanging rod is round, so the inspector describes it as **length** and
-  **diameter** instead of width/height/depth; `normalizePiece` keeps its height and depth equal to the
-  one diameter.
-- **Coordinates** (`src/canvas/view.ts`): SVG counts y downwards and the design counts it upwards,
-  so every flip goes through `toSvgY` / `toDesignY`. Screen→drawing conversion uses the SVG's own
-  CTM, frozen at the start of a gesture so panning can't feed back into itself.
-- **Geometry** (`src/lib/geometry.ts`): `normalizePiece` (sane sizes, nothing below the floor) and
-  `contentBounds` are the single source of truth; the store runs every mutation through them.
-- **Interaction** (`src/canvas/Canvas2D.tsx`): sidebar components add a piece, dropped on the floor
-  clear of what is already there. Click to select, drag to move (snapped to 10mm), drag a corner or
-  edge handle to resize, drag the background to pan, wheel to zoom around the cursor, "Fit view" to
-  frame everything. Arrow keys nudge by 10mm (100mm with shift) and Delete removes. The inspector
-  edits exact sizes and positions, and has Duplicate / Delete.
-- **Resizing** (`src/canvas/handles.ts`): eight handles, each owning the edges it drags while the
-  opposite edges stay put. Mid-edge handles are dropped on pieces too thin to fit them beside the
-  corners, and the floor is a hard stop for the bottom edge.
-- **`NumberField`** is a text input, not `type="number"`: number inputs report a half-typed "-" as an
-  empty value, which made negative X coordinates impossible to enter.
+- **Units:** everything is millimetres, all the way through. SVG user units are mm, so the drawing needs no scale conversion, only a zoom/pan `viewBox`.
+- **Model** (`src/types.ts`): the design is a flat list of `Piece`s. There's no built-in cabinet: you assemble the carcass from side / top-bottom / back panels, then add shelves, dividers, rods and drawers. A piece's `x`/`y` is its bottom-left corner, `y` counts **up** from the floor, and `x = 0` is the middle of the drawing. `depth` is stored and used by the cut list, but isn't drawn in the front view. A hanging rod is round, so the inspector shows it as **length** and **diameter**.
+- **Board thickness** (`src/lib/defaults.ts`): `BOARD` says which dimension of each piece kind is its thickness (side = width, shelf = height, back = depth) and which project thickness it follows. `normalizePiece` (`src/lib/geometry.ts`) applies it on every change, so a piece can't drift from the setting.
+- **Coordinates** (`src/canvas/view.ts`): SVG counts y downwards and the design counts it upwards, so every flip goes through `toSvgY` / `toDesignY`. Screen→drawing conversion uses the SVG's own CTM, frozen at the start of a gesture so panning can't feed back into itself.
+- **State** (`src/store/`): `useDesignStore` holds the open design and its undo history. A drag or a typed number counts as one step (`beginBatch` / `endBatch`). `useProjectsStore` holds the project list and autosaves the open design half a second after each change, or straight away when the tab is hidden or closed.
+- **Saving** (`src/lib/project.ts`, `src/lib/storage.ts`): autosaves and files share one JSON format with a `formatVersion`. Everything loaded is validated and normalised, so a hand-edited or older file can't break the app. Storage sits behind a small `ProjectStorage` interface, so a cloud backend could be added later.
+- **`NumberField`** is a text input, not `type="number"`: number inputs report a half-typed "-" as an empty value, which made negative X coordinates impossible to enter.
 
 ## Not done yet
 
-Persistence, undo/redo, snapping pieces to each other's edges, grouping, multiple views (plan /
-side), doors, dimension lines, cut list / export, mobile layout.
+Side, top and 3D preview views, snapping to other panels, doors and drawer boxes, hardware lists, CSV/PDF export, and a mobile layout.
