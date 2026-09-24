@@ -390,3 +390,18 @@ button {
   color: var(--danger);
   opacity: 1;
 }
+
+.add-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.add-button:disabled:hover {
+  background: #f5f7fa;
+  border-color: var(--border);
+}
+
+.hint-error {
+  color: var(--danger);
+  opacity: 1;
+}

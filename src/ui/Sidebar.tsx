@@ -2,6 +2,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PieceInspector } from './PieceInspector'
+import { ProjectFileButtons } from './ProjectFileButtons'
 import type { SaveStatus } from './useAutosave'
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from './useUndoShortcuts'
 
@@ -26,6 +27,11 @@ export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
           {SAVE_LABELS[saveStatus]}
         </p>
       </header>
+
+      <section className="section">
+        <h2>Project</h2>
+        <ProjectFileButtons />
+      </section>
 
       <BoardSettings />
 
