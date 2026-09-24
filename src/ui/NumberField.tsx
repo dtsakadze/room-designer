@@ -5,6 +5,7 @@ type NumberFieldProps = {
   value: number
   onChange: (value: number) => void
   unit?: string
+  readOnly?: boolean
 }
 
 /**
@@ -13,7 +14,13 @@ type NumberFieldProps = {
  * the raw text locally lets a half-typed number exist without the store seeing
  * it. Range is not enforced here — the store normalises every piece.
  */
-export function NumberField({ label, value, onChange, unit = 'mm' }: NumberFieldProps) {
+export function NumberField({
+  label,
+  value,
+  onChange,
+  unit = 'mm',
+  readOnly = false,
+}: NumberFieldProps) {
   const [text, setText] = useState(() => String(Math.round(value)))
   const editing = useRef(false)
 
@@ -35,6 +42,7 @@ export function NumberField({ label, value, onChange, unit = 'mm' }: NumberField
           type="text"
           inputMode="decimal"
           autoComplete="off"
+          readOnly={readOnly}
           value={text}
           onFocus={() => {
             editing.current = true

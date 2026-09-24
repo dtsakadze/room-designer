@@ -1,4 +1,5 @@
 import { useDesignStore } from '../store/useDesignStore'
+import { BoardSettings } from './BoardSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PieceInspector } from './PieceInspector'
 
@@ -13,6 +14,8 @@ export function Sidebar() {
         <h1>room designer</h1>
         <p className="muted">{count} piece{count === 1 ? '' : 's'}</p>
       </header>
+
+      <BoardSettings />
 
       <ComponentPalette />
 

@@ -15,6 +15,16 @@ export type PieceKind =
  * `depth` is carried for real-world completeness (cut lists later) but is not
  * drawn in this elevation view.
  */
+/**
+ * Board thicknesses for the whole project, in mm. Every board piece takes its
+ * thickness from here rather than storing its own, so changing one number
+ * updates every panel of that kind.
+ */
+export type Thickness = {
+  body: number
+  back: number
+}
+
 export type Piece = {
   id: string
   kind: PieceKind

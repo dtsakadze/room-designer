@@ -1,9 +1,13 @@
-import type { Piece } from '../types'
+import type { Piece, Thickness } from '../types'
+import { BOARD } from './defaults'
 
-/** Keeps a piece a sane size and stops it sinking through the floor. */
-export function normalizePiece(piece: Piece): Piece {
+/**
+ * Keeps a piece a sane size and stops it sinking through the floor. A board's
+ * thickness is always reset to the project thickness, so it can't drift.
+ */
+export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   const height = atLeast(piece.height)
-  return {
+  const normalized = {
     ...piece,
     width: atLeast(piece.width),
     height,
@@ -12,6 +16,9 @@ export function normalizePiece(piece: Piece): Piece {
     x: round(piece.x),
     y: Math.max(0, round(piece.y)),
   }
+  const board = BOARD[piece.kind]
+  if (board) normalized[board.axis] = atLeast(thickness[board.board])
+  return normalized
 }
 
 /** Bounding box of everything placed so far, in mm. */
