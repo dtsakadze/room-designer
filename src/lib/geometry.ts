@@ -2,11 +2,13 @@ import type { Piece } from '../types'
 
 /** Keeps a piece a sane size and stops it sinking through the floor. */
 export function normalizePiece(piece: Piece): Piece {
+  const height = atLeast(piece.height)
   return {
     ...piece,
     width: atLeast(piece.width),
-    height: atLeast(piece.height),
-    depth: atLeast(piece.depth),
+    height,
+    // A rod is round, so its height and depth are one number: the diameter.
+    depth: piece.kind === 'rod' ? height : atLeast(piece.depth),
     x: round(piece.x),
     y: Math.max(0, round(piece.y)),
   }

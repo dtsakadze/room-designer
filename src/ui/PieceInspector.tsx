@@ -12,26 +12,46 @@ export function PieceInspector() {
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
 
+  // A rod is round: one length along the wall, one diameter for the section.
+  const isRod = piece.kind === 'rod'
+
   return (
     <div className="stack">
       <p className="muted">{PIECE_LABELS[piece.kind]}</p>
 
-      <NumberField
-        label="Width"
-        value={piece.width}
-        onChange={(width) => updatePiece(piece.id, { width })}
-      />
-      <NumberField
-        label="Height"
-        value={piece.height}
-        onChange={(height) => updatePiece(piece.id, { height })}
-      />
-      <NumberField
-        label="Depth"
-        value={piece.depth}
-        onChange={(depth) => updatePiece(piece.id, { depth })}
-      />
-      <p className="hint">Depth is recorded for later, but not drawn in this view.</p>
+      {isRod ? (
+        <>
+          <NumberField
+            label="Length"
+            value={piece.width}
+            onChange={(width) => updatePiece(piece.id, { width })}
+          />
+          <NumberField
+            label="Diameter"
+            value={piece.height}
+            onChange={(height) => updatePiece(piece.id, { height })}
+          />
+        </>
+      ) : (
+        <>
+          <NumberField
+            label="Width"
+            value={piece.width}
+            onChange={(width) => updatePiece(piece.id, { width })}
+          />
+          <NumberField
+            label="Height"
+            value={piece.height}
+            onChange={(height) => updatePiece(piece.id, { height })}
+          />
+          <NumberField
+            label="Depth"
+            value={piece.depth}
+            onChange={(depth) => updatePiece(piece.id, { depth })}
+          />
+          <p className="hint">Depth is recorded for later, but not drawn in this view.</p>
+        </>
+      )}
 
       <hr className="rule" />
 

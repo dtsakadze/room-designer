@@ -21,7 +21,9 @@ drawing library.
   you assemble the carcass yourself from side / top-bottom / back panels, then add shelves,
   dividers, rods and drawers. A piece's `x`/`y` is its bottom-left corner, `y` counts **up** from the
   floor and `x = 0` is the middle of the drawing. `depth` is stored (for a cut list later) but is not
-  drawn in an elevation view.
+  drawn in an elevation view. A hanging rod is round, so the inspector describes it as **length** and
+  **diameter** instead of width/height/depth; `normalizePiece` keeps its height and depth equal to the
+  one diameter.
 - **Coordinates** (`src/canvas/view.ts`): SVG counts y downwards and the design counts it upwards,
   so every flip goes through `toSvgY` / `toDesignY`. Screen→drawing conversion uses the SVG's own
   CTM, frozen at the start of a gesture so panning can't feed back into itself.

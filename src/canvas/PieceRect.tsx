@@ -1,5 +1,6 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
+import { HANDLE_SIZE, handleOutsets } from './handles'
 import { toSvgY } from './view'
 
 const FILLS: Record<Piece['kind'], string> = {
@@ -21,6 +22,9 @@ type PieceRectProps = {
 
 export function PieceRect({ piece, selected, unit, onPointerDown }: PieceRectProps) {
   const y = toSvgY(piece.y, piece.height)
+  // Clear the top row of resize handles, which sit outside a thin piece.
+  const box = HANDLE_SIZE * unit
+  const labelY = y - handleOutsets(piece, box).y - box / 2 - unit * 5
   // The back panel sits behind everything else, so draw it hollow.
   const isBack = piece.kind === 'back'
 
@@ -43,13 +47,15 @@ export function PieceRect({ piece, selected, unit, onPointerDown }: PieceRectPro
       {selected && (
         <text
           x={piece.x + piece.width / 2}
-          y={y - unit * 6}
+          y={labelY}
           textAnchor="middle"
           fontSize={unit * 16}
           fill="#2563eb"
           style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
-          {piece.width} × {piece.height}
+          {piece.kind === 'rod'
+            ? `⌀${piece.height} × ${piece.width}`
+            : `${piece.width} × ${piece.height}`}
         </text>
       )}
     </g>

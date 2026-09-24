@@ -1,12 +1,14 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
-import { HANDLES, type Handle, handleCursor, handleKey } from './handles'
+import {
+  HANDLES,
+  HANDLE_SIZE,
+  type Handle,
+  handleCursor,
+  handleKey,
+  handleOutsets,
+} from './handles'
 import { toSvgY } from './view'
-
-/** Handle box size, in screen-constant units. */
-const SIZE = 11
-/** Minimum spread between the three handles on an axis, as handle boxes. */
-const SPREAD = 2.6
 
 type ResizeHandlesProps = {
   piece: Piece
@@ -15,14 +17,10 @@ type ResizeHandlesProps = {
 }
 
 export function ResizeHandles({ piece, unit, onPointerDown }: ResizeHandlesProps) {
-  const box = SIZE * unit
+  const box = HANDLE_SIZE * unit
   const svgTop = toSvgY(piece.y, piece.height)
   const svgBottom = toSvgY(piece.y, 0)
-
-  // An 18mm board is thinner than the handles themselves, so on a short axis the
-  // outer handles sit just outside the piece rather than on top of each other.
-  const outsetX = Math.max(0, (box * SPREAD - piece.width) / 2)
-  const outsetY = Math.max(0, (box * SPREAD - piece.height) / 2)
+  const { x: outsetX, y: outsetY } = handleOutsets(piece, box)
 
   return (
     <g>

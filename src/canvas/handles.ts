@@ -20,6 +20,22 @@ export const HANDLES: Handle[] = [
 /** Stops a piece being dragged inside out. */
 export const MIN_SIZE = 10
 
+/** Handle box size, in screen-constant units. */
+export const HANDLE_SIZE = 11
+/** Minimum spread between the three handles on an axis, as handle boxes. */
+const SPREAD = 2.6
+
+/**
+ * An 18mm board is thinner than the handles themselves, so on a short axis the
+ * outer handles sit just outside the piece rather than on top of each other.
+ */
+export function handleOutsets(piece: Piece, box: number) {
+  return {
+    x: Math.max(0, (box * SPREAD - piece.width) / 2),
+    y: Math.max(0, (box * SPREAD - piece.height) / 2),
+  }
+}
+
 export const handleKey = (handle: Handle) => `${handle.hx}:${handle.hy}`
 
 export function handleCursor({ hx, hy }: Handle) {
