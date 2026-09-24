@@ -21,7 +21,7 @@ export function Sidebar({ saveStatus }: { saveStatus: SaveStatus }) {
   return (
     <aside className="sidebar">
       <header className="sidebar-header">
-        <h1>room designer</h1>
+        <h1>Room Designer</h1>
         <p className="muted">{count} piece{count === 1 ? '' : 's'}</p>
         <p className={saveStatus === 'unavailable' ? 'save-status save-status-error' : 'save-status'}>
           {SAVE_LABELS[saveStatus]}
