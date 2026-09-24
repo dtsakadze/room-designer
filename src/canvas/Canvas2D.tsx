@@ -4,6 +4,7 @@ import type { Piece } from '../types'
 import { SNAP } from '../lib/defaults'
 import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
+import { CutListPanel } from '../ui/CutListPanel'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
@@ -45,6 +46,7 @@ export function Canvas2D() {
   const svgRef = useRef<SVGSVGElement>(null)
   const gesture = useRef<Gesture | null>(null)
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
+  const [showCutList, setShowCutList] = useState(false)
 
   const pieces = useDesignStore((s) => s.pieces)
   const selectedId = useDesignStore((s) => s.selectedId)
@@ -265,7 +267,17 @@ export function Canvas2D() {
         <button type="button" className="ghost-button" onClick={fitToContent}>
           Fit view
         </button>
+        <button
+          type="button"
+          className="ghost-button"
+          aria-pressed={showCutList}
+          onClick={() => setShowCutList((open) => !open)}
+        >
+          Cut list
+        </button>
       </div>
+
+      {showCutList && <CutListPanel onClose={() => setShowCutList(false)} />}
 
       {pieces.length === 0 && (
         <p className="viewport-hint">Pick a component from the sidebar to start building.</p>

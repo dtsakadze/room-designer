@@ -273,3 +273,84 @@ button {
 .checkbox input {
   accent-color: var(--accent);
 }
+
+.canvas-tools .ghost-button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cut-list {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100% - 80px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(29, 36, 48, 0.08);
+}
+
+.cut-list-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cut-list-header h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.icon-button {
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 18px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  color: var(--text);
+}
+
+.cut-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cut-list th {
+  padding: 0 6px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.cut-list td {
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cut-list th:first-child,
+.cut-list td:first-child {
+  padding-left: 0;
+}
+
+.cut-list .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
