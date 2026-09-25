@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { DEFAULT_THICKNESS } from '../lib/defaults'
 import { type ProjectData, parseProject, toProjectData } from '../lib/project'
 import { type StoredProject, browserStorage } from '../lib/storage'
+import type { Piece } from '../types'
 import { useDesignStore } from './useDesignStore'
 
 export type SaveStatus = 'loading' | 'blocked' | 'saving' | 'saved' | 'unavailable'
@@ -12,6 +13,8 @@ export type ProjectSummary = {
   createdAt: string
   updatedAt: string
   pieceCount: number
+  /** The design's parts, for drawing its thumbnail in the project list. */
+  pieces: Piece[]
 }
 
 type ProjectsState = {
@@ -64,7 +67,9 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
     set({
       projects: sortByEdited(
         projects.map((project) =>
-          project.id === meta.id ? { ...project, updatedAt, pieceCount: design.pieces.length } : project,
+          project.id === meta.id
+            ? { ...project, updatedAt, pieceCount: design.pieces.length, pieces: design.pieces }
+            : project,
         ),
       ),
     })
@@ -249,13 +254,15 @@ function newRecord(name: string, design: ProjectData, createdAt = new Date().toI
 }
 
 function summarize(record: StoredProject): ProjectSummary {
-  const pieces = (record.design as { pieces?: unknown } | null)?.pieces
+  // Checked like any load, so a broken project shows an empty thumbnail, not an error.
+  const pieces = parseProject(record.design)?.pieces ?? []
   return {
     id: record.id,
     name: record.name,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
-    pieceCount: Array.isArray(pieces) ? pieces.length : 0,
+    pieceCount: pieces.length,
+    pieces,
   }
 }
 

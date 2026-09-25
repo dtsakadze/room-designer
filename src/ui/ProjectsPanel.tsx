@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useProjectsStore } from '../store/useProjectsStore'
+import { useDesignStore } from '../store/useDesignStore'
 import { EditableName } from './EditableName'
+import { ProjectThumbnail } from './ProjectThumbnail'
 
 /** Every project in this browser: open, create, rename and delete. */
 export function ProjectsPanel({ onClose }: { onClose: () => void }) {
   const projects = useProjectsStore((s) => s.projects)
   const currentId = useProjectsStore((s) => s.currentId)
+  const livePieces = useDesignStore((s) => s.pieces)
   const { createProject, openProject, renameProject, duplicateProject, deleteProject } =
     useProjectsStore.getState()
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -44,6 +47,8 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
             const isOpen = project.id === currentId
             return (
               <li key={project.id} className={isOpen ? 'project-row project-row-open' : 'project-row'}>
+                {/* The open project is drawn from the live design, so it's always current. */}
+                <ProjectThumbnail pieces={isOpen ? livePieces : project.pieces} />
                 <div className="project-info">
                   {renamingId === project.id ? (
                     <EditableName
