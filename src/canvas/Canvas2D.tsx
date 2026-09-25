@@ -13,7 +13,7 @@ import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
 import type { Handle } from './handles'
 import { resizePiece } from './handles'
-import { VIEWS, type ViewName, isHollow, projectPieces, sizeLabel } from './views'
+import { VIEWS, type ViewName, isHollow, piecesAt, projectPieces, sizeLabel } from './views'
 import {
   INITIAL_VIEW,
   MAX_VIEW_WIDTH,
@@ -35,6 +35,11 @@ type Gesture =
       startY: number
       originX: number
       originY: number
+      /** Only the front view moves pieces; elsewhere a press just selects. */
+      editable: boolean
+      /** Pieces under the pointer when an already-selected one was pressed. */
+      stack: string[] | null
+      moved: boolean
     }
   | {
       mode: 'resize'
@@ -71,6 +76,15 @@ export function Canvas2D() {
     () => projectPieces(pieces, viewName, thickness),
     [pieces, viewName, thickness],
   )
+  // See-through panels go underneath, so where they overlap a real part (a
+  // side panel's edge, say) the part gets the click.
+  const drawn = useMemo(
+    () => [
+      ...shown.filter((piece) => isHollow(piece, viewName)),
+      ...shown.filter((piece) => !isHollow(piece, viewName)),
+    ],
+    [shown, viewName],
+  )
 
   const unit = view.w / 1400
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
@@ -93,26 +107,41 @@ export function Canvas2D() {
     svg.setPointerCapture(event.pointerId)
   }
 
-  const beginPieceDrag = (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => {
+  /**
+   * Pressing a part selects it and, in the front view, starts dragging it.
+   * Pressing where the selected part is (even under others) keeps it, so it can
+   * be dragged; releasing without moving then selects the next part beneath.
+   */
+  const beginPieceDrag = (event: ReactPointerEvent<SVGRectElement>, clicked: Piece) => {
     event.stopPropagation()
-    select(piece.id)
-    // The other views are for looking: a click selects, nothing moves.
-    if (!isFront) return
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
     if (!svg || !inverse) return
     const point = svgPoint(inverse, event.clientX, event.clientY)
+
+    const stack = piecesAt(drawn, point.x, toDesignY(point.y), viewName).map((piece) => piece.id)
+    const current = shown.find((piece) => piece.id === selectedId)
+    // A see-through panel stays selectable, but pressing a part inside it
+    // should grab that part, not the panel.
+    const keep = current && stack.includes(current.id) && !isHollow(current, viewName)
+    const target = pieces.find((piece) => piece.id === (keep ? current.id : clicked.id))
+    if (!target) return
+    select(target.id)
+
     gesture.current = {
       mode: 'piece',
       inverse,
-      id: piece.id,
+      id: target.id,
       startX: point.x,
       startY: point.y,
-      originX: piece.x,
-      originY: piece.y,
+      originX: target.x,
+      originY: target.y,
+      editable: isFront,
+      stack: keep ? stack : null,
+      moved: false,
     }
     // The whole drag undoes as one step.
-    beginBatch()
+    if (isFront) beginBatch()
     setHoveredId(null)
     svg.setPointerCapture(event.pointerId)
   }
@@ -161,6 +190,10 @@ export function Canvas2D() {
       return
     }
 
+    // A few pixels of wobble is still a click, not a drag.
+    if (!active.moved && Math.hypot(dx, dy) < unit * 4) return
+    active.moved = true
+    if (!active.editable) return
     updatePiece(active.id, {
       x: snap(active.originX + dx),
       y: snap(active.originY + dy),
@@ -168,8 +201,13 @@ export function Canvas2D() {
   }
 
   const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (!gesture.current) return
-    if (gesture.current.mode !== 'pan') endBatch()
+    const active = gesture.current
+    if (!active) return
+    if (active.mode === 'resize' || (active.mode === 'piece' && active.editable)) endBatch()
+    if (active.mode === 'piece' && active.stack && !active.moved) {
+      const next = active.stack[(active.stack.indexOf(active.id) + 1) % active.stack.length]
+      select(next)
+    }
     gesture.current = null
     svgRef.current?.releasePointerCapture(event.pointerId)
   }
@@ -287,7 +325,7 @@ export function Canvas2D() {
         onPointerCancel={endGesture}
       >
         <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />
-        {shown.map((piece) => (
+        {drawn.map((piece) => (
           <PieceRect
             key={piece.id}
             piece={piece}

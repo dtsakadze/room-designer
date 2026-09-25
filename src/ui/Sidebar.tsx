@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
 import { ComponentPalette } from './ComponentPalette'
+import { PartsList } from './PartsList'
 import { PieceInspector } from './PieceInspector'
 import { ProjectFileButtons } from './ProjectFileButtons'
 import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
@@ -70,13 +71,18 @@ export function Sidebar() {
       <ComponentPalette />
 
       <section className="section">
+        <h2>Parts</h2>
+        <PartsList />
+      </section>
+
+      <section className="section">
         <h2>Selected</h2>
         {selectedId ? (
           <PieceInspector />
         ) : (
           <p className="muted">
             Add a component, then click it. Drag to move it, drag the blue handles to
-            resize it. Arrow keys nudge by 10mm (hold shift for 100mm).
+            resize it. Click a selected part again to pick the one beneath it. Arrow keys nudge by 10mm (hold shift for 100mm).
             {` ${DUPLICATE_SHORTCUT} duplicates, ${DELETE_SHORTCUT} deletes, ${UNDO_SHORTCUT} undoes and ${REDO_SHORTCUT} redoes.`}
           </p>
         )}

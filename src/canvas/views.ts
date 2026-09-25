@@ -76,3 +76,17 @@ export function isHollow(piece: Piece, view: ViewName) {
   if (view === 'top') return piece.kind === 'horizontal'
   return piece.kind === 'back'
 }
+
+/**
+ * Every shown piece under a point, topmost first. See-through panels go last,
+ * so clicking through a stack reaches the parts inside before the panel.
+ */
+export function piecesAt(shown: Piece[], x: number, y: number, view: ViewName) {
+  const under = shown
+    .filter((p) => x >= p.x && x <= p.x + p.width && y >= p.y && y <= p.y + p.height)
+    .reverse()
+  return [
+    ...under.filter((piece) => !isHollow(piece, view)),
+    ...under.filter((piece) => isHollow(piece, view)),
+  ]
+}

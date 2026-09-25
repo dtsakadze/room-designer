@@ -11,6 +11,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
 - Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).
 - Look at the unit from either side, the top or the back. These views are for looking: you edit in the front view.
+- Hidden parts stay reachable: click a selected part again to pick the one beneath it, or pick any part from the Parts list.
 
 ## Run it locally
 

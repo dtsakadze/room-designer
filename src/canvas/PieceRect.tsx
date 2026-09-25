@@ -46,6 +46,11 @@ export function PieceRect({
   // Selection already has its own outline, so hover only shows on the others.
   const showHover = hovered && !selected
   const rx = piece.kind === 'rod' ? Math.min(piece.width, piece.height) / 2 : 0
+  const handlers = {
+    onPointerDown: (event: ReactPointerEvent<SVGRectElement>) => onPointerDown(event, piece),
+    onPointerEnter: () => onHoverChange(piece.id),
+    onPointerLeave: () => onHoverChange(null),
+  }
 
   return (
     <g>
@@ -60,11 +65,24 @@ export function PieceRect({
         stroke={selected ? '#2563eb' : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
         strokeDasharray={hollow ? `${unit * 8} ${unit * 6}` : undefined}
-        style={{ cursor: editable ? 'move' : 'pointer' }}
-        onPointerDown={(event) => onPointerDown(event, piece)}
-        onPointerEnter={() => onHoverChange(piece.id)}
-        onPointerLeave={() => onHoverChange(null)}
+        style={{ cursor: editable ? 'move' : 'pointer', pointerEvents: hollow ? 'none' : undefined }}
+        {...(hollow ? {} : handlers)}
       />
+      {/* A see-through panel covers the parts inside it, so only a band along
+          its outline takes clicks; clicks inside reach those parts. */}
+      {hollow && (
+        <rect
+          x={piece.x}
+          y={y}
+          width={piece.width}
+          height={piece.height}
+          fill="none"
+          stroke="transparent"
+          strokeWidth={unit * 10}
+          style={{ cursor: editable ? 'move' : 'pointer', pointerEvents: 'stroke' }}
+          {...handlers}
+        />
+      )}
       {showHover && (
         <rect
           x={piece.x}

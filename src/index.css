@@ -597,3 +597,42 @@ button kbd {
   background: #eef3fd;
   color: var(--accent);
 }
+
+.parts-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.part-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+}
+
+.part-row:hover {
+  background: #f5f7fa;
+}
+
+.part-row-selected,
+.part-row-selected:hover {
+  background: #eef3fd;
+  color: var(--accent);
+}
+
+.part-size {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
