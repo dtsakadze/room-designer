@@ -3,9 +3,17 @@ import { useDesignStore } from '../store/useDesignStore'
 
 export function ComponentPalette() {
   const addPiece = useDesignStore((s) => s.addPiece)
+  const addBox = useDesignStore((s) => s.addBox)
 
   return (
     <>
+      <section className="section">
+        <h2>Units</h2>
+        <button type="button" className="add-button box-button" onClick={addBox}>
+          Box
+          <span className="muted">sides, top, bottom and back, sized as one</span>
+        </button>
+      </section>
       {PIECE_GROUPS.map((group) => (
         <section key={group.title} className="section">
           <h2>{group.title}</h2>

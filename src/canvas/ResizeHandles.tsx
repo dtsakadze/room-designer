@@ -1,10 +1,9 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import type { Piece } from '../types'
-import { BOARD } from '../lib/defaults'
 import {
   HANDLES,
   HANDLE_SIZE,
   type Handle,
+  type Rect,
   handleCursor,
   handleKey,
   handleOutsets,
@@ -12,18 +11,18 @@ import {
 import { toSvgY } from './view'
 
 type ResizeHandlesProps = {
-  piece: Piece
+  piece: Rect
+  /** A board's thickness axis, which isn't dragged: it comes from the project. */
+  locked?: 'width' | 'height' | 'depth'
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, handle: Handle) => void
 }
 
-export function ResizeHandles({ piece, unit, onPointerDown }: ResizeHandlesProps) {
+export function ResizeHandles({ piece, locked, unit, onPointerDown }: ResizeHandlesProps) {
   const box = HANDLE_SIZE * unit
   const svgTop = toSvgY(piece.y, piece.height)
   const svgBottom = toSvgY(piece.y, 0)
   const { x: outsetX, y: outsetY } = handleOutsets(piece, box)
-  // A board's thickness comes from the project, so don't offer to drag it.
-  const locked = BOARD[piece.kind]?.axis
   const handles = HANDLES.filter(
     (handle) =>
       !(locked === 'width' && handle.hx !== 0) && !(locked === 'height' && handle.hy !== 0),

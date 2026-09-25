@@ -92,6 +92,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       if (applying) return
       const unchanged =
         state.pieces === previous.pieces &&
+        state.boxes === previous.boxes &&
         state.thickness === previous.thickness &&
         state.unitDepth === previous.unitDepth
       if (unchanged) return

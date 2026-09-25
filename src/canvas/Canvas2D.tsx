@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
-import { SNAP } from '../lib/defaults'
+import { BOARD, SNAP } from '../lib/defaults'
 import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
@@ -13,7 +13,7 @@ import { HangingGuides } from './HangingGuides'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
-import type { Handle } from './handles'
+import type { Handle, Rect } from './handles'
 import { resizePiece } from './handles'
 import {
   VIEWS,
@@ -58,10 +58,12 @@ type Gesture =
       mode: 'resize'
       inverse: DOMMatrix
       id: string
+      /** Set when resizing a whole box rather than one piece. */
+      boxId: string | null
       startX: number
       startY: number
       handle: Handle
-      origin: Piece
+      origin: Rect
     }
 
 export function Canvas2D() {
@@ -102,6 +104,9 @@ export function Canvas2D() {
 
   const unit = view.w / 1400
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
+  const updateBox = useDesignStore((s) => s.updateBox)
+  const selectedBox =
+    useDesignStore((s) => s.boxes.find((box) => box.id === selected?.boxId)) ?? null
   const selectedShown = shown.find((piece) => piece.id === selectedId) ?? null
 
   const beginPan = (event: ReactPointerEvent<SVGSVGElement>) => {
@@ -160,7 +165,11 @@ export function Canvas2D() {
     svg.setPointerCapture(event.pointerId)
   }
 
-  const beginResize = (event: ReactPointerEvent<SVGRectElement>, handle: Handle, piece: Piece) => {
+  const beginResize = (
+    event: ReactPointerEvent<SVGRectElement>,
+    handle: Handle,
+    target: { id: string; boxId: string | null; origin: Rect },
+  ) => {
     event.stopPropagation()
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
@@ -169,11 +178,12 @@ export function Canvas2D() {
     gesture.current = {
       mode: 'resize',
       inverse,
-      id: piece.id,
+      id: target.id,
+      boxId: target.boxId,
       startX: point.x,
       startY: point.y,
       handle,
-      origin: piece,
+      origin: target.origin,
     }
     beginBatch()
     setHoveredId(null)
@@ -200,7 +210,9 @@ export function Canvas2D() {
     const dy = toDesignY(point.y - active.startY)
 
     if (active.mode === 'resize') {
-      updatePiece(active.id, resizePiece(active.origin, active.handle, dx, dy, snap))
+      const resized = resizePiece(active.origin, active.handle, dx, dy, snap)
+      if (active.boxId) updateBox(active.boxId, resized)
+      else updatePiece(active.id, resized)
       return
     }
 
@@ -345,7 +357,11 @@ export function Canvas2D() {
           <PieceRect
             key={piece.id}
             piece={piece}
-            selected={piece.id === selectedId}
+            // Selecting any panel of a box selects the whole box.
+            selected={
+              piece.id === selectedId || (!!piece.boxId && piece.boxId === selected?.boxId)
+            }
+            labelled={piece.id === selectedId}
             hovered={piece.id === hoveredId}
             label={sizeLabel(piece, viewName)}
             editable={isFront}
@@ -368,12 +384,29 @@ export function Canvas2D() {
           <HangingGuides rod={selectedShown} pieces={shown} unit={unit} />
         )}
 
-        {/* Handles go last so they stay clickable above every piece. */}
-        {isFront && selected && (
+        {/* Handles go last so they stay clickable above every piece. A box is
+            resized as a whole, by handles around its outside. */}
+        {isFront && selectedBox && (
+          <ResizeHandles
+            piece={selectedBox}
+            unit={unit}
+            onPointerDown={(event, handle) =>
+              beginResize(event, handle, {
+                id: selectedBox.id,
+                boxId: selectedBox.id,
+                origin: selectedBox,
+              })
+            }
+          />
+        )}
+        {isFront && selected && !selected.boxId && (
           <ResizeHandles
             piece={selected}
+            locked={BOARD[selected.kind]?.axis}
             unit={unit}
-            onPointerDown={(event, handle) => beginResize(event, handle, selected)}
+            onPointerDown={(event, handle) =>
+              beginResize(event, handle, { id: selected.id, boxId: null, origin: selected })
+            }
           />
         )}
       </svg>

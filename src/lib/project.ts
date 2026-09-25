@@ -1,4 +1,5 @@
-import type { Piece, PieceKind, Thickness } from '../types'
+import type { Box, Piece, PieceKind, Thickness } from '../types'
+import { normalizeBox, withBoxPanels } from './box'
 import {
   DEFAULT_THICKNESS,
   DEFAULT_UNIT_DEPTH,
@@ -27,10 +28,12 @@ export type ProjectData = {
   /** How deep new parts start. Older saves don't have it, so it's optional here. */
   unitDepth?: number
   pieces: Piece[]
+  /** Carcasses; their panels are in `pieces` too, but are rebuilt from these on load. */
+  boxes?: Box[]
 }
 
 export function toProjectData(
-  design: { pieces: Piece[]; thickness: Thickness; unitDepth?: number },
+  design: { pieces: Piece[]; boxes?: Box[]; thickness: Thickness; unitDepth?: number },
   name?: string,
 ): ProjectData {
   return {
@@ -40,6 +43,7 @@ export function toProjectData(
     thickness: design.thickness,
     unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
+    boxes: design.boxes ?? [],
   }
 }
 
@@ -47,7 +51,8 @@ export function toProjectData(
  * Reads stored data back into a design, or returns null if it isn't a project
  * this version understands. Stored data can come from an older version or be
  * hand-edited, so nothing is trusted: unknown pieces are dropped and every
- * piece goes through the same normalising as an edit does.
+ * piece goes through the same normalising as an edit does. A box's panels
+ * are rebuilt from the box, so they can't disagree with it.
  */
 export function parseProject(data: unknown): ProjectData | null {
   if (!isRecord(data) || data.formatVersion !== FORMAT_VERSION) return null
@@ -75,7 +80,26 @@ export function parseProject(data: unknown): ProjectData | null {
       depth: raw.depth as number,
     }
     const railAt = raw.railAt === 'back' ? ('back' as const) : undefined
-    return [normalizePiece({ ...piece, fixed: raw.fixed === true, railAt }, thickness)]
+    const boxId = typeof raw.boxId === 'string' ? raw.boxId : undefined
+    return [normalizePiece({ ...piece, fixed: raw.fixed === true, railAt, boxId }, thickness)]
+  })
+
+  const boxes = (Array.isArray(data.boxes) ? data.boxes : []).flatMap((raw): Box[] => {
+    if (!isRecord(raw) || typeof raw.id !== 'string') return []
+    const numbers = ['x', 'y', 'width', 'height', 'depth'] as const
+    if (!numbers.every((key) => typeof raw[key] === 'number' && Number.isFinite(raw[key]))) {
+      return []
+    }
+    const box = {
+      id: raw.id,
+      x: raw.x as number,
+      y: raw.y as number,
+      width: raw.width as number,
+      height: raw.height as number,
+      depth: raw.depth as number,
+      joint: raw.joint === 'on' ? ('on' as const) : ('between' as const),
+    }
+    return [normalizeBox(box, thickness)]
   })
 
   return {
@@ -84,7 +108,8 @@ export function parseProject(data: unknown): ProjectData | null {
     ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
     thickness,
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
-    pieces,
+    pieces: withBoxPanels(pieces, boxes, thickness),
+    boxes,
   }
 }
 

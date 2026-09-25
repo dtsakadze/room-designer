@@ -22,6 +22,7 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'shelf' || !piece.fixed) delete normalized.fixed
   // Only rails have a side, and front (the default) is stored as no value.
   if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
+  if (!piece.boxId) delete normalized.boxId
   return normalized
 }
 

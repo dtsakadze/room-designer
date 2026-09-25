@@ -42,4 +42,23 @@ export type Piece = {
   fixed?: boolean
   /** Rails only: which edge of the unit the strip runs along. Absent means front. */
   railAt?: 'front' | 'back'
+  /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */
+  boxId?: string
+}
+
+/**
+ * A carcass defined by its outside size: its sides, top, bottom and back are
+ * worked out from it (see `boxPanels`) and rebuilt whenever it changes.
+ * `x`/`y` is its bottom-left corner, like a piece's.
+ */
+export type Box = {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
+  /** Outside depth, back panel included. */
+  depth: number
+  /** Top and bottom fit between the sides, or sit on them and run full width. */
+  joint: 'between' | 'on'
 }

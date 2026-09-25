@@ -7,6 +7,8 @@ import { toSvgY } from './view'
 type PieceRectProps = {
   piece: Piece
   selected: boolean
+  /** Shows the size label: only on the clicked panel, not every panel of a box. */
+  labelled: boolean
   hovered: boolean
   /** Size shown above the piece while it's selected. */
   label: string
@@ -31,6 +33,7 @@ const SCREW_INSET = 25
 export function PieceRect({
   piece,
   selected,
+  labelled,
   hovered,
   label,
   editable,
@@ -106,7 +109,7 @@ export function PieceRect({
           style={{ pointerEvents: 'none' }}
         />
       )}
-      {selected && (
+      {labelled && (
         <text
           x={piece.x + piece.width / 2}
           y={labelY}

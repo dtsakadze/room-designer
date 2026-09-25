@@ -665,3 +665,15 @@ button kbd {
   color: var(--accent);
   background: #eef3fd;
 }
+
+.box-button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.box-button .muted {
+  font-size: 12px;
+}

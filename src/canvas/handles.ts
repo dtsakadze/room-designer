@@ -1,5 +1,8 @@
 import type { Piece } from '../types'
 
+/** The part of a piece (or a box) that handles resize. */
+export type Rect = Pick<Piece, 'x' | 'y' | 'width' | 'height'>
+
 /**
  * A handle is identified by which edges it drags: -1 is the left/bottom edge,
  * 1 the right/top edge, 0 means that axis stays put.
@@ -29,7 +32,7 @@ const SPREAD = 2.6
  * An 18mm board is thinner than the handles themselves, so on a short axis the
  * outer handles sit just outside the piece rather than on top of each other.
  */
-export function handleOutsets(piece: Piece, box: number) {
+export function handleOutsets(piece: Rect, box: number) {
   return {
     x: Math.max(0, (box * SPREAD - piece.width) / 2),
     y: Math.max(0, (box * SPREAD - piece.height) / 2),
@@ -49,12 +52,12 @@ export function handleCursor({ hx, hy }: Handle) {
  * opposite edges stay where they are. `dx`/`dy` are in design coordinates.
  */
 export function resizePiece(
-  origin: Piece,
+  origin: Rect,
   handle: Handle,
   dx: number,
   dy: number,
   snap: (mm: number) => number,
-): Pick<Piece, 'x' | 'y' | 'width' | 'height'> {
+): Rect {
   const left = origin.x
   const right = origin.x + origin.width
   const bottom = origin.y

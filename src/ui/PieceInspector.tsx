@@ -1,5 +1,6 @@
 import { BOARD, pieceLabel } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
+import { BoxInspector } from './BoxInspector'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 
@@ -9,9 +10,14 @@ export function PieceInspector() {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)
+  const boxes = useDesignStore((s) => s.boxes)
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
+
+  // A box's panel is edited through its box.
+  const box = piece.boxId && boxes.find((candidate) => candidate.id === piece.boxId)
+  if (box) return <BoxInspector box={box} panelId={piece.id} />
 
   // A rod is round: one length along the wall, one diameter for the section.
   const isRod = piece.kind === 'rod'
