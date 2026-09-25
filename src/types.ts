@@ -7,6 +7,7 @@ export type PieceKind =
   | 'rod'
   | 'drawer'
   | 'plinth'
+  | 'rail'
 
 /**
  * One board, seen head-on. Everything lives in a single 2D world measured in
@@ -39,4 +40,6 @@ export type Piece = {
    * structural shelf) rather than resting on pins. Absent means adjustable.
    */
   fixed?: boolean
+  /** Rails only: which edge of the unit the strip runs along. Absent means front. */
+  railAt?: 'front' | 'back'
 }

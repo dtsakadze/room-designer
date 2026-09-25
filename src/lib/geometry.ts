@@ -20,6 +20,8 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (board) normalized[board.axis] = atLeast(thickness[board.board])
   // Only shelves can be fixed, and "not fixed" is stored as no flag at all.
   if (piece.kind !== 'shelf' || !piece.fixed) delete normalized.fixed
+  // Only rails have a side, and front (the default) is stored as no value.
+  if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
   return normalized
 }
 

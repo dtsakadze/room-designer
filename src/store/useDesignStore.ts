@@ -197,4 +197,5 @@ const samePiece = (a: Piece, b: Piece) =>
   a.width === b.width &&
   a.height === b.height &&
   a.depth === b.depth &&
-  !!a.fixed === !!b.fixed
+  !!a.fixed === !!b.fixed &&
+  a.railAt === b.railAt

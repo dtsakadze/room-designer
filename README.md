@@ -4,7 +4,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 
 ## Features
 
-- Build in a front view from side, top/bottom and back panels, a plinth, shelves, dividers, hanging rods and drawers. Drag to move, drag handles to resize, or type exact sizes.
+- Build in a front view from side, top/bottom and back panels, a plinth, rails, shelves, dividers, hanging rods and drawers. Drag to move, drag handles to resize, or type exact sizes.
 - Board thickness is a project setting (body and back), and every panel follows it.
 - Dimension lines for the overall size and the gaps around the selected part.
 - A cut list: every board as length × width × thickness, with identical parts counted together.

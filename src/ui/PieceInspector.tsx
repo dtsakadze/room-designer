@@ -32,6 +32,22 @@ export function PieceInspector() {
         </label>
       )}
 
+      {piece.kind === 'rail' && (
+        <div className="choice" role="radiogroup" aria-label="Rail position">
+          {(['front', 'back'] as const).map((at) => (
+            <label key={at} className="checkbox">
+              <input
+                type="radio"
+                name={`rail-${piece.id}`}
+                checked={(piece.railAt ?? 'front') === at}
+                onChange={() => updatePiece(piece.id, { railAt: at })}
+              />
+              {at === 'front' ? 'Front of the unit' : 'Back of the unit'}
+            </label>
+          ))}
+        </div>
+      )}
+
       {isRod ? (
         <>
           <NumberField

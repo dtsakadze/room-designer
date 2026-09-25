@@ -10,6 +10,7 @@ export const FILLS: Record<PieceKind, string> = {
   rod: '#aab5c2',
   drawer: '#c4ab7e',
   plinth: '#cdbb91',
+  rail: '#d8c9a3',
 }
 
 export const SELECTED = '#2563eb'

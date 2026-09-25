@@ -650,3 +650,8 @@ button kbd {
   right: auto;
   left: 16px;
 }
+
+.choice {
+  display: flex;
+  gap: 14px;
+}

@@ -5,6 +5,7 @@ export const ROD_DIAMETER = 25
 export const PLINTH_HEIGHT = 80
 /** How far the plinth sits back from the front, so toes don't hit it. */
 export const PLINTH_RECESS = 50
+export const RAIL_DEPTH = 100
 
 /** Outer width the default pieces are sized for; fittings fill its inside. */
 const UNIT_WIDTH = 1200
@@ -24,14 +25,18 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
   rod: 'Hanging rod',
   drawer: 'Drawer',
   plinth: 'Plinth',
+  rail: 'Rail',
 }
 
-/** A piece's name, telling fixed shelves apart from adjustable ones. */
-export const pieceLabel = (piece: Pick<Piece, 'kind' | 'fixed'>) =>
-  piece.kind === 'shelf' && piece.fixed ? 'Fixed shelf' : PIECE_LABELS[piece.kind]
+/** A piece's name: tells fixed shelves from adjustable ones, front rails from back. */
+export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt'>) {
+  if (piece.kind === 'shelf' && piece.fixed) return 'Fixed shelf'
+  if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
+  return PIECE_LABELS[piece.kind]
+}
 
 export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
-  { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth'] },
+  { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth', 'rail'] },
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
 ]
 
@@ -49,6 +54,8 @@ export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Th
   back: { axis: 'depth', board: 'back' },
   // The base board the unit stands on, facing forward like the back panel.
   plinth: { axis: 'depth', board: 'body' },
+  // A narrow strip joining the sides, used instead of a full top.
+  rail: { axis: 'height', board: 'body' },
 }
 
 /**
@@ -72,6 +79,8 @@ function dimensions(kind: PieceKind, thickness: Thickness): Pick<Piece, Dimensio
       return { width: inside, height: ROD_DIAMETER, depth: ROD_DIAMETER }
     case 'drawer':
       return { width: inside, height: 200, depth: 550 }
+    case 'rail':
+      return { width: inside, height: 0, depth: RAIL_DEPTH }
     case 'plinth':
       return { width: inside, height: PLINTH_HEIGHT, depth: 0 }
   }

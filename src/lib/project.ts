@@ -65,7 +65,8 @@ export function parseProject(data: unknown): ProjectData | null {
       height: raw.height as number,
       depth: raw.depth as number,
     }
-    return [normalizePiece({ ...piece, fixed: raw.fixed === true }, thickness)]
+    const railAt = raw.railAt === 'back' ? ('back' as const) : undefined
+    return [normalizePiece({ ...piece, fixed: raw.fixed === true, railAt }, thickness)]
   })
 
   return {
