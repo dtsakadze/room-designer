@@ -1,6 +1,8 @@
 import { BOARD, pieceLabel } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
+import { FILLS } from '../canvas/colors'
 import { BoxInspector } from './BoxInspector'
+import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 
@@ -11,6 +13,7 @@ export function PieceInspector() {
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)
   const boxes = useDesignStore((s) => s.boxes)
+  const setPieceColors = useDesignStore((s) => s.setPieceColors)
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
@@ -26,6 +29,17 @@ export function PieceInspector() {
   return (
     <div className="stack">
       <p className="muted">{pieceLabel(piece)}</p>
+
+      <ColorField
+        // A fresh picker per part, so it always opens on this part's colour and
+        // a picker left open can't recolour the next part selected.
+        key={piece.id}
+        label="Part colour"
+        value={piece.color ?? null}
+        fallback={FILLS[piece.kind]}
+        onChange={(color) => setPieceColors([piece.id], color)}
+        onReset={() => setPieceColors([piece.id], null)}
+      />
 
       {piece.kind === 'shelf' && (
         <label className="checkbox">

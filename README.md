@@ -9,6 +9,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - Dimension lines for the overall size and the gaps around the selected part.
 - A cut list: every board as length × width × thickness, with identical parts counted together.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
+- Colour parts one by one or several at once (⌘/Ctrl-drag a selection rectangle, or ⌘/Ctrl-click), and set a colour for new parts.
 - Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).
 - Look at the unit from either side, the top or the back, or orbit around it in 3D. These views are for looking: you edit in the front view.
 - Hidden parts stay reachable: click a selected part again to pick the one beneath it, or pick any part from the Parts list.

@@ -41,6 +41,18 @@ import {
 type Gesture =
   | { mode: 'pan'; inverse: DOMMatrix; startX: number; startY: number; startView: ViewBox }
   | {
+      mode: 'marquee'
+      inverse: DOMMatrix
+      startX: number
+      startY: number
+      /** The part the ⌘-press started on, toggled if the pointer doesn't move. */
+      clickedId: string | null
+      /** Where the pointer is now; read on release, as state may not have caught up. */
+      endX: number
+      endY: number
+      moved: boolean
+    }
+  | {
       mode: 'piece'
       inverse: DOMMatrix
       id: string
@@ -73,13 +85,20 @@ export function Canvas2D() {
   const [showCutList, setShowCutList] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [viewName, setViewName] = useState<ViewName>('front')
+  /** The selection rectangle being dragged, in SVG coordinates. */
+  const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(
+    null,
+  )
   const isFront = viewName === 'front'
 
   const pieces = useDesignStore((s) => s.pieces)
   const selectedId = useDesignStore((s) => s.selectedId)
+  const selectedIds = useDesignStore((s) => s.selectedIds)
   const select = useDesignStore((s) => s.select)
+  const toggleSelect = useDesignStore((s) => s.toggleSelect)
+  const selectMany = useDesignStore((s) => s.selectMany)
+  const removePieces = useDesignStore((s) => s.removePieces)
   const updatePiece = useDesignStore((s) => s.updatePiece)
-  const removePiece = useDesignStore((s) => s.removePiece)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const beginBatch = useDesignStore((s) => s.beginBatch)
   const endBatch = useDesignStore((s) => s.endBatch)
@@ -108,13 +127,52 @@ export function Canvas2D() {
   const selectedBox =
     useDesignStore((s) => s.boxes.find((box) => box.id === selected?.boxId)) ?? null
   const selectedShown = shown.find((piece) => piece.id === selectedId) ?? null
+  // Handles, gap lines and the like are for one part at a time.
+  const single = selectedIds.length <= 1
+  const selectedSet = new Set(selectedIds)
+  // Selecting any panel of a box selects the whole box.
+  const selectedBoxIds = new Set(
+    pieces.filter((piece) => selectedSet.has(piece.id) && piece.boxId).map((p) => p.boxId),
+  )
 
-  const beginPan = (event: ReactPointerEvent<SVGSVGElement>) => {
+  /**
+   * ⌘/Ctrl + drag draws a selection rectangle that adds what it touches to the
+   * selection. It can start over a part (the back panel covers the whole unit),
+   * so a ⌘-press that doesn't move is a ⌘-click on that part instead.
+   */
+  const beginMarquee = (
+    event: ReactPointerEvent<SVGElement>,
+    clickedId: string | null,
+  ) => {
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
     if (!svg || !inverse) return
-    select(null)
     const point = svgPoint(inverse, event.clientX, event.clientY)
+    gesture.current = {
+      mode: 'marquee',
+      inverse,
+      startX: point.x,
+      startY: point.y,
+      clickedId,
+      endX: point.x,
+      endY: point.y,
+      moved: false,
+    }
+    setHoveredId(null)
+    svg.setPointerCapture(event.pointerId)
+  }
+
+  /** Dragging empty space pans the view, and pressing it clears the selection. */
+  const beginBackground = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (event.button === 0 && hasModifier(event)) {
+      beginMarquee(event, null)
+      return
+    }
+    const svg = svgRef.current
+    const inverse = svg && screenToSvgMatrix(svg)
+    if (!svg || !inverse) return
+    const point = svgPoint(inverse, event.clientX, event.clientY)
+    if (event.button === 0) select(null)
     gesture.current = {
       mode: 'pan',
       inverse,
@@ -132,7 +190,13 @@ export function Canvas2D() {
    * be dragged; releasing without moving then selects the next part beneath.
    */
   const beginPieceDrag = (event: ReactPointerEvent<SVGRectElement>, clicked: Piece) => {
+    // Right-drag pans, even when it starts on a part.
+    if (event.button !== 0) return
     event.stopPropagation()
+    if (hasModifier(event)) {
+      beginMarquee(event, clicked.id)
+      return
+    }
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
     if (!svg || !inverse) return
@@ -196,6 +260,16 @@ export function Canvas2D() {
     if (!active || !svg) return
     const point = svgPoint(active.inverse, event.clientX, event.clientY)
 
+    if (active.mode === 'marquee') {
+      const distance = Math.hypot(point.x - active.startX, point.y - active.startY)
+      if (!active.moved && distance < unit * 4) return
+      active.moved = true
+      active.endX = point.x
+      active.endY = point.y
+      setMarquee({ x1: active.startX, y1: active.startY, x2: point.x, y2: point.y })
+      return
+    }
+
     if (active.mode === 'pan') {
       setView({
         ...active.startView,
@@ -229,6 +303,26 @@ export function Canvas2D() {
   const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
     const active = gesture.current
     if (!active) return
+    if (active.mode === 'marquee') {
+      if (active.moved) {
+        // Everything the rectangle touches, in design coordinates (y up).
+        const left = Math.min(active.startX, active.endX)
+        const right = Math.max(active.startX, active.endX)
+        const bottom = toDesignY(Math.max(active.startY, active.endY))
+        const top = toDesignY(Math.min(active.startY, active.endY))
+        const hit = drawn.filter(
+          (p) => p.x < right && p.x + p.width > left && p.y < top && p.y + p.height > bottom,
+        )
+        selectMany(
+          hit.map((piece) => piece.id),
+          true,
+        )
+      } else if (active.clickedId) {
+        // ⌘/Ctrl-click: adds the part to the selection, or takes it out.
+        toggleSelect(active.clickedId)
+      }
+      setMarquee(null)
+    }
     if (active.mode === 'resize' || (active.mode === 'piece' && active.editable)) endBatch()
     if (active.mode === 'piece' && active.stack && !active.moved) {
       const next = active.stack[(active.stack.indexOf(active.id) + 1) % active.stack.length]
@@ -268,6 +362,21 @@ export function Canvas2D() {
     return () => svg.removeEventListener('wheel', onWheel)
   }, [])
 
+  // ⌘A / Ctrl+A selects every part.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
+      const selectAll = event.key.toLowerCase() === 'a' && !event.shiftKey && !event.altKey
+      if (selectAll && hasModifier(event)) {
+        event.preventDefault()
+        selectMany(useDesignStore.getState().pieces.map((piece) => piece.id))
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectMany])
+
   // Arrow keys nudge the selection; Delete removes it.
   useEffect(() => {
     if (!selectedId) return
@@ -278,9 +387,12 @@ export function Canvas2D() {
 
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault()
-        removePiece(selectedId)
+        removePieces(useDesignStore.getState().selectedIds)
         return
       }
+
+      // Duplicating and nudging act on one part at a time.
+      if (useDesignStore.getState().selectedIds.length > 1) return
 
       // Also stops the browser's own ⌘D / Ctrl+D (bookmark this page).
       if (hasModifier(event) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'd') {
@@ -311,7 +423,7 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePiece, duplicatePiece, updatePiece])
+  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece])
 
   const fitTo = (list: Piece[]) => {
     const bounds = contentBounds(list)
@@ -347,7 +459,9 @@ export function Canvas2D() {
         style={viewName === '3d' ? { display: 'none' } : undefined}
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         preserveAspectRatio="xMidYMid meet"
-        onPointerDown={beginPan}
+        onPointerDown={beginBackground}
+        // The right button pans, so its menu would only get in the way.
+        onContextMenu={(event) => event.preventDefault()}
         onPointerMove={onPointerMove}
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
@@ -359,9 +473,9 @@ export function Canvas2D() {
             piece={piece}
             // Selecting any panel of a box selects the whole box.
             selected={
-              piece.id === selectedId || (!!piece.boxId && piece.boxId === selected?.boxId)
+              selectedSet.has(piece.id) || (!!piece.boxId && selectedBoxIds.has(piece.boxId))
             }
-            labelled={piece.id === selectedId}
+            labelled={single && piece.id === selectedId}
             hovered={piece.id === hoveredId}
             label={sizeLabel(piece, viewName)}
             editable={isFront}
@@ -377,16 +491,37 @@ export function Canvas2D() {
         ))}
 
         {/* Gaps to neighbours only make sense in the view where you move things. */}
-        <Dimensions pieces={shown} selected={isFront ? selectedShown : null} unit={unit} />
+        <Dimensions
+          pieces={shown}
+          selected={isFront && single ? selectedShown : null}
+          unit={unit}
+        />
 
         {/* How far clothes hang below a selected rod, where you see its length. */}
-        {selectedShown?.kind === 'rod' && (viewName === 'front' || viewName === 'back') && (
+        {single &&
+          selectedShown?.kind === 'rod' &&
+          (viewName === 'front' || viewName === 'back') && (
           <HangingGuides rod={selectedShown} pieces={shown} unit={unit} />
+        )}
+
+        {marquee && (
+          <rect
+            x={Math.min(marquee.x1, marquee.x2)}
+            y={Math.min(marquee.y1, marquee.y2)}
+            width={Math.abs(marquee.x2 - marquee.x1)}
+            height={Math.abs(marquee.y2 - marquee.y1)}
+            fill="#2563eb"
+            fillOpacity={0.08}
+            stroke="#2563eb"
+            strokeWidth={unit}
+            strokeDasharray={`${unit * 5} ${unit * 4}`}
+            style={{ pointerEvents: 'none' }}
+          />
         )}
 
         {/* Handles go last so they stay clickable above every piece. A box is
             resized as a whole, by handles around its outside. */}
-        {isFront && selectedBox && (
+        {isFront && single && selectedBox && (
           <ResizeHandles
             piece={selectedBox}
             unit={unit}
@@ -399,7 +534,7 @@ export function Canvas2D() {
             }
           />
         )}
-        {isFront && selected && !selected.boxId && (
+        {isFront && single && selected && !selected.boxId && (
           <ResizeHandles
             piece={selected}
             locked={BOARD[selected.kind]?.axis}

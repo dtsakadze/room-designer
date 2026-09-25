@@ -7,7 +7,7 @@ import {
   MIN_UNIT_DEPTH,
   PIECE_LABELS,
 } from './defaults'
-import { normalizePiece } from './geometry'
+import { isHexColor, normalizePiece } from './geometry'
 
 /**
  * Bump this whenever the saved shape changes, and teach `parseProject` to
@@ -30,10 +30,18 @@ export type ProjectData = {
   pieces: Piece[]
   /** Carcasses; their panels are in `pieces` too, but are rebuilt from these on load. */
   boxes?: Box[]
+  /** Colour new parts start with. Absent means the standard look. */
+  defaultColor?: string
 }
 
 export function toProjectData(
-  design: { pieces: Piece[]; boxes?: Box[]; thickness: Thickness; unitDepth?: number },
+  design: {
+    pieces: Piece[]
+    boxes?: Box[]
+    thickness: Thickness
+    unitDepth?: number
+    defaultColor?: string | null
+  },
   name?: string,
 ): ProjectData {
   return {
@@ -44,6 +52,7 @@ export function toProjectData(
     unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
     boxes: design.boxes ?? [],
+    ...(design.defaultColor ? { defaultColor: design.defaultColor } : {}),
   }
 }
 
@@ -81,7 +90,9 @@ export function parseProject(data: unknown): ProjectData | null {
     }
     const railAt = raw.railAt === 'back' ? ('back' as const) : undefined
     const boxId = typeof raw.boxId === 'string' ? raw.boxId : undefined
-    return [normalizePiece({ ...piece, fixed: raw.fixed === true, railAt, boxId }, thickness)]
+    const color = isHexColor(raw.color) ? raw.color : undefined
+    const extras = { fixed: raw.fixed === true, railAt, boxId, color }
+    return [normalizePiece({ ...piece, ...extras }, thickness)]
   })
 
   const boxes = (Array.isArray(data.boxes) ? data.boxes : []).flatMap((raw): Box[] => {
@@ -110,6 +121,7 @@ export function parseProject(data: unknown): ProjectData | null {
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
     pieces: withBoxPanels(pieces, boxes, thickness),
     boxes,
+    ...(isHexColor(data.defaultColor) ? { defaultColor: data.defaultColor } : {}),
   }
 }
 

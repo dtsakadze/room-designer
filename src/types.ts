@@ -42,6 +42,8 @@ export type Piece = {
   fixed?: boolean
   /** Rails only: which edge of the unit the strip runs along. Absent means front. */
   railAt?: 'front' | 'back'
+  /** Hex colour (`#rrggbb`). Absent means the project's default colour. */
+  color?: string
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */
   boxId?: string
 }

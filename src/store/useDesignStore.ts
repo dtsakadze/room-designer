@@ -16,8 +16,16 @@ type DesignState = {
   pieces: Piece[]
   /** Carcasses whose panels (tagged with `boxId`) live in `pieces`. */
   boxes: Box[]
+  /** The part the inspector shows, and the last one clicked. */
   selectedId: string | null
+  /** Every selected part (the primary one included); more than one for a multi-selection. */
+  selectedIds: string[]
   thickness: Thickness
+  /**
+   * Colour new parts start with; null means the standard look. Like `unitDepth`,
+   * it only affects parts added later, so undo skips it.
+   */
+  defaultColor: string | null
   /** How deep new parts start. Only affects parts added later, so undo skips it. */
   unitDepth: number
 
@@ -40,6 +48,15 @@ type DesignState = {
   duplicatePiece: (id: string) => void
   removePiece: (id: string) => void
   select: (id: string | null) => void
+  /** Adds a part to the selection, or takes it out if it's already in (⌘-click). */
+  toggleSelect: (id: string) => void
+  /** Selects these parts (e.g. from a selection rectangle), or adds them to the selection. */
+  selectMany: (ids: string[], add?: boolean) => void
+  /** Deletes several parts at once, as one undo step. */
+  removePieces: (ids: string[]) => void
+  /** Gives parts their own colour, or null to go back to the standard look. */
+  setPieceColors: (ids: string[], color: string | null) => void
+  setDefaultColor: (color: string | null) => void
   setThickness: (patch: Partial<Thickness>) => void
   setUnitDepth: (mm: number) => void
   clear: () => void
@@ -87,8 +104,10 @@ export const useDesignStore = create<DesignState>()(
       state.pieces = snapshot.pieces
       state.boxes = snapshot.boxes
       state.thickness = snapshot.thickness
-      if (!snapshot.pieces.some((piece) => piece.id === state.selectedId)) {
-        state.selectedId = null
+      const ids = new Set(snapshot.pieces.map((piece) => piece.id))
+      state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
+      if (state.selectedId && !ids.has(state.selectedId)) {
+        state.selectedId = state.selectedIds.at(-1) ?? null
       }
     }
 
@@ -115,14 +134,31 @@ export const useDesignStore = create<DesignState>()(
       )
       state.boxes.push(placed)
       state.pieces = rebuildBox(state.pieces, placed, state.thickness)
+      if (state.defaultColor) {
+        for (const piece of state.pieces) if (piece.boxId === id) piece.color = state.defaultColor
+      }
       state.selectedId = `${id}:left`
+      state.selectedIds = [state.selectedId]
+    }
+
+    /** Ids plus, for any box panel among them, every other panel of that box. */
+    const withWholeBoxes = (state: DesignState, ids: string[]) => {
+      const boxIds = new Set(
+        state.pieces.filter((piece) => ids.includes(piece.id) && piece.boxId).map((p) => p.boxId),
+      )
+      return new Set([
+        ...ids,
+        ...state.pieces.filter((piece) => boxIds.has(piece.boxId)).map((piece) => piece.id),
+      ])
     }
 
     return {
       pieces: [],
       boxes: [],
       selectedId: null,
+      selectedIds: [],
       thickness: DEFAULT_THICKNESS,
+      defaultColor: null,
       unitDepth: DEFAULT_UNIT_DEPTH,
 
       past: [],
@@ -137,8 +173,10 @@ export const useDesignStore = create<DesignState>()(
           // never lands hidden behind one that is already there.
           const bounds = contentBounds(state.pieces)
           if (bounds) piece.x = bounds.maxX + PLACEMENT_GAP
+          if (state.defaultColor) piece.color = state.defaultColor
           state.pieces.push(normalizePiece(piece, state.thickness))
           state.selectedId = piece.id
+          state.selectedIds = [piece.id]
         }),
 
       addBox: () =>
@@ -204,6 +242,7 @@ export const useDesignStore = create<DesignState>()(
           )
           state.pieces.push(copy)
           state.selectedId = copy.id
+          state.selectedIds = [copy.id]
         }),
 
       removePiece: (id) =>
@@ -216,15 +255,71 @@ export const useDesignStore = create<DesignState>()(
             state.boxes = state.boxes.filter((box) => box.id !== piece.boxId)
             state.pieces = state.pieces.filter((candidate) => candidate.boxId !== piece.boxId)
             state.selectedId = null
+            state.selectedIds = []
             return
           }
           state.pieces = state.pieces.filter((candidate) => candidate.id !== id)
-          if (state.selectedId === id) state.selectedId = null
+          state.selectedIds = state.selectedIds.filter((selected) => selected !== id)
+          if (state.selectedId === id) state.selectedId = state.selectedIds.at(-1) ?? null
         }),
 
       select: (id) =>
         set((state) => {
           state.selectedId = id
+          state.selectedIds = id ? [id] : []
+        }),
+
+      toggleSelect: (id) =>
+        set((state) => {
+          if (state.selectedIds.includes(id)) {
+            state.selectedIds = state.selectedIds.filter((selected) => selected !== id)
+            if (state.selectedId === id) state.selectedId = state.selectedIds.at(-1) ?? null
+          } else {
+            state.selectedIds.push(id)
+            state.selectedId = id
+          }
+        }),
+
+      selectMany: (ids, add = false) =>
+        set((state) => {
+          const next = add ? [...new Set([...state.selectedIds, ...ids])] : ids
+          state.selectedIds = next
+          state.selectedId = next.at(-1) ?? null
+        }),
+
+      removePieces: (ids) =>
+        set((state) => {
+          const doomed = withWholeBoxes(state, ids)
+          if (doomed.size === 0) return
+          record(state)
+          const doomedBoxes = new Set(
+            state.pieces.filter((piece) => doomed.has(piece.id)).map((piece) => piece.boxId),
+          )
+          state.boxes = state.boxes.filter((box) => !doomedBoxes.has(box.id))
+          state.pieces = state.pieces.filter((piece) => !doomed.has(piece.id))
+          state.selectedIds = []
+          state.selectedId = null
+        }),
+
+      setPieceColors: (ids, color) =>
+        set((state) => {
+          // A box's panels are coloured together, like they're selected together.
+          const targets = withWholeBoxes(state, ids)
+          const changes = state.pieces.some(
+            (piece) => targets.has(piece.id) && (piece.color ?? null) !== color,
+          )
+          if (!changes) return
+          record(state)
+          for (const piece of state.pieces) {
+            if (!targets.has(piece.id)) continue
+            if (color) piece.color = color
+            else delete piece.color
+          }
+        }),
+
+      setDefaultColor: (color) =>
+        set((state) => {
+          state.defaultColor = color
         }),
 
       setThickness: (patch) =>
@@ -254,6 +349,7 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = []
           state.boxes = []
           state.selectedId = null
+          state.selectedIds = []
         }),
 
       loadProject: (project) =>
@@ -261,8 +357,10 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = project.pieces
           state.boxes = project.boxes ?? []
           state.thickness = project.thickness
+          state.defaultColor = project.defaultColor ?? null
           state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.selectedId = null
+          state.selectedIds = []
           state.past = []
           state.future = []
           state.batch = { open: false, recorded: false }
@@ -306,4 +404,5 @@ const samePiece = (a: Piece, b: Piece) =>
   a.height === b.height &&
   a.depth === b.depth &&
   !!a.fixed === !!b.fixed &&
+  a.color === b.color &&
   a.railAt === b.railAt

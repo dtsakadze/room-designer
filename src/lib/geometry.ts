@@ -23,6 +23,7 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   // Only rails have a side, and front (the default) is stored as no value.
   if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
   if (!piece.boxId) delete normalized.boxId
+  if (!isHexColor(piece.color)) delete normalized.color
   return normalized
 }
 
@@ -209,3 +210,6 @@ export function clearanceBelow(rod: Piece, pieces: Piece[]) {
   const floor = Math.max(0, ...below.map((piece) => piece.y + piece.height))
   return rod.y - floor
 }
+
+export const isHexColor = (value: unknown): value is string =>
+  typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)

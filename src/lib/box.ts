@@ -94,7 +94,8 @@ export function rebuildBox(pieces: Piece[], box: Box, thickness: Thickness) {
     if (piece.boxId !== box.id) return [piece]
     const panel = panels.get(piece.id)
     panels.delete(piece.id)
-    return panel ? [panel] : []
+    // A panel's colour is its own, not the box's, so it survives a rebuild.
+    return panel ? [piece.color ? { ...panel, color: piece.color } : panel] : []
   })
   return [...rebuilt, ...panels.values()]
 }

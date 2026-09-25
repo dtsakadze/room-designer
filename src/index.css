@@ -59,7 +59,6 @@ body {
   height: 100%;
   background: #f4f6f9;
   touch-action: none;
-  cursor: grab;
 }
 
 .canvas:active {
@@ -676,4 +675,28 @@ button kbd {
 
 .box-button .muted {
   font-size: 12px;
+}
+
+.color-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-field input[type='color'] {
+  width: 36px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--accent);
 }

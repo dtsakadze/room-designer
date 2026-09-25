@@ -28,6 +28,7 @@ No test runner yet. Run `pnpm build` and `pnpm lint` after every change.
 - **Saved data is untrusted.** Autosaves and files are `ProjectData` with `formatVersion`, and everything loaded goes through `parseProject`. If the shape changes, bump `FORMAT_VERSION` and teach `parseProject` to upgrade the old version.
 - **Storage goes through the `ProjectStorage` interface** so a cloud backend can plug in later. Changing the IndexedDB schema means bumping `DB_VERSION`, handling it in `onupgradeneeded`, and migrating data in one transaction. Writes must start in the same turn as the call, otherwise saves made while the page closes are lost.
 - **Shortcuts:** ⌘ on Mac, Ctrl elsewhere (`hasModifier`). Labels live in `ui/shortcuts.ts`, and every shortcut is shown on its button and in the sidebar hint. Key handlers ignore events from text inputs.
+- **Store selectors must not build new arrays or objects** (`s.pieces.filter(...)` inside `useDesignStore(...)`): zustand then sees a change on every read and React re-renders forever, blanking the app. Select the raw state and filter in render.
 - **React keys must be unique even when values repeat.** Two dimension lines can share from/to, and colliding keys left stale lines on the canvas.
 - On-canvas strokes and text are sized with `unit` (`view.w / 1400`) so they stay the same size on screen at any zoom.
 - Code style: no semicolons, single quotes, 2-space indent. Comments explain why, not what. Match the surrounding code. In Markdown, don't hard-wrap lines: one line per paragraph or list item, and let the editor wrap.

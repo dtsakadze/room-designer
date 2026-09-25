@@ -1,5 +1,7 @@
 import { useDesignStore } from '../store/useDesignStore'
 import type { Box } from '../types'
+import { FILLS } from '../canvas/colors'
+import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 
@@ -12,10 +14,26 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
   const separateBox = useDesignStore((s) => s.separateBox)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)
+  const setPieceColors = useDesignStore((s) => s.setPieceColors)
+  // Filtered here, not in the selector: a selector that returns a new array
+  // every time makes React re-render forever.
+  const pieces = useDesignStore((s) => s.pieces)
+  const panels = pieces.filter((piece) => piece.boxId === box.id)
+  const colors = new Set(panels.map((piece) => piece.color ?? null))
+  const shared = colors.size === 1 ? [...colors][0] : null
 
   return (
     <div className="stack">
       <p className="muted">Box (sides, top, bottom, back)</p>
+
+      <ColorField
+        key={box.id}
+        label="Part colour"
+        value={shared}
+        fallback={FILLS.vertical}
+        onChange={(color) => setPieceColors([panelId], color)}
+        onReset={() => setPieceColors([panelId], null)}
+      />
 
       <NumberField
         label="Width"

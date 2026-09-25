@@ -136,8 +136,8 @@ export default function Preview3D() {
 function buildPiece(piece: Piece, z: number, tint: string | null) {
   const material = new THREE.MeshStandardMaterial({
     color: tint
-      ? new THREE.Color(FILLS[piece.kind]).lerp(new THREE.Color(tint), 0.45)
-      : FILLS[piece.kind],
+      ? new THREE.Color(piece.color ?? FILLS[piece.kind]).lerp(new THREE.Color(tint), 0.45)
+      : (piece.color ?? FILLS[piece.kind]),
     roughness: 0.85,
     // The back panel would hide the inside from most angles, so it's faint.
     transparent: piece.kind === 'back',

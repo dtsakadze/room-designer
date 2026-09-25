@@ -66,7 +66,8 @@ export function PieceRect({
         width={piece.width}
         height={piece.height}
         rx={rx}
-        fill={(edgeOn ? EDGE_FILLS : FILLS)[piece.kind]}
+        // A part with its own colour is drawn in just that colour.
+        fill={piece.color ?? (edgeOn ? EDGE_FILLS : FILLS)[piece.kind]}
         fillOpacity={hollow ? 0.35 : 1}
         stroke={selected ? '#2563eb' : clashing ? CLASH : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
