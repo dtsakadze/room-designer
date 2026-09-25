@@ -714,3 +714,35 @@ button kbd {
   color: var(--muted);
   cursor: default;
 }
+
+.open-file-dialog {
+  width: min(420px, 100%);
+}
+
+.open-file-dialog h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  /* It's rendered inside a sidebar section, whose headings are small caps. */
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.choice-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px;
+  text-align: left;
+}
+
+.choice-button strong {
+  font-weight: 600;
+}
+
+.choice-button .hint {
+  margin: 0;
+}

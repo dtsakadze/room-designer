@@ -62,6 +62,12 @@ type DesignState = {
   clear: () => void
   /** Replaces the whole design, e.g. when a project is opened. Starts a fresh history. */
   loadProject: (project: ProjectData) => void
+  /**
+   * Overwrites the open project's design with another (e.g. an opened file),
+   * as one undoable step. The file's unit depth and new-part colour come along;
+   * like any change to those settings, undo doesn't restore them.
+   */
+  replaceDesign: (project: ProjectData) => void
 
   undo: () => void
   redo: () => void
@@ -364,6 +370,18 @@ export const useDesignStore = create<DesignState>()(
           state.past = []
           state.future = []
           state.batch = { open: false, recorded: false }
+        }),
+
+      replaceDesign: (project) =>
+        set((state) => {
+          record(state)
+          state.pieces = project.pieces
+          state.boxes = project.boxes
+          state.thickness = project.thickness
+          state.unitDepth = project.unitDepth
+          state.defaultColor = project.defaultColor ?? null
+          state.selectedId = null
+          state.selectedIds = []
         }),
 
       undo: () =>

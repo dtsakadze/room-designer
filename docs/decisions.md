@@ -91,3 +91,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Ask the browser to keep the projects** (2026-09-25)
 *Decision*: after the first successful autosave in a session, the app asks the browser for persistent storage (`navigator.storage.persist()`). The Project section reminds people to save a file as a backup, and warns when the browser declined.
 *Why*: browsers may clear site data when disk space runs low (Safari after about a week without a visit), which would silently delete projects. Asked after a save rather than on page load because Firefox shows a permission prompt, and asking before anything's been made is pushy.
+
+**Opening a file asks: new project or replace** (2026-09-25)
+*Decision*: after a file is picked, a dialog offers "Open as a new project" (the default, nothing is lost) or "Replace <current project>", which overwrites the open project's design as one undoable step and keeps its name. Replaces the 2026-09-24 behaviour of always opening as a new project.
+*Why*: warn before work is overwritten, while still allowing a file to update the project you're in.
