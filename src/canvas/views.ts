@@ -1,4 +1,4 @@
-import { BOARD } from '../lib/defaults'
+import { BOARD, PLINTH_RECESS } from '../lib/defaults'
 import type { Piece, Thickness } from '../types'
 
 export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
@@ -58,10 +58,17 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
  * Where each piece starts, front to back, in mm from the wall (z = 0). Pieces
  * don't store this yet, so everything sits flush against the back: the back
  * panel takes the first `thickness.back` mm, and the rest start in front of it.
+ * The exception is the plinth, which sits at the front, set back a little.
  */
 export function depthStart(pieces: Piece[], thickness: Thickness) {
   const hasBack = pieces.some((piece) => piece.kind === 'back')
-  return (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
+  const behind = (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
+  const front = Math.max(
+    0,
+    ...pieces.filter((piece) => piece.kind !== 'plinth').map((piece) => behind(piece) + piece.depth),
+  )
+  return (piece: Piece) =>
+    piece.kind === 'plinth' ? Math.max(0, front - PLINTH_RECESS - piece.depth) : behind(piece)
 }
 
 /** The size shown next to a selected piece, in the view's own terms. */

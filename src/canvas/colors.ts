@@ -9,6 +9,7 @@ export const FILLS: Record<PieceKind, string> = {
   divider: '#d3bf93',
   rod: '#aab5c2',
   drawer: '#c4ab7e',
+  plinth: '#cdbb91',
 }
 
 export const SELECTED = '#2563eb'

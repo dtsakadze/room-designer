@@ -6,6 +6,7 @@ export type PieceKind =
   | 'divider'
   | 'rod'
   | 'drawer'
+  | 'plinth'
 
 /**
  * One board, seen head-on. Everything lives in a single 2D world measured in

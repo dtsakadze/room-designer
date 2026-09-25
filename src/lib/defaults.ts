@@ -2,6 +2,9 @@ import type { Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3 }
 export const ROD_DIAMETER = 25
+export const PLINTH_HEIGHT = 80
+/** How far the plinth sits back from the front, so toes don't hit it. */
+export const PLINTH_RECESS = 50
 
 /** Outer width the default pieces are sized for; fittings fill its inside. */
 const UNIT_WIDTH = 1200
@@ -20,10 +23,11 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
   divider: 'Divider',
   rod: 'Hanging rod',
   drawer: 'Drawer',
+  plinth: 'Plinth',
 }
 
 export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
-  { title: 'Panels', kinds: ['vertical', 'horizontal', 'back'] },
+  { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth'] },
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
 ]
 
@@ -39,6 +43,8 @@ export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Th
   horizontal: { axis: 'height', board: 'body' },
   shelf: { axis: 'height', board: 'body' },
   back: { axis: 'depth', board: 'back' },
+  // The base board the unit stands on, facing forward like the back panel.
+  plinth: { axis: 'depth', board: 'body' },
 }
 
 /**
@@ -62,6 +68,8 @@ function dimensions(kind: PieceKind, thickness: Thickness): Pick<Piece, Dimensio
       return { width: inside, height: ROD_DIAMETER, depth: ROD_DIAMETER }
     case 'drawer':
       return { width: inside, height: 200, depth: 550 }
+    case 'plinth':
+      return { width: inside, height: PLINTH_HEIGHT, depth: 0 }
   }
 }
 
