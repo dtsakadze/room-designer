@@ -281,10 +281,10 @@ button {
 
 .cut-list {
   position: absolute;
-  top: 16px;
+  top: 62px;
   right: 16px;
   width: min(460px, calc(100% - 32px));
-  max-height: calc(100% - 80px);
+  max-height: calc(100% - 126px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -572,4 +572,28 @@ button kbd {
   margin: 0;
   padding: 5px 10px;
   font-size: 12px;
+}
+
+.view-switcher {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.view-switcher .ghost-button {
+  width: auto;
+  padding: 5px 10px;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.view-switcher .ghost-button[aria-pressed='true'] {
+  background: #eef3fd;
+  color: var(--accent);
 }

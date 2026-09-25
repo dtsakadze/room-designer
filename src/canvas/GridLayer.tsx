@@ -9,7 +9,8 @@ const MINOR_LIMIT = 9000
  * Grid lines are emitted for the visible range only, with widths scaled to the
  * view so they stay hairline-thin however far you zoom.
  */
-export function GridLayer({ view }: { view: ViewBox }) {
+/** `wall` also draws the wall line at x = 0, for the side views. */
+export function GridLayer({ view, wall = false }: { view: ViewBox; wall?: boolean }) {
   const unit = view.w / 1400
   const showMinor = view.w < MINOR_LIMIT
 
@@ -35,7 +36,7 @@ export function GridLayer({ view }: { view: ViewBox }) {
         ))}
       </g>
 
-      {/* The floor: y = 0 in design space. */}
+      {/* The floor: y = 0 in design space (the wall, in the top view). */}
       <line
         x1={view.x}
         y1={0}
@@ -44,6 +45,16 @@ export function GridLayer({ view }: { view: ViewBox }) {
         stroke="#8c9bad"
         strokeWidth={unit * 2.5}
       />
+      {wall && (
+        <line
+          x1={0}
+          y1={view.y}
+          x2={0}
+          y2={view.y + view.h}
+          stroke="#8c9bad"
+          strokeWidth={unit * 2.5}
+        />
+      )}
     </g>
   )
 }

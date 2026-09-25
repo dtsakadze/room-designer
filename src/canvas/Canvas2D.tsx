@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { SNAP } from '../lib/defaults'
@@ -13,6 +13,7 @@ import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
 import type { Handle } from './handles'
 import { resizePiece } from './handles'
+import { VIEWS, type ViewName, isHollow, projectPieces, sizeLabel } from './views'
 import {
   INITIAL_VIEW,
   MAX_VIEW_WIDTH,
@@ -51,6 +52,8 @@ export function Canvas2D() {
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
   const [showCutList, setShowCutList] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [viewName, setViewName] = useState<ViewName>('front')
+  const isFront = viewName === 'front'
 
   const pieces = useDesignStore((s) => s.pieces)
   const selectedId = useDesignStore((s) => s.selectedId)
@@ -61,8 +64,17 @@ export function Canvas2D() {
   const beginBatch = useDesignStore((s) => s.beginBatch)
   const endBatch = useDesignStore((s) => s.endBatch)
 
+  const thickness = useDesignStore((s) => s.thickness)
+  // What's drawn: the pieces themselves in the front view, read-only
+  // projections in the others.
+  const shown = useMemo(
+    () => projectPieces(pieces, viewName, thickness),
+    [pieces, viewName, thickness],
+  )
+
   const unit = view.w / 1400
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
+  const selectedShown = shown.find((piece) => piece.id === selectedId) ?? null
 
   const beginPan = (event: ReactPointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current
@@ -83,10 +95,12 @@ export function Canvas2D() {
 
   const beginPieceDrag = (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => {
     event.stopPropagation()
+    select(piece.id)
+    // The other views are for looking: a click selects, nothing moves.
+    if (!isFront) return
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
     if (!svg || !inverse) return
-    select(piece.id)
     const point = svgPoint(inverse, event.clientX, event.clientY)
     gesture.current = {
       mode: 'piece',
@@ -219,7 +233,8 @@ export function Canvas2D() {
         ArrowDown: { y: -step },
       }
       const delta = nudge[event.key]
-      if (!delta) return
+      // Nudging moves along the front view's axes, so only there.
+      if (!delta || !isFront) return
 
       event.preventDefault()
       const piece = useDesignStore.getState().pieces.find((p) => p.id === selectedId)
@@ -232,10 +247,10 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, removePiece, duplicatePiece, updatePiece])
+  }, [selectedId, isFront, removePiece, duplicatePiece, updatePiece])
 
-  const fitToContent = useCallback(() => {
-    const bounds = contentBounds(useDesignStore.getState().pieces)
+  const fitTo = (list: Piece[]) => {
+    const bounds = contentBounds(list)
     if (!bounds) {
       setView(INITIAL_VIEW)
       return
@@ -249,7 +264,15 @@ export function Canvas2D() {
       w,
       h,
     })
-  }, [])
+  }
+
+  const switchView = (name: ViewName) => {
+    setViewName(name)
+    setHoveredId(null)
+    // Each view spans different sizes (a 600 deep side vs a 1200 wide front),
+    // so frame the unit again.
+    fitTo(projectPieces(pieces, name, thickness))
+  }
 
   return (
     <div className="viewport">
@@ -263,23 +286,27 @@ export function Canvas2D() {
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
       >
-        <GridLayer view={view} />
-        {pieces.map((piece) => (
+        <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />
+        {shown.map((piece) => (
           <PieceRect
             key={piece.id}
             piece={piece}
             selected={piece.id === selectedId}
             hovered={piece.id === hoveredId}
+            label={sizeLabel(piece, viewName)}
+            editable={isFront}
+            hollow={isHollow(piece, viewName)}
             unit={unit}
             onPointerDown={beginPieceDrag}
             onHoverChange={setHoveredId}
           />
         ))}
 
-        <Dimensions pieces={pieces} selected={selected} unit={unit} />
+        {/* Gaps to neighbours only make sense in the view where you move things. */}
+        <Dimensions pieces={shown} selected={isFront ? selectedShown : null} unit={unit} />
 
         {/* Handles go last so they stay clickable above every piece. */}
-        {selected && (
+        {isFront && selected && (
           <ResizeHandles
             piece={selected}
             unit={unit}
@@ -291,7 +318,7 @@ export function Canvas2D() {
       <HistoryButtons />
 
       <div className="canvas-tools">
-        <button type="button" className="ghost-button" onClick={fitToContent}>
+        <button type="button" className="ghost-button" onClick={() => fitTo(shown)}>
           Fit view
         </button>
         <button
@@ -306,8 +333,26 @@ export function Canvas2D() {
 
       {showCutList && <CutListPanel onClose={() => setShowCutList(false)} />}
 
-      {pieces.length === 0 && (
+      <div className="view-switcher" role="group" aria-label="View">
+        {VIEWS.map(({ name, label }) => (
+          <button
+            key={name}
+            type="button"
+            className="ghost-button"
+            aria-pressed={viewName === name}
+            onClick={() => switchView(name)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {pieces.length === 0 ? (
         <p className="viewport-hint">Pick a component from the sidebar to start building.</p>
+      ) : (
+        !isFront && (
+          <p className="viewport-hint">View only. Switch to Front to move or resize parts.</p>
+        )
       )}
     </div>
   )

@@ -17,6 +17,12 @@ type PieceRectProps = {
   piece: Piece
   selected: boolean
   hovered: boolean
+  /** Size shown above the piece while it's selected. */
+  label: string
+  /** Only the front view can move pieces, so only it shows the move cursor. */
+  editable: boolean
+  /** Drawn see-through, for a panel that would otherwise hide everything else. */
+  hollow: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
   onHoverChange: (id: string | null) => void
@@ -26,6 +32,9 @@ export function PieceRect({
   piece,
   selected,
   hovered,
+  label,
+  editable,
+  hollow,
   unit,
   onPointerDown,
   onHoverChange,
@@ -34,8 +43,6 @@ export function PieceRect({
   // Clear the top row of resize handles, which sit outside a thin piece.
   const box = HANDLE_SIZE * unit
   const labelY = y - handleOutsets(piece, box).y - box / 2 - unit * 5
-  // The back panel sits behind everything else, so draw it hollow.
-  const isBack = piece.kind === 'back'
   // Selection already has its own outline, so hover only shows on the others.
   const showHover = hovered && !selected
   const rx = piece.kind === 'rod' ? Math.min(piece.width, piece.height) / 2 : 0
@@ -49,11 +56,11 @@ export function PieceRect({
         height={piece.height}
         rx={rx}
         fill={FILLS[piece.kind]}
-        fillOpacity={isBack ? 0.35 : 1}
+        fillOpacity={hollow ? 0.35 : 1}
         stroke={selected ? '#2563eb' : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
-        strokeDasharray={isBack ? `${unit * 8} ${unit * 6}` : undefined}
-        style={{ cursor: 'move' }}
+        strokeDasharray={hollow ? `${unit * 8} ${unit * 6}` : undefined}
+        style={{ cursor: editable ? 'move' : 'pointer' }}
         onPointerDown={(event) => onPointerDown(event, piece)}
         onPointerEnter={() => onHoverChange(piece.id)}
         onPointerLeave={() => onHoverChange(null)}
@@ -79,9 +86,7 @@ export function PieceRect({
           fill="#2563eb"
           style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
-          {piece.kind === 'rod'
-            ? `⌀${piece.height} × ${piece.width}`
-            : `${piece.width} × ${piece.height}`}
+          {label}
         </text>
       )}
     </g>

@@ -10,6 +10,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - A cut list: every board as length × width × thickness, with identical parts counted together.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
 - Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).
+- Look at the unit from either side, the top or the back. These views are for looking: you edit in the front view.
 
 ## Run it locally
 
@@ -61,4 +62,4 @@ React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the d
 
 ## Not done yet
 
-Side, top and 3D preview views, snapping to other panels, doors and drawer boxes, hardware lists, CSV/PDF export, and a mobile layout.
+A 3D preview, front-to-back positions for parts (for now every part sits flush against the back), editing in the side and top views, snapping to other panels, doors and drawer boxes, hardware lists, CSV/PDF export, and a mobile layout.
