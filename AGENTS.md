@@ -1,6 +1,6 @@
 # Room Designer — agent notes
 
-Browser app for designing wardrobes, closets and shelving in a flat 2D front view. Open source, runs fully in the browser with no server (a backend may come later). `README.md` explains how the app works; `notes.md` is the roadmap; `docs/` holds the design decisions (`docs/decisions.md`) and the save format guide (`docs/save-format.md`).
+Browser app for designing wardrobes, closets and shelving in a flat 2D front view. Open source, runs fully in the browser with no server (a backend may come later). `README.md` explains how the app works; `notes.md` is the roadmap; `docs/` holds the design decisions (`docs/decisions.md`), the save format guide (`docs/save-format.md`) and how to release (`docs/releasing.md`). `CHANGELOG.md` lists what changed per version and is shown in the app.
 
 ## Commands
 
@@ -33,6 +33,7 @@ Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 - On-canvas strokes and text are sized with `unit` (`view.w / 1400`) so they stay the same size on screen at any zoom.
 - Code style: no semicolons, single quotes, 2-space indent. Comments explain why, not what. Match the surrounding code. In Markdown, don't hard-wrap lines: one line per paragraph or list item, and let the editor wrap.
 - **Record every architectural, design or otherwise important decision or change in `docs/decisions.md`** (what, when, why, and what it replaced), in the same change that makes it. Reversing one gets a new entry, not a deletion.
+- **Every new feature, bug fix, improvement or removal that people using the app would notice adds a line under `## Unreleased` in `CHANGELOG.md`, in the same change.** Write it for them, not for developers (the app shows it as "What's new"). Internal-only changes (refactors, tests, docs) don't need a line. On release, `pnpm release <patch|minor|major>` turns "Unreleased" into the new version; don't edit version numbers or dates by hand, and don't release, tag or push unless asked. See `docs/releasing.md`.
 - Keep `notes.md` in sync when roadmap items are done or change. Don't commit unless asked; the user commits.
 
 ## Save format (read `docs/save-format.md` before touching it)

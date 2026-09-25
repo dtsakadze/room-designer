@@ -9,6 +9,7 @@ import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
 import { EditableName } from './EditableName'
 import { ProjectsPanel } from './ProjectsPanel'
 import { useClashes } from './useClashes'
+import { VersionInfo } from './WhatsNew'
 
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
@@ -60,6 +61,7 @@ export function Sidebar() {
         >
           {SAVE_LABELS[saveStatus]}
         </p>
+        <VersionInfo />
       </header>
 
       <div className="sidebar-body">

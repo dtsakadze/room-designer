@@ -116,3 +116,23 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Decision*: the sidebar's tabs were replaced with foldable sections (Add and Parts open by default, Settings and File folded), each remembering whether it's open in this browser. The Parts header keeps the part count and the red overlap dot, so they show while folded. The inspector stays on the right. Replaces the tabs from earlier the same day.
 *Why*: more sections are coming, and four tabs wouldn't scale; a new section is just another `CollapsibleSection`. Chosen by the user over a VS Code-style icon rail.
 
+**Releases: semantic versions, a changelog shown in the app** (2026-09-26)
+*Decision*: versions are `MAJOR.MINOR.PATCH`, starting at 1.0.0: minor for features, patch for fixes, major for removals, breaking behaviour or big redesigns. `CHANGELOG.md` gets a line for every user-facing change and is shown in the app as "What's new"; after an update, a one-time notice says what version people are on. Releases are git tags (`v1.1.0`) with GitHub releases. Details in [releasing.md](releasing.md).
+*Why*: people using a hosted or self-hosted copy need to know which version they have and what changed, and a changelog in the app reaches them without watching the repository.
+
+**MIT licence** (2026-09-26)
+*Decision*: the project is released under the MIT licence.
+*Why*: the simplest common open-source licence; it keeps the door open for paid hosted features later. Chosen over AGPL-3.0 and Apache-2.0.
+
+**Crash screen** (2026-09-26)
+*Decision*: an error boundary shows "Something went wrong" with a Reload button and the error details (with the app version) instead of a blank page.
+*Why*: a rendering bug used to blank the whole app; projects are autosaved, so telling people a reload is safe is the right fallback.
+
+**Autosave never writes a broken design** (2026-09-26)
+*Decision*: before each autosave, the design is checked with `readProject`; if it fails, nothing is written and the last good save stays.
+*Why*: found while testing the crash screen: a bug that corrupts the design in memory would otherwise be autosaved over the good project, turning it into "can't open".
+
+**Releases are prepared locally and published by a GitHub Action** (2026-09-26)
+*Decision*: `pnpm release <patch|minor|major>` moves the changelog's "Unreleased" notes under the new version, bumps `package.json`, runs the checks, commits and tags. Pushing the tag runs the Release Action, which checks the tag, tests and builds, and creates the GitHub release with the changelog notes and a zip of the build. The Action doesn't deploy yet.
+*Why*: releases are easy to get wrong by hand. The changelog is updated before tagging rather than by the Action, so the tagged commit already contains the finished changelog and version.
+

@@ -1,0 +1,52 @@
+# Publishes a GitHub release when a version tag (v1.2.0) is pushed. The tag is
+# made by `pnpm release`, which has already moved the changelog's "Unreleased"
+# notes under the version; this only checks, builds and publishes.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Uses the pnpm version from package.json's "packageManager".
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check the tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+
+      - run: pnpm test
+      - run: pnpm lint
+      - run: pnpm build
+
+      - name: Package the build for self-hosting
+        run: cd dist && zip -r "../room-designer-$GITHUB_REF_NAME.zip" .
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release-notes.mjs "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            "room-designer-$GITHUB_REF_NAME.zip"

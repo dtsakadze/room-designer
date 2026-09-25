@@ -69,3 +69,8 @@ React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the d
 ## Not done yet
 
 Front-to-back positions for parts (for now every part sits flush against the back), editing in the side and top views, snapping to other panels, doors and drawer boxes, hardware lists, CSV/PDF export, and a mobile layout.
+
+## Releases and licence
+
+Versions follow `MAJOR.MINOR.PATCH`; what changed in each is in [CHANGELOG.md](CHANGELOG.md), which the app also shows under "What's new". Room Designer is open source under the [MIT licence](LICENSE).
+

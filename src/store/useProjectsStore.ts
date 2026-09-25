@@ -81,6 +81,14 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
     pending = false
 
     const design = useDesignStore.getState()
+    const data = toProjectData(design)
+    // A bug that left the design broken must never overwrite the last good
+    // save, so it's checked like any load before it's written.
+    if (!readProject(data).ok) {
+      console.error('Not autosaving a design that fails its own checks', data)
+      set({ saveStatus: 'unavailable' })
+      return
+    }
     const updatedAt = new Date().toISOString()
     set({
       projects: sortByEdited(
@@ -97,7 +105,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         name: meta.name,
         createdAt: meta.createdAt,
         updatedAt,
-        design: toProjectData(design),
+        design: data,
       })
       if (!pending) set({ saveStatus: 'saved' })
       // Asked once there's something worth keeping, not on page load.
