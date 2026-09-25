@@ -9,6 +9,7 @@ export function ProjectFileButtons() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const isEmpty = useDesignStore((s) => s.pieces.length === 0)
+  const persistent = useProjectsStore((s) => s.persistent)
 
   const save = () => {
     const { projects, currentId } = useProjectsStore.getState()
@@ -51,6 +52,17 @@ export function ProjectFileButtons() {
         }}
       />
       {message && <p className={message.error ? 'hint hint-error' : 'hint'}>{message.text}</p>}
+      {persistent === false ? (
+        <p className="hint hint-error">
+          This browser may clear saved projects when disk space runs low. Save to file to keep
+          a backup.
+        </p>
+      ) : (
+        <p className="hint">
+          Projects are kept in this browser. Save to file now and then for a backup, since
+          clearing browsing data deletes them.
+        </p>
+      )}
     </div>
   )
 }

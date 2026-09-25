@@ -87,3 +87,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Store selectors return existing state** (2026-09-25)
 *Decision*: zustand selectors never build new arrays or objects; filter in render instead.
 *Why*: a selector returning a new array on every read re-rendered forever and blanked the app.
+
+**Ask the browser to keep the projects** (2026-09-25)
+*Decision*: after the first successful autosave in a session, the app asks the browser for persistent storage (`navigator.storage.persist()`). The Project section reminds people to save a file as a backup, and warns when the browser declined.
+*Why*: browsers may clear site data when disk space runs low (Safari after about a week without a visit), which would silently delete projects. Asked after a save rather than on page load because Firefox shows a permission prompt, and asking before anything's been made is pushy.

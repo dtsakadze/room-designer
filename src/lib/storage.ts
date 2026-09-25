@@ -132,3 +132,20 @@ function done(tx: IDBTransaction) {
     tx.onabort = () => reject(tx.error)
   })
 }
+
+/**
+ * Asks the browser to keep this site's data instead of clearing it when disk
+ * space runs low (or, in Safari, after a week without a visit). Returns
+ * whether the data is protected; false where the browser declines or can't say.
+ * Chrome decides silently; Firefox asks the user, so call it after they've
+ * made something worth keeping rather than on page load.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.storage?.persist) return false
+  try {
+    if (await navigator.storage.persisted()) return true
+    return await navigator.storage.persist()
+  } catch {
+    return false
+  }
+}

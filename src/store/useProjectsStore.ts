@@ -7,7 +7,7 @@ import {
   readProject,
   toProjectData,
 } from '../lib/project'
-import { type StoredProject, browserStorage } from '../lib/storage'
+import { type StoredProject, browserStorage, requestPersistentStorage } from '../lib/storage'
 import type { Piece } from '../types'
 import { useDesignStore } from './useDesignStore'
 
@@ -30,6 +30,11 @@ export type ProjectSummary = {
 
 type ProjectsState = {
   saveStatus: SaveStatus
+  /**
+   * Whether the browser promised to keep the projects (see
+   * `requestPersistentStorage`); null until it's been asked.
+   */
+  persistent: boolean | null
   currentId: string | null
   /** Most recently edited first. */
   projects: ProjectSummary[]
@@ -60,6 +65,8 @@ let pending = false
 let timer: ReturnType<typeof setTimeout> | undefined
 /** Set while a project is being loaded, so loading it doesn't count as an edit. */
 let applying = false
+/** The browser is asked to keep the data once per session. */
+let persistAsked = false
 
 export const useProjectsStore = create<ProjectsState>()((set, get) => {
   /**
@@ -93,6 +100,11 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         design: toProjectData(design),
       })
       if (!pending) set({ saveStatus: 'saved' })
+      // Asked once there's something worth keeping, not on page load.
+      if (!persistAsked) {
+        persistAsked = true
+        set({ persistent: await requestPersistentStorage() })
+      }
     } catch (error) {
       console.error('Autosave failed', error)
       set({ saveStatus: 'unavailable' })
@@ -131,6 +143,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
 
   return {
     saveStatus: 'loading',
+    persistent: null,
     currentId: null,
     projects: [],
 
