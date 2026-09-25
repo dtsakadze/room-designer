@@ -1,3 +1,4 @@
+import { BOARD } from '../lib/defaults'
 import type { Piece, Thickness } from '../types'
 
 export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
@@ -96,4 +97,18 @@ export function piecesAt(shown: Piece[], x: number, y: number, view: ViewName) {
     ...under.filter((piece) => !isHollow(piece, view)),
     ...under.filter((piece) => isHollow(piece, view)),
   ]
+}
+
+/** Which of a board's dimensions points at the viewer in each flat view. */
+const LOOKING_ALONG = { front: 'depth', back: 'depth', left: 'width', right: 'width', top: 'height' } as const
+
+/**
+ * Whether a board is seen edge-on (its thickness runs across the view), as a
+ * shelf is from the front. Those are drawn darker, so a cut edge reads
+ * differently from a board's face. Rods and drawers aren't boards.
+ */
+export function showsEdge(piece: Piece, view: ViewName) {
+  const board = BOARD[piece.kind]
+  if (!board || view === '3d') return false
+  return board.axis !== LOOKING_ALONG[view]
 }

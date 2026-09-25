@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { FILLS } from './colors'
+import { EDGE_FILLS, FILLS } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -14,6 +14,8 @@ type PieceRectProps = {
   editable: boolean
   /** Drawn see-through, for a panel that would otherwise hide everything else. */
   hollow: boolean
+  /** A board seen edge-on, drawn darker than a board's face. */
+  edgeOn: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
   onHoverChange: (id: string | null) => void
@@ -26,6 +28,7 @@ export function PieceRect({
   label,
   editable,
   hollow,
+  edgeOn,
   unit,
   onPointerDown,
   onHoverChange,
@@ -51,7 +54,7 @@ export function PieceRect({
         width={piece.width}
         height={piece.height}
         rx={rx}
-        fill={FILLS[piece.kind]}
+        fill={(edgeOn ? EDGE_FILLS : FILLS)[piece.kind]}
         fillOpacity={hollow ? 0.35 : 1}
         stroke={selected ? '#2563eb' : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}

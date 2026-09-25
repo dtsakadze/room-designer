@@ -13,7 +13,15 @@ import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
 import type { Handle } from './handles'
 import { resizePiece } from './handles'
-import { VIEWS, type ViewName, isHollow, piecesAt, projectPieces, sizeLabel } from './views'
+import {
+  VIEWS,
+  type ViewName,
+  isHollow,
+  piecesAt,
+  projectPieces,
+  showsEdge,
+  sizeLabel,
+} from './views'
 
 // three.js is big, so the 3D preview only downloads when it's first opened.
 const Preview3D = lazy(() => import('./Preview3D'))
@@ -339,6 +347,7 @@ export function Canvas2D() {
             label={sizeLabel(piece, viewName)}
             editable={isFront}
             hollow={isHollow(piece, viewName)}
+            edgeOn={showsEdge(piece, viewName)}
             unit={unit}
             onPointerDown={beginPieceDrag}
             onHoverChange={setHoveredId}

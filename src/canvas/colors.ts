@@ -12,3 +12,15 @@ export const FILLS: Record<PieceKind, string> = {
 }
 
 export const SELECTED = '#2563eb'
+
+/** Darker versions, for a board seen edge-on: its cut edge, not its face. */
+export const EDGE_FILLS = Object.fromEntries(
+  Object.entries(FILLS).map(([kind, color]) => [kind, darken(color, 0.18)]),
+) as Record<PieceKind, string>
+
+function darken(hex: string, amount: number) {
+  const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  return `#${channels
+    .map((c) => Math.round(c * (1 - amount)).toString(16).padStart(2, '0'))
+    .join('')}`
+}
