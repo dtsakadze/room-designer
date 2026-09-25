@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { SNAP } from '../lib/defaults'
@@ -14,6 +14,9 @@ import { ResizeHandles } from './ResizeHandles'
 import type { Handle } from './handles'
 import { resizePiece } from './handles'
 import { VIEWS, type ViewName, isHollow, piecesAt, projectPieces, sizeLabel } from './views'
+
+// three.js is big, so the 3D preview only downloads when it's first opened.
+const Preview3D = lazy(() => import('./Preview3D'))
 import {
   INITIAL_VIEW,
   MAX_VIEW_WIDTH,
@@ -317,6 +320,8 @@ export function Canvas2D() {
       <svg
         ref={svgRef}
         className="canvas"
+        // Hidden, not unmounted, in 3D: the wheel listener is bound to this element.
+        style={viewName === '3d' ? { display: 'none' } : undefined}
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         preserveAspectRatio="xMidYMid meet"
         onPointerDown={beginPan}
@@ -353,12 +358,20 @@ export function Canvas2D() {
         )}
       </svg>
 
+      {viewName === '3d' && (
+        <Suspense fallback={<p className="viewport-hint">Loading 3D preview…</p>}>
+          <Preview3D />
+        </Suspense>
+      )}
+
       <HistoryButtons />
 
       <div className="canvas-tools">
-        <button type="button" className="ghost-button" onClick={() => fitTo(shown)}>
-          Fit view
-        </button>
+        {viewName !== '3d' && (
+          <button type="button" className="ghost-button" onClick={() => fitTo(shown)}>
+            Fit view
+          </button>
+        )}
         <button
           type="button"
           className="ghost-button"
@@ -389,7 +402,11 @@ export function Canvas2D() {
         <p className="viewport-hint">Pick a component from the sidebar to start building.</p>
       ) : (
         !isFront && (
-          <p className="viewport-hint">View only. Switch to Front to move or resize parts.</p>
+          <p className="viewport-hint">
+            {viewName === '3d'
+              ? 'Drag to rotate, scroll to zoom, right-drag to pan. Edit in Front.'
+              : 'View only. Switch to Front to move or resize parts.'}
+          </p>
         )
       )}
     </div>

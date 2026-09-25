@@ -40,7 +40,7 @@ body {
 
 .viewport-hint {
   position: absolute;
-  top: 24px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
@@ -635,4 +635,18 @@ button kbd {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.preview-3d {
+  position: absolute;
+  inset: 0;
+}
+
+.preview-3d canvas {
+  display: block;
+}
+
+.canvas-tools-left {
+  right: auto;
+  left: 16px;
 }

@@ -1,17 +1,8 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { HANDLE_SIZE, handleOutsets } from './handles'
+import { FILLS } from './colors'
 import { toSvgY } from './view'
-
-const FILLS: Record<Piece['kind'], string> = {
-  vertical: '#d8c9a3',
-  horizontal: '#d8c9a3',
-  back: '#e6ddc6',
-  shelf: '#e0cfa8',
-  divider: '#d3bf93',
-  rod: '#aab5c2',
-  drawer: '#c4ab7e',
-}
 
 type PieceRectProps = {
   piece: Piece

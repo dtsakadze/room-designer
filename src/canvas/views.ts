@@ -1,6 +1,6 @@
 import type { Piece, Thickness } from '../types'
 
-export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back'
+export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
 
 export const VIEWS: { name: ViewName; label: string }[] = [
   { name: 'front', label: 'Front' },
@@ -8,22 +8,19 @@ export const VIEWS: { name: ViewName; label: string }[] = [
   { name: 'right', label: 'Right side' },
   { name: 'top', label: 'Top' },
   { name: 'back', label: 'Back' },
+  { name: '3d', label: '3D' },
 ]
 
 /**
  * Pieces as seen from one side, as flat rectangles in the same 2D space the
  * front view uses (x right, y up), ordered so nearer pieces draw on top. Only
  * the front view is edited; the others are read-only projections.
- *
- * Pieces don't store a front-to-back position yet, so every piece sits flush
- * against the back: the back panel takes the first `thickness.back` mm in
- * front of the wall (z = 0), and everything else starts right in front of it.
+ * Front-to-back placement comes from `depthStart`.
  */
 export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickness): Piece[] {
-  if (view === 'front') return pieces
-
-  const hasBack = pieces.some((piece) => piece.kind === 'back')
-  const zStart = (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
+  // The 3D preview draws the pieces themselves.
+  if (view === 'front' || view === '3d') return pieces
+  const zStart = depthStart(pieces, thickness)
 
   switch (view) {
     // From the left: the wall on the left, the front of the unit on the right.
@@ -54,6 +51,16 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
         .sort((a, b) => zStart(b) - zStart(a))
         .map((piece) => ({ ...piece, x: -(piece.x + piece.width) }))
   }
+}
+
+/**
+ * Where each piece starts, front to back, in mm from the wall (z = 0). Pieces
+ * don't store this yet, so everything sits flush against the back: the back
+ * panel takes the first `thickness.back` mm, and the rest start in front of it.
+ */
+export function depthStart(pieces: Piece[], thickness: Thickness) {
+  const hasBack = pieces.some((piece) => piece.kind === 'back')
+  return (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
 }
 
 /** The size shown next to a selected piece, in the view's own terms. */
