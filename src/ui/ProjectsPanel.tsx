@@ -6,7 +6,8 @@ import { EditableName } from './EditableName'
 export function ProjectsPanel({ onClose }: { onClose: () => void }) {
   const projects = useProjectsStore((s) => s.projects)
   const currentId = useProjectsStore((s) => s.currentId)
-  const { createProject, openProject, renameProject, deleteProject } = useProjectsStore.getState()
+  const { createProject, openProject, renameProject, duplicateProject, deleteProject } =
+    useProjectsStore.getState()
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
@@ -95,6 +96,13 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
                       onClick={() => setRenamingId(project.id)}
                     >
                       Rename
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => void duplicateProject(project.id)}
+                    >
+                      Duplicate
                     </button>
                     <button
                       type="button"

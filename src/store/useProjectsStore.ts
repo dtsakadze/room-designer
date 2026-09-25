@@ -26,6 +26,8 @@ type ProjectsState = {
   createProject: (from?: { name?: string; design?: ProjectData }) => Promise<void>
   openProject: (id: string) => Promise<void>
   renameProject: (id: string, name: string) => Promise<void>
+  /** A copy named "<name> copy"; the open project stays open. */
+  duplicateProject: (id: string) => Promise<void>
   /** Deleting the open project moves to the most recent other one, or a new one. */
   deleteProject: (id: string) => Promise<void>
 }
@@ -180,6 +182,25 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       await storage.setCurrentId(id)
     },
 
+    duplicateProject: async (id) => {
+      if (!usable()) return
+      // The open project's latest edits may not be in storage yet.
+      if (id === get().currentId) await saveNow()
+      const source = await storage.get(id)
+      if (!source) return
+      const names = get().projects.map((project) => project.name)
+      const now = new Date().toISOString()
+      const copy: StoredProject = {
+        ...source,
+        id: newId(),
+        name: copyName(source.name, names),
+        createdAt: now,
+        updatedAt: now,
+      }
+      await storage.put(copy)
+      set({ projects: [summarize(copy), ...get().projects] })
+    },
+
     renameProject: async (id, name) => {
       const trimmed = name.trim()
       if (!usable() || !trimmed) return
@@ -221,10 +242,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
 const emptyDesign = () => toProjectData({ pieces: [], thickness: DEFAULT_THICKNESS })
 
 function newRecord(name: string, design: ProjectData, createdAt = new Date().toISOString()): StoredProject {
-  const id =
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2)
+  const id = newId()
   // The name lives on the record; it's only put in the design for saved files.
   const { name: _fileName, ...rest } = design
   return { id, name, createdAt, updatedAt: createdAt, design: rest }
@@ -250,4 +268,18 @@ function untitledName(taken: string[]) {
   let n = 2
   while (taken.includes(`${DEFAULT_NAME} ${n}`)) n++
   return `${DEFAULT_NAME} ${n}`
+}
+
+const newId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2)
+
+/** "Kitchen copy", then "Kitchen copy 2", 3, … skipping names in use. */
+function copyName(name: string, taken: string[]) {
+  const base = `${name} copy`
+  if (!taken.includes(base)) return base
+  let n = 2
+  while (taken.includes(`${base} ${n}`)) n++
+  return `${base} ${n}`
 }
