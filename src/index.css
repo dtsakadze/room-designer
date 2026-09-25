@@ -655,3 +655,7 @@ button kbd {
   display: flex;
   gap: 14px;
 }
+
+.part-row-clash span:first-child {
+  color: var(--danger);
+}

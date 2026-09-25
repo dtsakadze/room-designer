@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { contentBounds } from '../lib/geometry'
+import { contentBounds, depthStart } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
+import { useClashes } from '../ui/useClashes'
 import type { Piece } from '../types'
-import { FILLS, SELECTED } from './colors'
-import { depthStart } from './views'
+import { CLASH, FILLS, SELECTED } from './colors'
 
 const BACKGROUND = '#f4f6f9'
 const EDGE = '#6f6450'
@@ -23,6 +23,7 @@ export default function Preview3D() {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
   const selectedId = useDesignStore((s) => s.selectedId)
+  const clashes = useClashes()
 
   // Scene, camera, renderer and controls: set up once.
   useEffect(() => {
@@ -111,9 +112,10 @@ export default function Preview3D() {
     disposeChildren(current.parts)
     const zStart = depthStart(pieces, thickness)
     for (const piece of pieces) {
-      current.parts.add(buildPiece(piece, zStart(piece), piece.id === selectedId))
+      const tint = piece.id === selectedId ? SELECTED : clashes.has(piece.id) ? CLASH : null
+      current.parts.add(buildPiece(piece, zStart(piece), tint))
     }
-  }, [pieces, thickness, selectedId])
+  }, [pieces, thickness, selectedId, clashes])
 
   return (
     <div className="preview-3d" ref={hostRef}>
@@ -126,12 +128,15 @@ export default function Preview3D() {
   )
 }
 
-/** One piece as a solid with outlined edges; a rod as a cylinder along x. */
-function buildPiece(piece: Piece, z: number, selected: boolean) {
+/**
+ * One piece as a solid with outlined edges; a rod as a cylinder along x.
+ * `tint` (selection blue or clash red) is mixed in rather than painted over,
+ * so the part still reads as wood.
+ */
+function buildPiece(piece: Piece, z: number, tint: string | null) {
   const material = new THREE.MeshStandardMaterial({
-    // Tinted rather than solid blue, so the selected part still reads as wood.
-    color: selected
-      ? new THREE.Color(FILLS[piece.kind]).lerp(new THREE.Color(SELECTED), 0.45)
+    color: tint
+      ? new THREE.Color(FILLS[piece.kind]).lerp(new THREE.Color(tint), 0.45)
       : FILLS[piece.kind],
     roughness: 0.85,
     // The back panel would hide the inside from most angles, so it's faint.
@@ -149,7 +154,7 @@ function buildPiece(piece: Piece, z: number, selected: boolean) {
   const mesh = new THREE.Mesh(geometry, material)
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(geometry, 30),
-    new THREE.LineBasicMaterial({ color: selected ? SELECTED : EDGE }),
+    new THREE.LineBasicMaterial({ color: tint ?? EDGE }),
   )
   const group = new THREE.Group()
   group.add(mesh, edges)

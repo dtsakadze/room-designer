@@ -6,6 +6,7 @@ import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
 import { HistoryButtons } from '../ui/HistoryButtons'
+import { useClashes } from '../ui/useClashes'
 import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { GridLayer } from './GridLayer'
@@ -81,6 +82,7 @@ export function Canvas2D() {
   const endBatch = useDesignStore((s) => s.endBatch)
 
   const thickness = useDesignStore((s) => s.thickness)
+  const clashes = useClashes()
   // What's drawn: the pieces themselves in the front view, read-only
   // projections in the others.
   const shown = useMemo(
@@ -349,6 +351,7 @@ export function Canvas2D() {
             hollow={isHollow(piece, viewName)}
             edgeOn={showsEdge(piece, viewName)}
             // Screws show where the shelf meets the sides: from the front or back.
+            clashing={clashes.has(piece.id)}
             screws={!!piece.fixed && (viewName === 'front' || viewName === 'back')}
             unit={unit}
             onPointerDown={beginPieceDrag}

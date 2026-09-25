@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { EDGE_FILLS, FILLS } from './colors'
+import { CLASH, EDGE_FILLS, FILLS } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -18,6 +18,8 @@ type PieceRectProps = {
   edgeOn: boolean
   /** Marks a fixed shelf with a screw at each end. */
   screws: boolean
+  /** Overlaps another part: drawn red. */
+  clashing: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
   onHoverChange: (id: string | null) => void
@@ -35,6 +37,7 @@ export function PieceRect({
   hollow,
   edgeOn,
   screws,
+  clashing,
   unit,
   onPointerDown,
   onHoverChange,
@@ -62,7 +65,7 @@ export function PieceRect({
         rx={rx}
         fill={(edgeOn ? EDGE_FILLS : FILLS)[piece.kind]}
         fillOpacity={hollow ? 0.35 : 1}
-        stroke={selected ? '#2563eb' : showHover ? '#60a5fa' : '#9c8f6d'}
+        stroke={selected ? '#2563eb' : clashing ? CLASH : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
         strokeDasharray={hollow ? `${unit * 8} ${unit * 6}` : undefined}
         style={{ cursor: editable ? 'move' : 'pointer', pointerEvents: hollow ? 'none' : undefined }}
@@ -94,6 +97,18 @@ export function PieceRect({
             style={{ pointerEvents: 'none' }}
           />
         ))}
+      {clashing && (
+        <rect
+          x={piece.x}
+          y={y}
+          width={piece.width}
+          height={piece.height}
+          rx={rx}
+          fill={CLASH}
+          fillOpacity={0.3}
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
       {showHover && (
         <rect
           x={piece.x}

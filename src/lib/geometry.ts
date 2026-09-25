@@ -1,5 +1,5 @@
 import type { Piece, Thickness } from '../types'
-import { BOARD } from './defaults'
+import { BOARD, PLINTH_RECESS } from './defaults'
 
 /**
  * Keeps a piece a sane size and stops it sinking through the floor. A board's
@@ -132,3 +132,61 @@ const edges = (piece: Piece): Edges => ({
 
 const overlaps = (a: Edges, b: Edges) =>
   a.left < b.right && a.right > b.left && a.bottom < b.top && a.top > b.bottom
+
+/**
+ * Where each piece starts, front to back, in mm from the wall (z = 0). Pieces
+ * don't store this yet, so everything sits flush against the back: the back
+ * panel takes the first `thickness.back` mm, and the rest start in front of it.
+ * The exceptions: the plinth sits at the front, set back a little, and a rail
+ * runs along the front unless it's marked as a back rail.
+ */
+export function depthStart(pieces: Piece[], thickness: Thickness) {
+  const hasBack = pieces.some((piece) => piece.kind === 'back')
+  const behind = (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
+  const front = Math.max(
+    0,
+    ...pieces
+      .filter((piece) => piece.kind !== 'plinth' && piece.kind !== 'rail')
+      .map((piece) => behind(piece) + piece.depth),
+  )
+  return (piece: Piece) => {
+    if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
+    if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
+    return behind(piece)
+  }
+}
+
+/** Overlaps smaller than this (rounding, not a real clash) are ignored, in mm. */
+const CLASH_TOLERANCE = 0.5
+
+/**
+ * Pieces that take up the same space as another, checked as real 3D boxes
+ * (front-to-back placement from `depthStart`). Touching isn't a clash, and
+ * neither is the back panel sitting behind everything in the front view.
+ */
+export function findClashes(pieces: Piece[], thickness: Thickness) {
+  const zStart = depthStart(pieces, thickness)
+  const boxes = pieces.map((piece) => {
+    const z = zStart(piece)
+    return {
+      id: piece.id,
+      min: [piece.x, piece.y, z],
+      max: [piece.x + piece.width, piece.y + piece.height, z + piece.depth],
+    }
+  })
+  const clashing = new Set<string>()
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const [a, b] = [boxes[i], boxes[j]]
+      const overlaps = [0, 1, 2].every((axis) => {
+        const shared = Math.min(a.max[axis], b.max[axis]) - Math.max(a.min[axis], b.min[axis])
+        return shared > CLASH_TOLERANCE
+      })
+      if (overlaps) {
+        clashing.add(a.id)
+        clashing.add(b.id)
+      }
+    }
+  }
+  return clashing
+}

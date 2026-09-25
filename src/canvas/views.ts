@@ -1,4 +1,5 @@
-import { BOARD, PLINTH_RECESS } from '../lib/defaults'
+import { BOARD } from '../lib/defaults'
+import { depthStart } from '../lib/geometry'
 import type { Piece, Thickness } from '../types'
 
 export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
@@ -51,29 +52,6 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
       return [...pieces]
         .sort((a, b) => zStart(b) - zStart(a))
         .map((piece) => ({ ...piece, x: -(piece.x + piece.width) }))
-  }
-}
-
-/**
- * Where each piece starts, front to back, in mm from the wall (z = 0). Pieces
- * don't store this yet, so everything sits flush against the back: the back
- * panel takes the first `thickness.back` mm, and the rest start in front of it.
- * The exceptions: the plinth sits at the front, set back a little, and a rail
- * runs along the front unless it's marked as a back rail.
- */
-export function depthStart(pieces: Piece[], thickness: Thickness) {
-  const hasBack = pieces.some((piece) => piece.kind === 'back')
-  const behind = (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
-  const front = Math.max(
-    0,
-    ...pieces
-      .filter((piece) => piece.kind !== 'plinth' && piece.kind !== 'rail')
-      .map((piece) => behind(piece) + piece.depth),
-  )
-  return (piece: Piece) => {
-    if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
-    if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
-    return behind(piece)
   }
 }
 

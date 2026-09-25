@@ -30,7 +30,7 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
 
 /** A piece's name: tells fixed shelves from adjustable ones, front rails from back. */
 export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt'>) {
-  if (piece.kind === 'shelf' && piece.fixed) return 'Fixed shelf'
+  if (piece.kind === 'shelf') return piece.fixed ? 'Fixed shelf' : 'Adjustable shelf'
   if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
   return PIECE_LABELS[piece.kind]
 }
