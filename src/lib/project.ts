@@ -65,7 +65,7 @@ export function parseProject(data: unknown): ProjectData | null {
       height: raw.height as number,
       depth: raw.depth as number,
     }
-    return [normalizePiece(piece, thickness)]
+    return [normalizePiece({ ...piece, fixed: raw.fixed === true }, thickness)]
   })
 
   return {

@@ -348,6 +348,8 @@ export function Canvas2D() {
             editable={isFront}
             hollow={isHollow(piece, viewName)}
             edgeOn={showsEdge(piece, viewName)}
+            // Screws show where the shelf meets the sides: from the front or back.
+            screws={!!piece.fixed && (viewName === 'front' || viewName === 'back')}
             unit={unit}
             onPointerDown={beginPieceDrag}
             onHoverChange={setHoveredId}

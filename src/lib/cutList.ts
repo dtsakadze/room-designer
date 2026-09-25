@@ -1,5 +1,5 @@
 import type { Piece, PieceKind, Thickness } from '../types'
-import { BOARD, PIECE_LABELS } from './defaults'
+import { BOARD, pieceLabel } from './defaults'
 
 export type CutListRow = {
   kind: PieceKind
@@ -35,14 +35,15 @@ export function cutList(pieces: Piece[]): CutListRow[] {
     const width = Math.min(a, b)
     const thickness = piece[board.axis]
 
-    const key = `${piece.kind}|${length}|${width}|${thickness}`
+    const label = pieceLabel(piece)
+    const key = `${label}|${length}|${width}|${thickness}`
     const row = rows.get(key)
     if (row) {
       row.quantity += 1
     } else {
       rows.set(key, {
         kind: piece.kind,
-        label: PIECE_LABELS[piece.kind],
+        label,
         quantity: 1,
         length,
         width,

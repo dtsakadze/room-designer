@@ -16,10 +16,15 @@ type PieceRectProps = {
   hollow: boolean
   /** A board seen edge-on, drawn darker than a board's face. */
   edgeOn: boolean
+  /** Marks a fixed shelf with a screw at each end. */
+  screws: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
   onHoverChange: (id: string | null) => void
 }
+
+/** How far in from each end a fixed shelf's screw marks sit, in mm. */
+const SCREW_INSET = 25
 
 export function PieceRect({
   piece,
@@ -29,6 +34,7 @@ export function PieceRect({
   editable,
   hollow,
   edgeOn,
+  screws,
   unit,
   onPointerDown,
   onHoverChange,
@@ -77,6 +83,17 @@ export function PieceRect({
           {...handlers}
         />
       )}
+      {screws &&
+        [piece.x + SCREW_INSET, piece.x + piece.width - SCREW_INSET].map((cx) => (
+          <circle
+            key={cx}
+            cx={cx}
+            cy={y + piece.height / 2}
+            r={unit * 2.5}
+            fill="#6f6450"
+            style={{ pointerEvents: 'none' }}
+          />
+        ))}
       {showHover && (
         <rect
           x={piece.x}

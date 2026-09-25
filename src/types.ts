@@ -34,4 +34,9 @@ export type Piece = {
   width: number
   height: number
   depth: number
+  /**
+   * Shelves only: screwed to the sides, so it holds them straight (a
+   * structural shelf) rather than resting on pins. Absent means adjustable.
+   */
+  fixed?: boolean
 }

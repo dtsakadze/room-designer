@@ -1,4 +1,4 @@
-import { BOARD, PIECE_LABELS } from '../lib/defaults'
+import { BOARD, pieceLabel } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
@@ -19,7 +19,18 @@ export function PieceInspector() {
 
   return (
     <div className="stack">
-      <p className="muted">{PIECE_LABELS[piece.kind]}</p>
+      <p className="muted">{pieceLabel(piece)}</p>
+
+      {piece.kind === 'shelf' && (
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={!!piece.fixed}
+            onChange={(event) => updatePiece(piece.id, { fixed: event.target.checked })}
+          />
+          Fixed: screwed to the sides, keeps them straight
+        </label>
+      )}
 
       {isRod ? (
         <>

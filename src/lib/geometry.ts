@@ -18,6 +18,8 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   }
   const board = BOARD[piece.kind]
   if (board) normalized[board.axis] = atLeast(thickness[board.board])
+  // Only shelves can be fixed, and "not fixed" is stored as no flag at all.
+  if (piece.kind !== 'shelf' || !piece.fixed) delete normalized.fixed
   return normalized
 }
 

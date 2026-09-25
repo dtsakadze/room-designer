@@ -38,7 +38,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={`${row.kind}|${row.length}|${row.width}|${row.thickness}`}>
+              <tr key={`${row.label}|${row.length}|${row.width}|${row.thickness}`}>
                 <td>{row.label}</td>
                 <td className="num">{row.quantity}</td>
                 <td className="num">{row.length}</td>

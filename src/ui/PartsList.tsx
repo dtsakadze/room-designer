@@ -1,4 +1,4 @@
-import { PIECE_LABELS } from '../lib/defaults'
+import { pieceLabel } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 
 /**
@@ -22,7 +22,7 @@ export function PartsList() {
             aria-pressed={piece.id === selectedId}
             onClick={() => select(piece.id)}
           >
-            <span>{PIECE_LABELS[piece.kind]}</span>
+            <span>{pieceLabel(piece)}</span>
             <span className="part-size">
               {piece.kind === 'rod'
                 ? `⌀${piece.height} × ${piece.width}`

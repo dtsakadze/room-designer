@@ -26,6 +26,10 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
   plinth: 'Plinth',
 }
 
+/** A piece's name, telling fixed shelves apart from adjustable ones. */
+export const pieceLabel = (piece: Pick<Piece, 'kind' | 'fixed'>) =>
+  piece.kind === 'shelf' && piece.fixed ? 'Fixed shelf' : PIECE_LABELS[piece.kind]
+
 export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth'] },
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
