@@ -78,6 +78,7 @@ run('pnpm build')
 
 run('git add CHANGELOG.md package.json')
 run(`git commit -m "release v${next}"`)
-run(`git tag v${next}`)
+// Annotated, because `git push --follow-tags` only pushes annotated tags.
+run(`git tag -a v${next} -m "release v${next}"`)
 
 console.log(`\n✓ Tagged v${next}. Publish it with: git push --follow-tags`)
