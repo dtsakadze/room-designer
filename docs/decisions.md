@@ -136,3 +136,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Decision*: `pnpm release <patch|minor|major>` moves the changelog's "Unreleased" notes under the new version, bumps `package.json`, runs the checks, commits and tags. Pushing the tag runs the Release Action, which checks the tag, tests and builds, and creates the GitHub release with the changelog notes and a zip of the build. The Action doesn't deploy yet.
 *Why*: releases are easy to get wrong by hand. The changelog is updated before tagging rather than by the Action, so the tagged commit already contains the finished changelog and version.
 
+
+**Public repository, `main` protected** (2026-09-26)
+*Decision*: the repository is public; only the owner can push, others contribute through issues and pull requests (Actions on a first-time contributor's PR wait for approval). A GitHub ruleset, "Protect main", blocks force-pushes to and deletion of `main` for everyone, the owner included. Change it under Settings → Rules → Rulesets.
+*Why*: open to contributions without risking the history or the release tags that point into it.
