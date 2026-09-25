@@ -709,3 +709,8 @@ button kbd {
   border-radius: 6px;
   background: #f4f6f9;
 }
+
+.project-name:disabled {
+  color: var(--muted);
+  cursor: default;
+}

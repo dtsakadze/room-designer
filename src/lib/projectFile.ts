@@ -1,4 +1,4 @@
-import { FORMAT_VERSION, type ProjectData, parseProject } from './project'
+import { type ProjectData, readProject } from './project'
 
 /** Downloads the project as a readable JSON file. */
 export function downloadProject(project: ProjectData) {
@@ -26,14 +26,13 @@ export async function readProjectFile(file: File): Promise<ProjectData> {
     throw new Error(`${file.name} isn't a project file (it isn't valid JSON).`)
   }
 
-  const version = (data as { formatVersion?: unknown } | null)?.formatVersion
-  if (typeof version === 'number' && version > FORMAT_VERSION) {
-    throw new Error(`${file.name} was saved by a newer version of the app. Update to open it.`)
-  }
-
-  const project = parseProject(data)
-  if (!project) throw new Error(`${file.name} isn't a room designer project.`)
-  return project
+  const result = readProject(data)
+  if (result.ok) return result.project
+  throw new Error(
+    result.problem === 'newer'
+      ? `${file.name} was saved by a newer version of the app. Update to open it.`
+      : `${file.name} isn't a room designer project, or it's damaged.`,
+  )
 }
 
 /** YYYY-MM-DD in the user's own time zone (`toISOString` would give UTC). */

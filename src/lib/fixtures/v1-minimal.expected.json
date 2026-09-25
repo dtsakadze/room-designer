@@ -1,0 +1,74 @@
+{
+  "savedAt": "2026-09-24T20:00:00.000Z",
+  "thickness": {
+    "body": 18,
+    "back": 3
+  },
+  "unitDepth": 600,
+  "pieces": [
+    {
+      "id": "a",
+      "kind": "vertical",
+      "x": -600,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 600
+    },
+    {
+      "id": "b",
+      "kind": "vertical",
+      "x": 582,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 600
+    },
+    {
+      "id": "c",
+      "kind": "horizontal",
+      "x": -582,
+      "y": 0,
+      "width": 1164,
+      "height": 18,
+      "depth": 600
+    },
+    {
+      "id": "d",
+      "kind": "back",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 3
+    },
+    {
+      "id": "e",
+      "kind": "shelf",
+      "x": -582,
+      "y": 800,
+      "width": 1164,
+      "height": 18,
+      "depth": 580
+    },
+    {
+      "id": "f",
+      "kind": "rod",
+      "x": -582,
+      "y": 1700,
+      "width": 1164,
+      "height": 25,
+      "depth": 25
+    },
+    {
+      "id": "g",
+      "kind": "drawer",
+      "x": -582,
+      "y": 18,
+      "width": 1164,
+      "height": 200,
+      "depth": 550
+    }
+  ],
+  "boxes": []
+}

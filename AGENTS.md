@@ -1,14 +1,15 @@
 # Room Designer — agent notes
 
-Browser app for designing wardrobes, closets and shelving in a flat 2D front view. Open source, runs fully in the browser with no server (a backend may come later). `README.md` explains how the app works; `notes.md` is the roadmap.
+Browser app for designing wardrobes, closets and shelving in a flat 2D front view. Open source, runs fully in the browser with no server (a backend may come later). `README.md` explains how the app works; `notes.md` is the roadmap; `docs/` holds the design decisions (`docs/decisions.md`) and the save format guide (`docs/save-format.md`).
 
 ## Commands
 
 - `pnpm dev`: dev server on http://localhost:5173 (the user usually has it running already)
 - `pnpm build`: `tsc -b` + Vite build, which is the type check
 - `pnpm lint`: oxlint
+- `pnpm test`: Vitest (`src/**/*.test.ts`)
 
-No test runner yet. Run `pnpm build` and `pnpm lint` after every change.
+Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 
 ## Layout
 
@@ -25,18 +26,29 @@ No test runner yet. Run `pnpm build` and `pnpm lint` after every change.
 - **Boxes own their panels.** A box's sides, top, bottom and back are ordinary pieces tagged `boxId`, always rebuilt from the box (`rebuildBox`), never edited one by one; moving, duplicating or deleting one of them acts on the whole box.
 - **Pieces have no front-to-back position (z) yet.** `depthStart` places every piece flush against the back panel (plinth and front rails excepted); the side, top and 3D views and the clash check all use it. Adding z means a `FORMAT_VERSION` bump.
 - **Every design change goes through a store action** that calls `record(state)` for undo, and skips no-op changes so undo never does nothing. Group continuous edits (drags, typing in a field) with `beginBatch` / `endBatch`. Selection and view are not in history or saves.
-- **Saved data is untrusted.** Autosaves and files are `ProjectData` with `formatVersion`, and everything loaded goes through `parseProject`. If the shape changes, bump `FORMAT_VERSION` and teach `parseProject` to upgrade the old version.
 - **Storage goes through the `ProjectStorage` interface** so a cloud backend can plug in later. Changing the IndexedDB schema means bumping `DB_VERSION`, handling it in `onupgradeneeded`, and migrating data in one transaction. Writes must start in the same turn as the call, otherwise saves made while the page closes are lost.
 - **Shortcuts:** ⌘ on Mac, Ctrl elsewhere (`hasModifier`). Labels live in `ui/shortcuts.ts`, and every shortcut is shown on its button and in the sidebar hint. Key handlers ignore events from text inputs.
 - **Store selectors must not build new arrays or objects** (`s.pieces.filter(...)` inside `useDesignStore(...)`): zustand then sees a change on every read and React re-renders forever, blanking the app. Select the raw state and filter in render.
 - **React keys must be unique even when values repeat.** Two dimension lines can share from/to, and colliding keys left stale lines on the canvas.
 - On-canvas strokes and text are sized with `unit` (`view.w / 1400`) so they stay the same size on screen at any zoom.
 - Code style: no semicolons, single quotes, 2-space indent. Comments explain why, not what. Match the surrounding code. In Markdown, don't hard-wrap lines: one line per paragraph or list item, and let the editor wrap.
+- **Record every architectural, design or otherwise important decision or change in `docs/decisions.md`** (what, when, why, and what it replaced), in the same change that makes it. Reversing one gets a new entry, not a deletion.
 - Keep `notes.md` in sync when roadmap items are done or change. Don't commit unless asked; the user commits.
+
+## Save format (read `docs/save-format.md` before touching it)
+
+Projects are saved as `ProjectData` JSON (`src/lib/project.ts`) in the browser (autosave) and in files people keep for years, so every version ever released must keep opening.
+
+- Every save has `formatVersion`. Everything that loads a save goes through `readProject` (or `parseProject`): older versions are upgraded one step at a time by the converters in `MIGRATIONS` (step N turns version N into N + 1), newer versions are refused as `newer`, anything else broken is `invalid`. Nothing loaded is trusted: `validate` drops and normalises bad data.
+- A project that can't be read is never opened (it's marked "Can't open" in the list), so autosave can never overwrite it. Keep it that way.
+- Any change to what's saved (new required field, rename, removal, changed meaning or units) needs a new version. An optional field whose absence means the old behaviour may not, but then `validate` must default it. When in doubt, bump.
+- To change the format, in order: save a sample of the current version to `src/lib/fixtures/v<N>-<name>.json` first; bump `FORMAT_VERSION` and the `ProjectData` type; add converter `N` to `MIGRATIONS`; update `validate` and `toProjectData`; add tests in `project.test.ts`; save a sample of the new version; add a row to the version history in `docs/save-format.md` and an entry in `docs/decisions.md`.
+- Converters are frozen once released: never edit or delete one, or a sample. Fix mistakes with a new version. Converters are one step, pure (no clock, storage or app state), don't mutate their input, work on raw JSON rather than app types, and tolerate missing or wrong-typed fields.
+- `DB_VERSION` (`src/lib/storage.ts`) is separate: it versions the browser database's layout, not the project JSON. See the end of `docs/save-format.md`.
 
 ## Checking changes
 
-- **Store and lib logic:** load the module through Vite in a scratch script instead of adding a test framework: `createServer({ server: { middlewareMode: true } })`, then `server.ssrLoadModule('/src/store/useDesignStore.ts')`. Import Vite from `node_modules/vite/dist/node/index.js` when the script lives outside the repo.
+- **Store and lib logic:** add a Vitest test for anything lasting (the save format has fixture tests). For a one-off check, load the module through Vite in a scratch script: `createServer({ server: { middlewareMode: true } })`, then `server.ssrLoadModule('/src/store/useDesignStore.ts')`. Import Vite from `node_modules/vite/dist/node/index.js` when the script lives outside the repo.
 - **In the browser:** the user's real projects live in IndexedDB on localhost:5173. Back them up before anything destructive, test with undo or throwaway projects, and leave their data as it was.
 - **Browser-test pitfalls:**
   - Automation tabs count as hidden, so timers are throttled and "Saving…" can linger for seconds.

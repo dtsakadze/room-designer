@@ -48,6 +48,10 @@ Projects are stored in the browser's IndexedDB for the site's address, so:
 - Clearing site data in the browser deletes the projects.
 - Use **Save to file** to back up a project or move it to another browser or address, and **Open file…** to bring it back.
 
+## Docs
+
+Design decisions and the save format guide are in [docs/](docs/README.md).
+
 ## Stack
 
 React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the drawing. The 3D preview uses three.js, loaded only when it's opened.

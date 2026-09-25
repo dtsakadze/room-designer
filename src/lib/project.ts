@@ -10,10 +10,39 @@ import {
 import { isHexColor, normalizePiece } from './geometry'
 
 /**
- * Bump this whenever the saved shape changes, and teach `parseProject` to
- * upgrade the older version, so existing autosaves and files still open.
+ * The version saves are written in. To change the saved shape:
+ *
+ * 1. bump this,
+ * 2. add a step to `MIGRATIONS` that turns the previous version into this one,
+ * 3. add a sample of the previous version to `fixtures/` and a test that it
+ *    still opens (see `project.test.ts`).
+ *
+ * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 1
+export const FORMAT_VERSION = 2
+
+type Raw = Record<string, unknown>
+
+/**
+ * Step `n` turns version `n` into version `n + 1`. Loading runs every step
+ * from the save's version up to `FORMAT_VERSION`, in order. Steps build new
+ * objects rather than changing their input.
+ */
+const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
+  // v1 grew `unitDepth` and `boxes` over time, so older v1 saves lack them.
+  // From v2 on they're always there.
+  1: (data) => ({
+    ...data,
+    formatVersion: 2,
+    unitDepth: data.unitDepth ?? DEFAULT_UNIT_DEPTH,
+    boxes: data.boxes ?? [],
+  }),
+}
+
+/** Why a save couldn't be opened. */
+export type ReadProblem = 'newer' | 'invalid'
+
+export type ReadResult = { ok: true; project: ProjectData } | { ok: false; problem: ReadProblem }
 
 /**
  * A project as it's stored: the same shape goes into the browser's autosave
@@ -25,11 +54,11 @@ export type ProjectData = {
   /** Only in saved files, so opening one can name the new project. */
   name?: string
   thickness: Thickness
-  /** How deep new parts start. Older saves don't have it, so it's optional here. */
-  unitDepth?: number
+  /** How deep new parts start. */
+  unitDepth: number
   pieces: Piece[]
   /** Carcasses; their panels are in `pieces` too, but are rebuilt from these on load. */
-  boxes?: Box[]
+  boxes: Box[]
   /** Colour new parts start with. Absent means the standard look. */
   defaultColor?: string
 }
@@ -57,15 +86,44 @@ export function toProjectData(
 }
 
 /**
- * Reads stored data back into a design, or returns null if it isn't a project
- * this version understands. Stored data can come from an older version or be
- * hand-edited, so nothing is trusted: unknown pieces are dropped and every
- * piece goes through the same normalising as an edit does. A box's panels
- * are rebuilt from the box, so they can't disagree with it.
+ * Reads a save (autosave or file) of any version: older ones are upgraded
+ * step by step, one from a newer version of the app is refused rather than
+ * guessed at. The input is never changed.
  */
+export function readProject(input: unknown): ReadResult {
+  if (!isRecord(input)) return { ok: false, problem: 'invalid' }
+  const version = input.formatVersion
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
+    return { ok: false, problem: 'invalid' }
+  }
+  if (version > FORMAT_VERSION) return { ok: false, problem: 'newer' }
+
+  let data: Raw = input
+  for (let step = version; step < FORMAT_VERSION; step++) {
+    const migrate = MIGRATIONS[step]
+    // A missing step is a bug in the app, not in the save.
+    if (!migrate) throw new Error(`No migration from format version ${step}`)
+    data = migrate(data)
+  }
+
+  const project = validate(data)
+  return project ? { ok: true, project } : { ok: false, problem: 'invalid' }
+}
+
+/** `readProject` for callers that only need the project: null when it can't be opened. */
 export function parseProject(data: unknown): ProjectData | null {
-  if (!isRecord(data) || data.formatVersion !== FORMAT_VERSION) return null
-  if (!Array.isArray(data.pieces)) return null
+  const result = readProject(data)
+  return result.ok ? result.project : null
+}
+
+/**
+ * Checks a save that's already in the current version. Nothing is trusted, as
+ * it may be hand-edited: unknown pieces are dropped and every piece goes
+ * through the same normalising as an edit does. A box's panels are rebuilt
+ * from the box, so they can't disagree with it.
+ */
+function validate(data: Raw): ProjectData | null {
+  if (data.formatVersion !== FORMAT_VERSION || !Array.isArray(data.pieces)) return null
 
   const stored = isRecord(data.thickness) ? data.thickness : {}
   const thickness: Thickness = {

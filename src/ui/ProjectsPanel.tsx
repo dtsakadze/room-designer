@@ -61,6 +61,8 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
                     <button
                       type="button"
                       className="project-name"
+                      // Can't be opened, so it's never autosaved over; see `problem`.
+                      disabled={!!project.problem}
                       onClick={async () => {
                         await openProject(project.id)
                         onClose()
@@ -69,11 +71,19 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
                       {project.name}
                     </button>
                   )}
-                  <span className="muted">
-                    {isOpen ? 'Open now · ' : ''}
-                    {project.pieceCount} piece{project.pieceCount === 1 ? '' : 's'} · edited{' '}
-                    {formatEdited(project.updatedAt)}
-                  </span>
+                  {project.problem ? (
+                    <span className="hint hint-error">
+                      {project.problem === 'newer'
+                        ? "Can't open: saved by a newer version of the app. It's kept as is."
+                        : "Can't open: the saved data is damaged. It's kept as is."}
+                    </span>
+                  ) : (
+                    <span className="muted">
+                      {isOpen ? 'Open now · ' : ''}
+                      {project.pieceCount} piece{project.pieceCount === 1 ? '' : 's'} · edited{' '}
+                      {formatEdited(project.updatedAt)}
+                    </span>
+                  )}
                 </div>
 
                 {confirmingId === project.id ? (

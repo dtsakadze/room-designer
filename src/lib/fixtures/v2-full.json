@@ -1,0 +1,145 @@
+{
+  "formatVersion": 2,
+  "savedAt": "2026-09-25T10:00:00.000Z",
+  "name": "Everything",
+  "thickness": {
+    "body": 16,
+    "back": 4
+  },
+  "unitDepth": 550,
+  "pieces": [
+    {
+      "kind": "back",
+      "x": -600,
+      "y": 0,
+      "width": 1000,
+      "height": 2000,
+      "depth": 4,
+      "id": "14c598ce-7628-4543-a22b-a59bd035cfd7:back",
+      "boxId": "14c598ce-7628-4543-a22b-a59bd035cfd7",
+      "color": "#8b5e3c"
+    },
+    {
+      "kind": "vertical",
+      "x": -600,
+      "y": 16,
+      "width": 16,
+      "height": 1968,
+      "depth": 546,
+      "id": "14c598ce-7628-4543-a22b-a59bd035cfd7:left",
+      "boxId": "14c598ce-7628-4543-a22b-a59bd035cfd7",
+      "color": "#8b5e3c"
+    },
+    {
+      "kind": "vertical",
+      "x": 384,
+      "y": 16,
+      "width": 16,
+      "height": 1968,
+      "depth": 546,
+      "id": "14c598ce-7628-4543-a22b-a59bd035cfd7:right",
+      "boxId": "14c598ce-7628-4543-a22b-a59bd035cfd7",
+      "color": "#8b5e3c"
+    },
+    {
+      "kind": "horizontal",
+      "x": -600,
+      "y": 0,
+      "width": 1000,
+      "height": 16,
+      "depth": 546,
+      "id": "14c598ce-7628-4543-a22b-a59bd035cfd7:bottom",
+      "boxId": "14c598ce-7628-4543-a22b-a59bd035cfd7",
+      "color": "#8b5e3c"
+    },
+    {
+      "kind": "horizontal",
+      "x": -600,
+      "y": 1984,
+      "width": 1000,
+      "height": 16,
+      "depth": 546,
+      "id": "14c598ce-7628-4543-a22b-a59bd035cfd7:top",
+      "boxId": "14c598ce-7628-4543-a22b-a59bd035cfd7",
+      "color": "#8b5e3c"
+    },
+    {
+      "id": "92137096-e787-4238-bac4-8c1e470b5e7a",
+      "kind": "shelf",
+      "x": 500,
+      "y": 900,
+      "width": 1168,
+      "height": 16,
+      "depth": 530,
+      "fixed": true
+    },
+    {
+      "id": "6d7b3577-819a-4f1a-ace2-e1332bb68c7c",
+      "kind": "shelf",
+      "x": 1768,
+      "y": 1300,
+      "width": 1168,
+      "height": 16,
+      "depth": 530
+    },
+    {
+      "id": "1e48fbad-3c7d-4438-bb6f-2dd3f9529389",
+      "kind": "rail",
+      "x": 3036,
+      "y": 1800,
+      "width": 1168,
+      "height": 16,
+      "depth": 100,
+      "railAt": "back"
+    },
+    {
+      "id": "c4199e05-1487-404c-b6ca-27b012ccc9fb",
+      "kind": "plinth",
+      "x": 4304,
+      "y": 0,
+      "width": 1168,
+      "height": 80,
+      "depth": 16
+    },
+    {
+      "id": "112e2b5f-984e-44b3-bcb2-ce5712bc0e0e",
+      "kind": "rod",
+      "x": 5572,
+      "y": 0,
+      "width": 1168,
+      "height": 25,
+      "depth": 25
+    },
+    {
+      "id": "80dcccc3-abb1-44df-8410-11bc7dcf763f",
+      "kind": "drawer",
+      "x": 6840,
+      "y": 0,
+      "width": 1168,
+      "height": 200,
+      "depth": 500,
+      "color": "#2563eb"
+    },
+    {
+      "id": "4f8c1e02-e5fc-4e56-9058-6d9746209617",
+      "kind": "divider",
+      "x": 8108,
+      "y": 0,
+      "width": 16,
+      "height": 1000,
+      "depth": 530
+    }
+  ],
+  "boxes": [
+    {
+      "id": "14c598ce-7628-4543-a22b-a59bd035cfd7",
+      "x": -600,
+      "y": 0,
+      "width": 1000,
+      "height": 2000,
+      "depth": 550,
+      "joint": "on"
+    }
+  ],
+  "defaultColor": "#aabbcc"
+}

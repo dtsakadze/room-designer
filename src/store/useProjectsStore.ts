@@ -1,6 +1,12 @@
 import { create } from 'zustand'
 import { DEFAULT_THICKNESS } from '../lib/defaults'
-import { type ProjectData, parseProject, toProjectData } from '../lib/project'
+import {
+  type ProjectData,
+  type ReadProblem,
+  parseProject,
+  readProject,
+  toProjectData,
+} from '../lib/project'
 import { type StoredProject, browserStorage } from '../lib/storage'
 import type { Piece } from '../types'
 import { useDesignStore } from './useDesignStore'
@@ -15,6 +21,11 @@ export type ProjectSummary = {
   pieceCount: number
   /** The design's parts, for drawing its thumbnail in the project list. */
   pieces: Piece[]
+  /**
+   * Why it can't be opened (saved by a newer version of the app, or damaged),
+   * or null if it can. Such a project is never opened, so nothing overwrites it.
+   */
+  problem: ReadProblem | null
 }
 
 type ProjectsState = {
@@ -140,19 +151,33 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
           records = [first]
         }
 
+        // Only a project that reads cleanly is opened. Opening one that doesn't
+        // (made by a newer version, or damaged) as an empty design would let the
+        // next autosave wipe it, so those are left untouched in the list.
+        const readable = records.flatMap((record) => {
+          const result = readProject(record.design)
+          return result.ok ? [{ record, design: result.project }] : []
+        })
         const lastId = await storage.getCurrentId()
-        const current =
-          records.find((record) => record.id === lastId) ?? sortByEdited(records)[0]
-        const design = parseProject(current.design)
-        if (!design) console.warn('Opening an empty design: this project cannot be read', current)
+        const newest = [...readable].sort((a, b) =>
+          b.record.updatedAt.localeCompare(a.record.updatedAt),
+        )[0]
+        let current = readable.find(({ record }) => record.id === lastId) ?? newest
+        if (!current) {
+          const design = emptyDesign()
+          const first = newRecord(DEFAULT_NAME, design)
+          await storage.put(first)
+          records = [...records, first]
+          current = { record: first, design }
+        }
 
         set({
           projects: sortByEdited(records.map(summarize)),
-          currentId: current.id,
+          currentId: current.record.id,
           saveStatus: 'saved',
         })
-        apply(design ?? emptyDesign())
-        await storage.setCurrentId(current.id)
+        apply(current.design)
+        await storage.setCurrentId(current.record.id)
         startAutosave()
       } catch (error) {
         // Private windows and blocked site data can refuse IndexedDB. Nothing
@@ -180,10 +205,11 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       await saveNow()
       const record = await storage.get(id)
       if (!record) return
+      // Never open what can't be read: autosave would then overwrite it.
       const design = parseProject(record.design)
-      if (!design) console.warn('Opening an empty design: this project cannot be read', record)
+      if (!design) return
       set({ currentId: id })
-      apply(design ?? emptyDesign())
+      apply(design)
       await storage.setCurrentId(id)
     },
 
@@ -238,7 +264,8 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       const remaining = get().projects.filter((project) => project.id !== id)
       set({ projects: remaining })
       if (!isOpen) return
-      if (remaining.length > 0) await get().openProject(remaining[0].id)
+      const next = remaining.find((project) => !project.problem)
+      if (next) await get().openProject(next.id)
       else await get().createProject()
     },
   }
@@ -254,8 +281,8 @@ function newRecord(name: string, design: ProjectData, createdAt = new Date().toI
 }
 
 function summarize(record: StoredProject): ProjectSummary {
-  // Checked like any load, so a broken project shows an empty thumbnail, not an error.
-  const pieces = parseProject(record.design)?.pieces ?? []
+  const result = readProject(record.design)
+  const pieces = result.ok ? result.project.pieces : []
   return {
     id: record.id,
     name: record.name,
@@ -263,6 +290,7 @@ function summarize(record: StoredProject): ProjectSummary {
     updatedAt: record.updatedAt,
     pieceCount: pieces.length,
     pieces,
+    problem: result.ok ? null : result.problem,
   }
 }
 
