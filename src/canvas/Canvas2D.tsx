@@ -89,8 +89,8 @@ export function Canvas2D() {
     () => projectPieces(pieces, viewName, thickness),
     [pieces, viewName, thickness],
   )
-  // See-through panels go underneath, so where they overlap a real part (a
-  // side panel's edge, say) the part gets the click.
+  // See-through panels go underneath everything, so a click on a part inside
+  // reaches that part, and a click on bare panel selects the panel.
   const drawn = useMemo(
     () => [
       ...shown.filter((piece) => isHollow(piece, viewName)),

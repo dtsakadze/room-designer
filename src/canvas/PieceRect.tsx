@@ -68,24 +68,9 @@ export function PieceRect({
         stroke={selected ? '#2563eb' : clashing ? CLASH : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
         strokeDasharray={hollow ? `${unit * 8} ${unit * 6}` : undefined}
-        style={{ cursor: editable ? 'move' : 'pointer', pointerEvents: hollow ? 'none' : undefined }}
-        {...(hollow ? {} : handlers)}
+        style={{ cursor: editable ? 'move' : 'pointer' }}
+        {...handlers}
       />
-      {/* A see-through panel covers the parts inside it, so only a band along
-          its outline takes clicks; clicks inside reach those parts. */}
-      {hollow && (
-        <rect
-          x={piece.x}
-          y={y}
-          width={piece.width}
-          height={piece.height}
-          fill="none"
-          stroke="transparent"
-          strokeWidth={unit * 10}
-          style={{ cursor: editable ? 'move' : 'pointer', pointerEvents: 'stroke' }}
-          {...handlers}
-        />
-      )}
       {screws &&
         [piece.x + SCREW_INSET, piece.x + piece.width - SCREW_INSET].map((cx) => (
           <circle
