@@ -19,6 +19,12 @@ export const PLINTH_HEIGHT = 80
 export const PLINTH_RECESS = 50
 export const RAIL_DEPTH = 100
 
+/** Room clothes need below a hanging rod, measured down from the rod. */
+export const HANGING_GUIDES = [
+  { label: 'Shirts, jackets', length: 1000 },
+  { label: 'Coats, dresses', length: 1700 },
+]
+
 /** Outer width the default pieces are sized for; fittings fill its inside. */
 const UNIT_WIDTH = 1200
 

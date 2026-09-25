@@ -190,3 +190,21 @@ export function findClashes(pieces: Piece[], thickness: Thickness) {
   }
   return clashing
 }
+
+/**
+ * Free height below a hanging rod: down to the highest part underneath it (a
+ * shelf, a drawer, the bottom panel) or the floor. Parts that only overlap part
+ * of the rod's length still count, since clothes hang all along it.
+ */
+export function clearanceBelow(rod: Piece, pieces: Piece[]) {
+  const below = pieces.filter(
+    (piece) =>
+      piece.id !== rod.id &&
+      piece.kind !== 'back' &&
+      piece.x < rod.x + rod.width &&
+      piece.x + piece.width > rod.x &&
+      piece.y + piece.height <= rod.y,
+  )
+  const floor = Math.max(0, ...below.map((piece) => piece.y + piece.height))
+  return rod.y - floor
+}

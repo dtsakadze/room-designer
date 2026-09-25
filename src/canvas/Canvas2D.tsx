@@ -9,6 +9,7 @@ import { HistoryButtons } from '../ui/HistoryButtons'
 import { useClashes } from '../ui/useClashes'
 import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
+import { HangingGuides } from './HangingGuides'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
@@ -361,6 +362,11 @@ export function Canvas2D() {
 
         {/* Gaps to neighbours only make sense in the view where you move things. */}
         <Dimensions pieces={shown} selected={isFront ? selectedShown : null} unit={unit} />
+
+        {/* How far clothes hang below a selected rod, where you see its length. */}
+        {selectedShown?.kind === 'rod' && (viewName === 'front' || viewName === 'back') && (
+          <HangingGuides rod={selectedShown} pieces={shown} unit={unit} />
+        )}
 
         {/* Handles go last so they stay clickable above every piece. */}
         {isFront && selected && (
