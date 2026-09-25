@@ -8,6 +8,7 @@ import { CutListPanel } from '../ui/CutListPanel'
 import { EditButtons } from '../ui/EditButtons'
 import { ShortcutsPanel } from '../ui/ShortcutsPanel'
 import { useClashes } from '../ui/useClashes'
+import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
@@ -107,6 +108,7 @@ export function Canvas2D() {
 
   const thickness = useDesignStore((s) => s.thickness)
   const clashes = useClashes()
+  const { len } = useUnits()
   // What's drawn: the pieces themselves in the front view, read-only
   // projections in the others.
   const shown = useMemo(
@@ -484,7 +486,7 @@ export function Canvas2D() {
             }
             labelled={single && piece.id === selectedId}
             hovered={piece.id === hoveredId}
-            label={sizeLabel(piece, viewName)}
+            label={sizeLabel(piece, viewName, len)}
             editable={isFront}
             hollow={isHollow(piece, viewName)}
             edgeOn={showsEdge(piece, viewName)}

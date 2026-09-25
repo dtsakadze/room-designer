@@ -1,3 +1,5 @@
+import { SNAP } from '../lib/defaults'
+import { useUnits } from '../store/useSettingsStore'
 import {
   COPY_SHORTCUT,
   DELETE_SHORTCUT,
@@ -21,14 +23,19 @@ const SHORTCUTS: [string, string][] = [
   [DELETE_SHORTCUT, 'Delete the selected parts'],
   [UNDO_SHORTCUT, 'Undo'],
   [REDO_SHORTCUT, 'Redo'],
-  ['← → ↑ ↓', 'Nudge the selected part 10 mm (Front view)'],
-  ['⇧ + arrows', 'Nudge 100 mm'],
   ['Drag empty space', 'Pan (right-drag works too)'],
   ['Scroll', 'Zoom'],
   ['Esc', 'Close a dialog'],
 ]
 
 export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
+  const { len } = useUnits()
+  const rows: [string, string][] = [
+    ...SHORTCUTS.slice(0, -3),
+    ['← → ↑ ↓', `Nudge the selected part ${len(SNAP)} (Front view)`],
+    ['⇧ + arrows', `Nudge ${len(SNAP * 10)}`],
+    ...SHORTCUTS.slice(-3),
+  ]
   return (
     <div className="cut-list shortcuts-panel">
       <header className="cut-list-header">
@@ -44,7 +51,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
       </header>
       <table>
         <tbody>
-          {SHORTCUTS.map(([keys, action]) => (
+          {rows.map(([keys, action]) => (
             <tr key={keys}>
               <td>
                 <kbd>{keys}</kbd>

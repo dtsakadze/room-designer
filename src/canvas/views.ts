@@ -56,13 +56,14 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
 }
 
 /** The size shown next to a selected piece, in the view's own terms. */
-export function sizeLabel(piece: Piece, view: ViewName) {
+export function sizeLabel(piece: Piece, view: ViewName, len: (mm: number) => string) {
   if (piece.kind === 'rod') {
     // End-on from the side a rod is just its round section.
-    if (view === 'left' || view === 'right') return `⌀${piece.height}`
-    return `⌀${Math.min(piece.width, piece.height)} × ${Math.max(piece.width, piece.height)}`
+    if (view === 'left' || view === 'right') return `⌀${len(piece.height)}`
+    const [diameter, length] = [piece.width, piece.height].sort((a, b) => a - b)
+    return `⌀${len(diameter)} × ${len(length)}`
   }
-  return `${piece.width} × ${piece.height}`
+  return `${len(piece.width)} × ${len(piece.height)}`
 }
 
 /**

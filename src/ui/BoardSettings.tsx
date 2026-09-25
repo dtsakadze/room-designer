@@ -1,5 +1,7 @@
 import { DEPTH_PRESETS } from '../lib/defaults'
+import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
+import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { NumberField } from './NumberField'
 
 /**
@@ -11,11 +13,29 @@ export function BoardSettings() {
   const setThickness = useDesignStore((s) => s.setThickness)
   const unitDepth = useDesignStore((s) => s.unitDepth)
   const setUnitDepth = useDesignStore((s) => s.setUnitDepth)
+  const setUnit = useSettingsStore((s) => s.setUnit)
+  const { unit, len } = useUnits()
 
   return (
     <section className="section">
       <h2>Boards</h2>
       <div className="stack">
+        <div className="field">
+          <span className="field-label">Units</span>
+          <span className="unit-switch" role="radiogroup" aria-label="Units">
+            {UNIT_ORDER.map((option) => (
+              <button
+                key={option}
+                type="button"
+                role="radio"
+                aria-checked={unit === option}
+                onClick={() => setUnit(option)}
+              >
+                {UNITS[option].label}
+              </button>
+            ))}
+          </span>
+        </div>
         <NumberField
           label="Body thickness"
           value={thickness.body}
@@ -36,7 +56,7 @@ export function BoardSettings() {
               aria-pressed={unitDepth === preset.depth}
               onClick={() => setUnitDepth(preset.depth)}
             >
-              {preset.label} {preset.depth}
+              {preset.label} {len(preset.depth)}
             </button>
           ))}
         </div>

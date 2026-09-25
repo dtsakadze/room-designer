@@ -104,3 +104,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Decision*: a Shortcuts button (bottom right) lists every keyboard and mouse shortcut; buttons keep showing their own shortcut. The long sidebar hint was shortened to point to it.
 *Why*: the sidebar hint was getting too long to read as shortcuts were added.
 
+**Units setting is display only, per person** (2026-09-25)
+*Decision*: a Units switch (mm, cm, m, in) changes how lengths are shown and typed; designs stay stored in whole millimetres. The choice is a personal preference kept in localStorage, the same in every project, not part of a project or its save.
+*Why*: no save format change, and a project looks the same to everyone whatever unit they prefer. Canvas labels show the unit (e.g. "116.4 cm") so they're never ambiguous; typed numbers accept a comma as the decimal separator.
+

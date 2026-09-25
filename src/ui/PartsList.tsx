@@ -1,5 +1,6 @@
 import { pieceLabel } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
+import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
 
@@ -13,6 +14,7 @@ export function PartsList() {
   const toggleSelect = useDesignStore((s) => s.toggleSelect)
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const clashes = useClashes()
+  const { num, unit } = useUnits()
 
   if (pieces.length === 0) return <p className="muted">No parts yet.</p>
 
@@ -43,8 +45,8 @@ export function PartsList() {
               <span>{pieceLabel(piece)}</span>
               <span className="part-size">
                 {piece.kind === 'rod'
-                  ? `⌀${piece.height} × ${piece.width}`
-                  : `${piece.width} × ${piece.height} × ${piece.depth}`}
+                  ? `⌀${num(piece.height)} × ${num(piece.width)} ${unit}`
+                  : `${num(piece.width)} × ${num(piece.height)} × ${num(piece.depth)} ${unit}`}
               </span>
             </button>
           </li>

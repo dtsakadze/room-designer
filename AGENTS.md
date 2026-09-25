@@ -21,7 +21,7 @@ Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 
 ## Rules
 
-- **Units are mm everywhere.** Design y counts up from the floor and x = 0 is the middle. SVG y counts down, so convert only through `toSvgY` / `toDesignY`.
+- **Units are mm everywhere in code and saves.** Design y counts up from the floor and x = 0 is the middle. SVG y counts down, so convert only through `toSvgY` / `toDesignY`. The Units setting (mm, cm, m, in) is display only: show lengths with `useUnits()` (`len` / `num`) and take typed lengths through `NumberField`, never raw mm numbers in the UI.
 - **Board thickness belongs to the project, not the piece.** `BOARD` says which dimension of each kind is its thickness, and `normalizePiece` resets it from `state.thickness` on every write. Never make thickness editable per piece. Rods and drawers aren't boards.
 - **Boxes own their panels.** A box's sides, top, bottom and back are ordinary pieces tagged `boxId`, always rebuilt from the box (`rebuildBox`), never edited one by one; moving, duplicating or deleting one of them acts on the whole box.
 - **Pieces have no front-to-back position (z) yet.** `depthStart` places every piece flush against the back panel (plinth and front rails excepted); the side, top and 3D views and the clash check all use it. Adding z means a `FORMAT_VERSION` bump.

@@ -1,5 +1,6 @@
 import type { Piece } from '../types'
 import { type Gap, contentBounds, neighbourGaps } from '../lib/geometry'
+import { useUnits } from '../store/useSettingsStore'
 import { toSvgY } from './view'
 
 const OVERALL_COLOR = '#74808f'
@@ -18,6 +19,7 @@ type DimensionsProps = {
  * along the top and left, and the clear gaps around the selected piece.
  */
 export function Dimensions({ pieces, selected, unit }: DimensionsProps) {
+  const { len } = useUnits()
   const bounds = contentBounds(pieces)
   if (!bounds) return null
 
@@ -31,12 +33,14 @@ export function Dimensions({ pieces, selected, unit }: DimensionsProps) {
         offset={offset}
         color={OVERALL_COLOR}
         unit={unit}
+        format={len}
       />
       <DimensionLine
         gap={{ axis: 'y', from: bounds.minY, to: bounds.maxY, at: bounds.minX }}
         offset={-offset}
         color={OVERALL_COLOR}
         unit={unit}
+        format={len}
       />
 
       {selected &&
@@ -49,6 +53,7 @@ export function Dimensions({ pieces, selected, unit }: DimensionsProps) {
             offset={0}
             color={GAP_COLOR}
             unit={unit}
+            format={len}
           />
         ))}
     </g>
@@ -61,13 +66,15 @@ type DimensionLineProps = {
   offset: number
   color: string
   unit: number
+  /** Writes the length in the chosen unit. */
+  format: (mm: number) => string
 }
 
 /** A line with end ticks and its length written across the middle. */
-function DimensionLine({ gap, offset, color, unit }: DimensionLineProps) {
+function DimensionLine({ gap, offset, color, unit, format }: DimensionLineProps) {
   const tick = unit * 6
   const at = gap.at + offset
-  const length = Math.round(gap.to - gap.from)
+  const length = format(gap.to - gap.from)
   const mid = (gap.from + gap.to) / 2
   const fontSize = unit * 13
 

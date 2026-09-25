@@ -1,5 +1,7 @@
 import { cutList } from '../lib/cutList'
+import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
+import { useUnits } from '../store/useSettingsStore'
 
 const BOARD_LABELS = { body: 'Body', back: 'Back' } as const
 
@@ -7,6 +9,7 @@ const BOARD_LABELS = { body: 'Body', back: 'Back' } as const
 export function CutListPanel({ onClose }: { onClose: () => void }) {
   const pieces = useDesignStore((s) => s.pieces)
   const rows = cutList(pieces)
+  const { num, unit } = useUnits()
   const total = rows.reduce((sum, row) => sum + row.quantity, 0)
   const skipped = pieces.filter((piece) => piece.kind === 'rod' || piece.kind === 'drawer').length
 
@@ -41,9 +44,9 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
               <tr key={`${row.label}|${row.length}|${row.width}|${row.thickness}`}>
                 <td>{row.label}</td>
                 <td className="num">{row.quantity}</td>
-                <td className="num">{row.length}</td>
-                <td className="num">{row.width}</td>
-                <td className="num">{row.thickness}</td>
+                <td className="num">{num(row.length)}</td>
+                <td className="num">{num(row.width)}</td>
+                <td className="num">{num(row.thickness)}</td>
                 <td>{BOARD_LABELS[row.board]}</td>
               </tr>
             ))}
@@ -52,7 +55,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
       )}
 
       <p className="hint">
-        All sizes in mm.
+        All sizes in {UNITS[unit].label}.
         {skipped > 0 &&
           ` Rods and drawers aren't flat boards, so they're left out (${skipped} in the design).`}
       </p>

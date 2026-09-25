@@ -2,6 +2,7 @@ import { HANGING_GUIDES } from '../lib/defaults'
 import { clearanceBelow } from '../lib/geometry'
 import type { Piece } from '../types'
 import { CLASH } from './colors'
+import { useUnits } from '../store/useSettingsStore'
 import { toSvgY } from './view'
 
 const FITS = '#4d7c5a'
@@ -21,6 +22,7 @@ type HangingGuidesProps = {
 
 export function HangingGuides({ rod, pieces, unit }: HangingGuidesProps) {
   const clearance = clearanceBelow(rod, pieces)
+  const { len } = useUnits()
 
   return (
     <g style={{ pointerEvents: 'none', userSelect: 'none' }}>
@@ -49,7 +51,7 @@ export function HangingGuides({ rod, pieces, unit }: HangingGuidesProps) {
               strokeWidth={unit * 3}
               paintOrder="stroke"
             >
-              {fits ? `${label} ~${length}` : `${label} ~${length}: doesn't fit`}
+              {fits ? `${label} ~${len(length)}` : `${label} ~${len(length)}: doesn't fit`}
             </text>
           </g>
         )
