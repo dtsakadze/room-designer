@@ -1,6 +1,18 @@
 import type { Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3 }
+
+/** Typical unit depths: a wardrobe fits a coat on a hanger, shelving doesn't need to. */
+export const DEPTH_PRESETS = [
+  { label: 'Wardrobe', depth: 600 },
+  { label: 'Shelving', depth: 350 },
+]
+export const DEFAULT_UNIT_DEPTH = 600
+export const MIN_UNIT_DEPTH = 100
+export const MAX_UNIT_DEPTH = 1500
+/** Shelves and dividers sit this far back from the front edge; drawers more. */
+const SHELF_SETBACK = 20
+const DRAWER_SETBACK = 50
 export const ROD_DIAMETER = 25
 export const PLINTH_HEIGHT = 80
 /** How far the plinth sits back from the front, so toes don't hit it. */
@@ -60,25 +72,31 @@ export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Th
 
 /**
  * Starting sizes. A board's thickness axis is left out here: it always comes
- * from the project thickness (see `normalizePiece`).
+ * from the project thickness (see `normalizePiece`). Depths follow the
+ * project's unit depth, so a bookshelf project starts with shallow parts.
  */
-function dimensions(kind: PieceKind, thickness: Thickness): Pick<Piece, Dimension> {
+function dimensions(
+  kind: PieceKind,
+  thickness: Thickness,
+  unitDepth: number,
+): Pick<Piece, Dimension> {
   const inside = UNIT_WIDTH - 2 * thickness.body
+  const shelfDepth = Math.max(1, unitDepth - SHELF_SETBACK)
   switch (kind) {
     case 'vertical':
-      return { width: 0, height: 2000, depth: 600 }
+      return { width: 0, height: 2000, depth: unitDepth }
     case 'horizontal':
-      return { width: UNIT_WIDTH, height: 0, depth: 600 }
+      return { width: UNIT_WIDTH, height: 0, depth: unitDepth }
     case 'back':
       return { width: UNIT_WIDTH, height: 2000, depth: 0 }
     case 'shelf':
-      return { width: inside, height: 0, depth: 580 }
+      return { width: inside, height: 0, depth: shelfDepth }
     case 'divider':
-      return { width: 0, height: 1000, depth: 580 }
+      return { width: 0, height: 1000, depth: shelfDepth }
     case 'rod':
       return { width: inside, height: ROD_DIAMETER, depth: ROD_DIAMETER }
     case 'drawer':
-      return { width: inside, height: 200, depth: 550 }
+      return { width: inside, height: 200, depth: Math.max(1, unitDepth - DRAWER_SETBACK) }
     case 'rail':
       return { width: inside, height: 0, depth: RAIL_DEPTH }
     case 'plinth':
@@ -87,8 +105,13 @@ function dimensions(kind: PieceKind, thickness: Thickness): Pick<Piece, Dimensio
 }
 
 /** A fresh piece, centred on x = 0 and sitting on the floor. */
-export function createPiece(kind: PieceKind, id: string, thickness: Thickness): Piece {
-  const size = dimensions(kind, thickness)
+export function createPiece(
+  kind: PieceKind,
+  id: string,
+  thickness: Thickness,
+  unitDepth = DEFAULT_UNIT_DEPTH,
+): Piece {
+  const size = dimensions(kind, thickness, unitDepth)
   const board = BOARD[kind]
   if (board) size[board.axis] = thickness[board.board]
   return { id, kind, x: -size.width / 2, y: 0, ...size }

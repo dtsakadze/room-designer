@@ -1,5 +1,11 @@
 import type { Piece, PieceKind, Thickness } from '../types'
-import { DEFAULT_THICKNESS, PIECE_LABELS } from './defaults'
+import {
+  DEFAULT_THICKNESS,
+  DEFAULT_UNIT_DEPTH,
+  MAX_UNIT_DEPTH,
+  MIN_UNIT_DEPTH,
+  PIECE_LABELS,
+} from './defaults'
 import { normalizePiece } from './geometry'
 
 /**
@@ -18,11 +24,13 @@ export type ProjectData = {
   /** Only in saved files, so opening one can name the new project. */
   name?: string
   thickness: Thickness
+  /** How deep new parts start. Older saves don't have it, so it's optional here. */
+  unitDepth?: number
   pieces: Piece[]
 }
 
 export function toProjectData(
-  design: { pieces: Piece[]; thickness: Thickness },
+  design: { pieces: Piece[]; thickness: Thickness; unitDepth?: number },
   name?: string,
 ): ProjectData {
   return {
@@ -30,6 +38,7 @@ export function toProjectData(
     savedAt: new Date().toISOString(),
     ...(name ? { name } : {}),
     thickness: design.thickness,
+    unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
   }
 }
@@ -74,6 +83,7 @@ export function parseProject(data: unknown): ProjectData | null {
     savedAt: typeof data.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
     ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
     thickness,
+    unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
     pieces,
   }
 }
@@ -86,3 +96,6 @@ const isKind = (value: unknown): value is PieceKind =>
 
 const positive = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined
+
+export const clampUnitDepth = (mm: number) =>
+  Math.min(MAX_UNIT_DEPTH, Math.max(MIN_UNIT_DEPTH, Math.round(mm)))

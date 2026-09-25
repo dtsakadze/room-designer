@@ -2,8 +2,8 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { Piece, PieceKind, Thickness } from '../types'
 import { contentBounds, normalizePiece } from '../lib/geometry'
-import { DEFAULT_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
-import type { ProjectData } from '../lib/project'
+import { DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
+import { type ProjectData, clampUnitDepth } from '../lib/project'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
 type Snapshot = { pieces: Piece[]; thickness: Thickness }
@@ -15,6 +15,8 @@ type DesignState = {
   pieces: Piece[]
   selectedId: string | null
   thickness: Thickness
+  /** How deep new parts start. Only affects parts added later, so undo skips it. */
+  unitDepth: number
 
   past: Snapshot[]
   future: Snapshot[]
@@ -27,6 +29,7 @@ type DesignState = {
   removePiece: (id: string) => void
   select: (id: string | null) => void
   setThickness: (patch: Partial<Thickness>) => void
+  setUnitDepth: (mm: number) => void
   clear: () => void
   /** Replaces the whole design, e.g. when a project is opened. Starts a fresh history. */
   loadProject: (project: ProjectData) => void
@@ -76,6 +79,7 @@ export const useDesignStore = create<DesignState>()(
       pieces: [],
       selectedId: null,
       thickness: DEFAULT_THICKNESS,
+      unitDepth: DEFAULT_UNIT_DEPTH,
 
       past: [],
       future: [],
@@ -84,7 +88,7 @@ export const useDesignStore = create<DesignState>()(
       addPiece: (kind) =>
         set((state) => {
           record(state)
-          const piece = createPiece(kind, nextId(), state.thickness)
+          const piece = createPiece(kind, nextId(), state.thickness, state.unitDepth)
           // Drop it on the floor to the right of everything else, so a new piece
           // never lands hidden behind one that is already there.
           const bounds = contentBounds(state.pieces)
@@ -140,6 +144,11 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = state.pieces.map((piece) => normalizePiece(piece, next))
         }),
 
+      setUnitDepth: (mm) =>
+        set((state) => {
+          state.unitDepth = clampUnitDepth(mm)
+        }),
+
       clear: () =>
         set((state) => {
           if (state.pieces.length === 0) return
@@ -152,6 +161,7 @@ export const useDesignStore = create<DesignState>()(
         set((state) => {
           state.pieces = project.pieces
           state.thickness = project.thickness
+          state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.selectedId = null
           state.past = []
           state.future = []

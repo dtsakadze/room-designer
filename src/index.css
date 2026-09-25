@@ -659,3 +659,9 @@ button kbd {
 .part-row-clash span:first-child {
   color: var(--danger);
 }
+
+.add-button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #eef3fd;
+}

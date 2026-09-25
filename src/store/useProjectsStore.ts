@@ -90,7 +90,11 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
   const startAutosave = () => {
     useDesignStore.subscribe((state, previous) => {
       if (applying) return
-      if (state.pieces === previous.pieces && state.thickness === previous.thickness) return
+      const unchanged =
+        state.pieces === previous.pieces &&
+        state.thickness === previous.thickness &&
+        state.unitDepth === previous.unitDepth
+      if (unchanged) return
       pending = true
       set({ saveStatus: 'saving' })
       clearTimeout(timer)
