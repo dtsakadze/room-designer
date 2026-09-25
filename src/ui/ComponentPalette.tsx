@@ -24,7 +24,7 @@ export function ComponentPalette() {
         </p>
       </section>
       <section className="section">
-        <h2>Units</h2>
+        <h2>Carcass</h2>
         <button type="button" className="add-button box-button" onClick={addBox}>
           Box
           <span className="muted">sides, top, bottom and back, sized as one</span>

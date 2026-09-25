@@ -17,7 +17,7 @@ Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 - `src/lib/`: pure logic. `defaults.ts` (piece sizes, `BOARD` map), `geometry.ts` (`normalizePiece`, `neighbourGaps`, `depthStart`, `findClashes`), `cutList.ts`, `project.ts` (saved format), `projectFile.ts` (JSON import/export), `storage.ts` (IndexedDB), `box.ts` (a box's panels)
 - `src/store/`: `useDesignStore` (the open design, undo/redo) and `useProjectsStore` (project list, switching, autosave)
 - `src/canvas/`: the SVG drawing. `view.ts` owns every conversion between design and SVG coordinates. `views.ts` projects pieces for the left, right, top and back views, which are read-only; only the front view edits. `Preview3D.tsx` is the three.js preview, lazy-loaded so three.js stays out of the main bundle.
-- `src/ui/`: sidebar, panels, `shortcuts.ts`
+- `src/ui/`: `Sidebar.tsx` (project header and foldable sections: Add, Parts, Settings, File; add a new one with `CollapsibleSection`), `Inspector.tsx` (the Selected panel right of the canvas), dialogs and panels, `shortcuts.ts`
 
 ## Rules
 

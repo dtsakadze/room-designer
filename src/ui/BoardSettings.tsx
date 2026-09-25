@@ -17,11 +17,11 @@ export function BoardSettings() {
   const { unit, len } = useUnits()
 
   return (
-    <section className="section">
-      <h2>Boards</h2>
-      <div className="stack">
+    <>
+      <section className="section">
+        <h2>Units</h2>
         <div className="field">
-          <span className="field-label">Units</span>
+          <span className="field-label">Show lengths in</span>
           <span className="unit-switch" role="radiogroup" aria-label="Units">
             {UNIT_ORDER.map((option) => (
               <button
@@ -36,32 +36,37 @@ export function BoardSettings() {
             ))}
           </span>
         </div>
-        <NumberField
-          label="Body thickness"
-          value={thickness.body}
-          onChange={(body) => setThickness({ body })}
-        />
-        <NumberField
-          label="Back thickness"
-          value={thickness.back}
-          onChange={(back) => setThickness({ back })}
-        />
-        <NumberField label="Unit depth" value={unitDepth} onChange={setUnitDepth} />
-        <div className="button-row">
-          {DEPTH_PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              type="button"
-              className="add-button"
-              aria-pressed={unitDepth === preset.depth}
-              onClick={() => setUnitDepth(preset.depth)}
-            >
-              {preset.label} {len(preset.depth)}
-            </button>
-          ))}
+      </section>
+      <section className="section">
+        <h2>Boards</h2>
+        <div className="stack">
+          <NumberField
+            label="Body thickness"
+            value={thickness.body}
+            onChange={(body) => setThickness({ body })}
+          />
+          <NumberField
+            label="Back thickness"
+            value={thickness.back}
+            onChange={(back) => setThickness({ back })}
+          />
+          <NumberField label="Unit depth" value={unitDepth} onChange={setUnitDepth} />
+          <div className="button-row">
+            {DEPTH_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                className="add-button"
+                aria-pressed={unitDepth === preset.depth}
+                onClick={() => setUnitDepth(preset.depth)}
+              >
+                {preset.label} {len(preset.depth)}
+              </button>
+            ))}
+          </div>
+          <p className="hint">New parts start this deep. Parts already placed keep their size.</p>
         </div>
-        <p className="hint">New parts start this deep. Parts already placed keep their size.</p>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }

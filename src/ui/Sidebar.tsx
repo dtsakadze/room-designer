@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
+import { CollapsibleSection } from './CollapsibleSection'
 import { ComponentPalette } from './ComponentPalette'
 import { PartsList } from './PartsList'
-import { MultiInspector } from './MultiInspector'
-import { PieceInspector } from './PieceInspector'
 import { ProjectFileButtons } from './ProjectFileButtons'
 import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
 import { EditableName } from './EditableName'
 import { ProjectsPanel } from './ProjectsPanel'
+import { useClashes } from './useClashes'
+
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
@@ -23,8 +24,7 @@ export function Sidebar() {
   const current = useProjectsStore((s) => s.projects.find((project) => project.id === s.currentId))
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [showProjects, setShowProjects] = useState(false)
-  const selectedId = useDesignStore((s) => s.selectedId)
-  const selectedIds = useDesignStore((s) => s.selectedIds)
+  const hasClashes = useClashes().size > 0
   const count = useDesignStore((s) => s.pieces.length)
   const clear = useDesignStore((s) => s.clear)
 
@@ -62,44 +62,30 @@ export function Sidebar() {
         </p>
       </header>
 
-      <section className="section">
-        <h2>Project</h2>
-        <ProjectFileButtons />
-      </section>
-
-      <BoardSettings />
-
-      <ComponentPalette />
-
-      <section className="section">
-        <h2>Parts</h2>
-        <PartsList />
-      </section>
-
-      <section className="section">
-        <h2>Selected</h2>
-        {selectedIds.length > 1 ? (
-          <MultiInspector />
-        ) : selectedId ? (
-          <PieceInspector />
-        ) : (
-          <p className="muted">
-            Select a part to change its size, position or colour. Drag it to move it, and drag
-            the blue handles to resize it. Every keyboard shortcut is under Shortcuts, bottom right.
-          </p>
-        )}
-      </section>
-
-      <footer className="sidebar-footer">
-        <button
-          type="button"
-          className="ghost-button"
-          onClick={clear}
-          disabled={count === 0}
+      <div className="sidebar-body">
+        <CollapsibleSection id="add" title="Add" defaultOpen>
+          <ComponentPalette />
+        </CollapsibleSection>
+        <CollapsibleSection
+          id="parts"
+          title="Parts"
+          defaultOpen
+          badge={count}
+          // Flagged on the header too, so it shows while the section is folded.
+          alert={hasClashes ? 'Some parts overlap' : undefined}
         >
-          Clear all
-        </button>
-      </footer>
+          <PartsList />
+          <button type="button" className="ghost-button" onClick={clear} disabled={count === 0}>
+            Clear all
+          </button>
+        </CollapsibleSection>
+        <CollapsibleSection id="settings" title="Settings">
+          <BoardSettings />
+        </CollapsibleSection>
+        <CollapsibleSection id="file" title="File">
+          <ProjectFileButtons />
+        </CollapsibleSection>
+      </div>
 
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
     </aside>

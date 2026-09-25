@@ -108,3 +108,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Decision*: a Units switch (mm, cm, m, in) changes how lengths are shown and typed; designs stay stored in whole millimetres. The choice is a personal preference kept in localStorage, the same in every project, not part of a project or its save.
 *Why*: no save format change, and a project looks the same to everyone whatever unit they prefer. Canvas labels show the unit (e.g. "116.4 cm") so they're never ambiguous; typed numbers accept a comma as the decimal separator.
 
+**Sidebar tabs and an inspector on the right** (2026-09-25)
+*Decision*: the left sidebar keeps the project header and puts everything else in four tabs: Add (new-part colour, carcass, panels, fittings), Parts (parts list, overlap warning, Clear all), Settings (units, boards) and File (open and save). The Selected inspector moved to its own panel right of the canvas. The Parts tab shows the part count and a red dot when parts overlap. The "Units" heading above the Box button became "Carcass", since Units now means the measurement setting.
+*Why*: the single long sidebar needed scrolling to reach the inspector while editing. Tabs were chosen over hover flyouts, which close when the mouse slips off, don't work on touch screens and open by accident.
+
+**Foldable sidebar sections instead of tabs** (2026-09-25)
+*Decision*: the sidebar's tabs were replaced with foldable sections (Add and Parts open by default, Settings and File folded), each remembering whether it's open in this browser. The Parts header keeps the part count and the red overlap dot, so they show while folded. The inspector stays on the right. Replaces the tabs from earlier the same day.
+*Why*: more sections are coming, and four tabs wouldn't scale; a new section is just another `CollapsibleSection`. Chosen by the user over a VS Code-style icon rail.
+
