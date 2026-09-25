@@ -5,6 +5,7 @@ import { contentBounds, normalizePiece } from '../lib/geometry'
 import { DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels } from '../lib/box'
+import { readClipboard, writeClipboard } from '../lib/clipboard'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
 type Snapshot = { pieces: Piece[]; boxes: Box[]; thickness: Thickness }
@@ -52,6 +53,18 @@ type DesignState = {
   toggleSelect: (id: string) => void
   /** Selects these parts (e.g. from a selection rectangle), or adds them to the selection. */
   selectMany: (ids: string[], add?: boolean) => void
+  /** Something has been copied (here or in another tab), so paste can work. */
+  canPaste: boolean
+  /** Copies the selected parts (whole boxes, if any panel of one is selected). */
+  copySelection: () => void
+  /**
+   * Pastes the copied parts, from this project or another, to the right of
+   * everything here, as one undo step, and selects them. They take this
+   * project's board thickness.
+   */
+  paste: () => void
+  /** Re-checks for copied parts, e.g. after another tab copied something. */
+  refreshClipboard: () => void
   /** Deletes several parts at once, as one undo step. */
   removePieces: (ids: string[]) => void
   /** Gives parts their own colour, or null to go back to the standard look. */
@@ -161,6 +174,7 @@ export const useDesignStore = create<DesignState>()(
     return {
       pieces: [],
       boxes: [],
+      canPaste: readClipboard() !== null,
       selectedId: null,
       selectedIds: [],
       thickness: DEFAULT_THICKNESS,
@@ -291,6 +305,60 @@ export const useDesignStore = create<DesignState>()(
           const next = add ? [...new Set([...state.selectedIds, ...ids])] : ids
           state.selectedIds = next
           state.selectedId = next.at(-1) ?? null
+        }),
+
+      copySelection: () => {
+        const state = get()
+        const ids = withWholeBoxes(state, state.selectedIds)
+        if (ids.size === 0) return
+        const pieces = state.pieces.filter((piece) => ids.has(piece.id))
+        const boxIds = new Set(pieces.map((piece) => piece.boxId))
+        const boxes = state.boxes.filter((box) => boxIds.has(box.id))
+        writeClipboard({ pieces, boxes, thickness: state.thickness })
+        set((draft) => {
+          draft.canPaste = true
+        })
+      },
+
+      paste: () =>
+        set((state) => {
+          const copied = readClipboard()
+          const copiedBounds = copied && contentBounds(copied.pieces)
+          if (!copied || !copiedBounds) return
+          record(state)
+          // Clear of everything already here, keeping the parts' layout and heights.
+          const bounds = contentBounds(state.pieces)
+          const dx = bounds ? bounds.maxX + PLACEMENT_GAP - copiedBounds.minX : 0
+          const pasted: string[] = []
+
+          for (const piece of copied.pieces.filter((candidate) => !candidate.boxId)) {
+            const moved = { ...piece, id: nextId(), x: piece.x + dx }
+            const copy = normalizePiece(moved, state.thickness)
+            state.pieces.push(copy)
+            pasted.push(copy.id)
+          }
+          for (const box of copied.boxes) {
+            const id = nextId()
+            const placed = normalizeBox({ ...box, id, x: box.x + dx }, state.thickness)
+            state.boxes.push(placed)
+            state.pieces = rebuildBox(state.pieces, placed, state.thickness)
+            // A box's panels are rebuilt, so carry over their colours by role
+            // (panel ids are `<box id>:<role>`).
+            for (const piece of state.pieces) {
+              if (piece.boxId !== id) continue
+              const source = copied.pieces.find((p) => p.id === piece.id.replace(id, box.id))
+              if (source?.color) piece.color = source.color
+              pasted.push(piece.id)
+            }
+          }
+
+          state.selectedIds = pasted
+          state.selectedId = pasted.at(-1) ?? null
+        }),
+
+      refreshClipboard: () =>
+        set((state) => {
+          state.canPaste = readClipboard() !== null
         }),
 
       removePieces: (ids) =>

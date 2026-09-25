@@ -746,3 +746,22 @@ button kbd {
 .choice-button .hint {
   margin: 0;
 }
+
+.shortcuts-panel {
+  top: auto;
+  bottom: 62px;
+  width: min(420px, calc(100% - 32px));
+}
+
+.shortcuts-panel td:first-child {
+  white-space: nowrap;
+}
+
+.shortcuts-panel kbd {
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f5f7fa;
+}

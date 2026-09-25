@@ -11,5 +11,7 @@ export const DUPLICATE_SHORTCUT = IS_MAC ? '⌘D' : 'Ctrl+D'
 /** Mac keyboards label Backspace "delete", and both keys remove a part. */
 export const DELETE_SHORTCUT = IS_MAC ? '⌫' : 'Del'
 export const SELECT_ALL_SHORTCUT = IS_MAC ? '⌘A' : 'Ctrl+A'
+export const COPY_SHORTCUT = IS_MAC ? '⌘C' : 'Ctrl+C'
+export const PASTE_SHORTCUT = IS_MAC ? '⌘V' : 'Ctrl+V'
 /** Held while clicking a part to add it to (or take it out of) the selection. */
 export const MULTI_SELECT_KEY = IS_MAC ? '⌘' : 'Ctrl'

@@ -95,3 +95,12 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Opening a file asks: new project or replace** (2026-09-25)
 *Decision*: after a file is picked, a dialog offers "Open as a new project" (the default, nothing is lost) or "Replace <current project>", which overwrites the open project's design as one undoable step and keeps its name. Replaces the 2026-09-24 behaviour of always opening as a new project.
 *Why*: warn before work is overwritten, while still allowing a file to update the project you're in.
+
+**Copy and paste between projects** (2026-09-25)
+*Decision*: ⌘/Ctrl+C copies the selected parts (whole boxes if any panel is selected); ⌘/Ctrl+V pastes them to the right of everything in the open project, keeping their layout and colours, taking that project's board thickness, as one undo step. The copy is stored in localStorage as a project save, so it survives switching projects and reloading, reaches other tabs, and is checked and upgraded on paste like a file.
+*Why*: reuse parts across projects. The system clipboard wasn't used because reading it needs a browser permission prompt.
+
+**Shortcuts panel** (2026-09-25)
+*Decision*: a Shortcuts button (bottom right) lists every keyboard and mouse shortcut; buttons keep showing their own shortcut. The long sidebar hint was shortened to point to it.
+*Why*: the sidebar hint was getting too long to read as shortcuts were added.
+

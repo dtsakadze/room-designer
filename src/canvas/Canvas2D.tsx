@@ -5,7 +5,8 @@ import { BOARD, SNAP } from '../lib/defaults'
 import { contentBounds } from '../lib/geometry'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
-import { HistoryButtons } from '../ui/HistoryButtons'
+import { EditButtons } from '../ui/EditButtons'
+import { ShortcutsPanel } from '../ui/ShortcutsPanel'
 import { useClashes } from '../ui/useClashes'
 import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
@@ -83,6 +84,7 @@ export function Canvas2D() {
   const gesture = useRef<Gesture | null>(null)
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
   const [showCutList, setShowCutList] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [viewName, setViewName] = useState<ViewName>('front')
   /** The selection rectangle being dragged, in SVG coordinates. */
@@ -362,16 +364,21 @@ export function Canvas2D() {
     return () => svg.removeEventListener('wheel', onWheel)
   }, [])
 
-  // ⌘A / Ctrl+A selects every part.
+  // ⌘A selects every part; ⌘C / ⌘V copy and paste parts (Ctrl on Windows).
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
-      const selectAll = event.key.toLowerCase() === 'a' && !event.shiftKey && !event.altKey
-      if (selectAll && hasModifier(event)) {
-        event.preventDefault()
-        selectMany(useDesignStore.getState().pieces.map((piece) => piece.id))
-      }
+      if (!hasModifier(event) || event.shiftKey || event.altKey) return
+      // Leave copying selected text on the page to the browser.
+      if (window.getSelection()?.toString()) return
+      const store = useDesignStore.getState()
+      const key = event.key.toLowerCase()
+      if (key === 'a') selectMany(store.pieces.map((piece) => piece.id))
+      else if (key === 'c' && store.selectedIds.length > 0) store.copySelection()
+      else if (key === 'v' && store.canPaste) store.paste()
+      else return
+      event.preventDefault()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -552,7 +559,7 @@ export function Canvas2D() {
         </Suspense>
       )}
 
-      <HistoryButtons />
+      <EditButtons />
 
       <div className="canvas-tools">
         {viewName !== '3d' && (
@@ -568,9 +575,18 @@ export function Canvas2D() {
         >
           Cut list
         </button>
+        <button
+          type="button"
+          className="ghost-button"
+          aria-pressed={showShortcuts}
+          onClick={() => setShowShortcuts((open) => !open)}
+        >
+          Shortcuts
+        </button>
       </div>
 
       {showCutList && <CutListPanel onClose={() => setShowCutList(false)} />}
+      {showShortcuts && <ShortcutsPanel onClose={() => setShowShortcuts(false)} />}
 
       <div className="view-switcher" role="group" aria-label="View">
         {VIEWS.map(({ name, label }) => (

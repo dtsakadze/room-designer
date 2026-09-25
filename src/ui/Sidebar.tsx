@@ -9,14 +9,6 @@ import { ProjectFileButtons } from './ProjectFileButtons'
 import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
 import { EditableName } from './EditableName'
 import { ProjectsPanel } from './ProjectsPanel'
-import {
-  DELETE_SHORTCUT,
-  DUPLICATE_SHORTCUT,
-  MULTI_SELECT_KEY,
-  REDO_SHORTCUT,
-  SELECT_ALL_SHORTCUT,
-  UNDO_SHORTCUT,
-} from './shortcuts'
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
@@ -92,11 +84,8 @@ export function Sidebar() {
           <PieceInspector />
         ) : (
           <p className="muted">
-            Select a part to change its size, position or colour. Add a component, then click it. Drag to move it, drag the blue handles to
-            resize it. Click a selected part again to pick the one beneath it. Arrow keys nudge by 10mm (hold shift for 100mm).
-            {` Drag empty space to pan. ${MULTI_SELECT_KEY}-drag to select several parts,`}
-            {` ${MULTI_SELECT_KEY}-click to add or remove one, ${SELECT_ALL_SHORTCUT} selects all.`}
-            {` ${DUPLICATE_SHORTCUT} duplicates, ${DELETE_SHORTCUT} deletes, ${UNDO_SHORTCUT} undoes and ${REDO_SHORTCUT} redoes.`}
+            Select a part to change its size, position or colour. Drag it to move it, and drag
+            the blue handles to resize it. Every keyboard shortcut is under Shortcuts, bottom right.
           </p>
         )}
       </section>
