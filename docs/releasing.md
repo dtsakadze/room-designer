@@ -37,9 +37,12 @@ Not after every feature: a release bundles whatever is under "Unreleased". Relea
    - commits `release v<version>` and tags `v<version>`.
 3. Push: **`git push --follow-tags`**.
 4. The **Release** GitHub Action (`.github/workflows/release.yml`) runs on the tag: it checks the tag matches `package.json`, runs the tests, lint and build, and creates the GitHub release with that version's changelog lines as notes and a zip of the built app (for self-hosting) attached. People watching the repository get notified.
-5. Deploy the new build if you host a copy (not automated yet).
 
 The Action never edits `CHANGELOG.md`: the tag must point at a commit that already has the finished changelog and version, which is why `pnpm release` does that before tagging.
+
+## Deploying
+
+boardcut.app is deployed by Cloudflare's Git integration (Workers Builds) on **every push to `main`**, not on releases: it runs `pnpm build` with `SITE_URL=https://boardcut.app` and then `npx wrangler deploy`, which uploads `dist/` as set in `wrangler.jsonc`. Other branches get preview links. So only push to `main` what's ready to go live; the version number and "What's new" change only when you release.
 
 ## What people see
 

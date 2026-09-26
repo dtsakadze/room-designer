@@ -148,3 +148,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Renamed to Boardcut, at boardcut.app** (2026-09-26)
 *Decision*: the app is called Boardcut (was Room Designer) and will be served at https://boardcut.app. The name appears in the page title, sidebar, messages, docs, the package name and release zips (`boardcut-v1.1.0.zip`); saved files default to `boardcut-<date>.json`. Browser storage keeps the old `room-designer` names (IndexedDB database and localStorage keys).
 *Why*: a short, memorable name that says what it's for (boards and a cut list), not tied to closets only. Storage names are invisible to people, and renaming them would lose everyone's stored projects and settings.
+
+**Hosted on Cloudflare Workers** (2026-09-26)
+*Decision*: boardcut.app is served by Cloudflare Workers as static files only (`wrangler.jsonc` points at `dist/`, no Worker code), built and deployed by Cloudflare's Git integration with `SITE_URL=https://boardcut.app` set as a build variable. Chosen over GitHub Pages and Vercel.
+*Why*: free with unlimited bandwidth, a custom domain, preview links for branches, and room for a backend (Workers, D1) later on the same host, so the address, and with it people's stored projects, never has to move. Vercel's free plan doesn't allow commercial use.

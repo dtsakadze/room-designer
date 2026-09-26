@@ -1,0 +1,8 @@
+// Cloudflare Workers config: serves the built app (dist/) as static files, no Worker code.
+{
+  "name": "boardcut",
+  "compatibility_date": "2026-09-26",
+  "assets": {
+    "directory": "./dist"
+  }
+}
