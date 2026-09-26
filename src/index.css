@@ -888,6 +888,17 @@ button kbd {
   color: var(--muted);
 }
 
+.github-link {
+  display: inline-flex;
+  margin-left: 8px;
+  vertical-align: -2px;
+  color: var(--muted);
+}
+
+.github-link:hover {
+  color: var(--text);
+}
+
 .update-notice {
   display: flex;
   align-items: center;

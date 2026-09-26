@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import changelog from '../../CHANGELOG.md?raw'
 import { parseChangelog } from '../lib/changelog'
+import { GitHubLink } from './GitHubLink'
 
 const RELEASES = parseChangelog(changelog)
 const SEEN_KEY = 'room-designer:seen-version'
@@ -68,6 +69,7 @@ export function VersionInfo() {
         <button type="button" className="link-button" onClick={() => setOpen(true)}>
           What's new
         </button>
+        <GitHubLink />
       </p>
       {open && <WhatsNewPanel onClose={() => setOpen(false)} />}
     </>
