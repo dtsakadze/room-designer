@@ -1,4 +1,4 @@
-# Room Designer — agent notes
+# Boardcut — agent notes
 
 Browser app for designing wardrobes, closets and shelving in a flat 2D front view. Open source, runs fully in the browser with no server (a backend may come later). `README.md` explains how the app works; `notes.md` is the roadmap; `docs/` holds the design decisions (`docs/decisions.md`), the save format guide (`docs/save-format.md`) and how to release (`docs/releasing.md`). `CHANGELOG.md` lists what changed per version and is shown in the app.
 
@@ -26,6 +26,7 @@ Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 - **Boxes own their panels.** A box's sides, top, bottom and back are ordinary pieces tagged `boxId`, always rebuilt from the box (`rebuildBox`), never edited one by one; moving, duplicating or deleting one of them acts on the whole box.
 - **Pieces have no front-to-back position (z) yet.** `depthStart` places every piece flush against the back panel (plinth and front rails excepted); the side, top and 3D views and the clash check all use it. Adding z means a `FORMAT_VERSION` bump.
 - **Every design change goes through a store action** that calls `record(state)` for undo, and skips no-op changes so undo never does nothing. Group continuous edits (drags, typing in a field) with `beginBatch` / `endBatch`. Selection and view are not in history or saves.
+- **Browser storage names keep the old `room-designer` prefix** (the IndexedDB name and every localStorage key). Renaming one loses what people have stored; new keys use the same prefix.
 - **Storage goes through the `ProjectStorage` interface** so a cloud backend can plug in later. Changing the IndexedDB schema means bumping `DB_VERSION`, handling it in `onupgradeneeded`, and migrating data in one transaction. Writes must start in the same turn as the call, otherwise saves made while the page closes are lost.
 - **Shortcuts:** ⌘ on Mac, Ctrl elsewhere (`hasModifier`). Labels live in `ui/shortcuts.ts`; every shortcut is shown on its button (if it has one) and listed in the Shortcuts panel (`ui/ShortcutsPanel.tsx`). Key handlers ignore events from text inputs.
 - **Store selectors must not build new arrays or objects** (`s.pieces.filter(...)` inside `useDesignStore(...)`): zustand then sees a change on every read and React re-renders forever, blanking the app. Select the raw state and filter in render.

@@ -91,4 +91,4 @@ The IndexedDB database has its own version, for its layout rather than the proje
 
 - **Version 1** kept a single design under the `autosave` key, from before there were projects. On startup, `migrateLegacyDesign` turns it into a project named "My first project", writing the new project and deleting the old key in one transaction, so a failure can't lose it.
 - To change the layout: bump `DB_VERSION`, create or change stores in `onupgradeneeded`, and move data in one transaction.
-- An upgrade waits until every tab using the old version closes its connection. Each connection closes itself when a newer version asks (`onversionchange`), and if an old tab still holds on, the app shows "close other Room Designer tabs".
+- An upgrade waits until every tab using the old version closes its connection. Each connection closes itself when a newer version asks (`onversionchange`), and if an old tab still holds on, the app shows "close other Boardcut tabs".

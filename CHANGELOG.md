@@ -4,6 +4,9 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Room Designer is now called Boardcut. Your projects and settings are kept.
+- New app icon: a small wardrobe instead of the Vite logo.
+
 ## 1.0.0 — 2026-09-26
 
 The first release.

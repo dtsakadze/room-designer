@@ -15,7 +15,7 @@ export class CrashScreen extends Component<{ children: ReactNode }, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Room Designer crashed', error, info.componentStack)
+    console.error('Boardcut crashed', error, info.componentStack)
   }
 
   render() {

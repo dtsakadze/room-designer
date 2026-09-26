@@ -14,7 +14,7 @@ import { VersionInfo } from './WhatsNew'
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
-  blocked: 'Updating storage: close other Room Designer tabs to continue',
+  blocked: 'Updating storage: close other Boardcut tabs to continue',
   saving: 'Saving…',
   saved: 'Saved in this browser',
   unavailable: "Can't save: browser storage is unavailable",
@@ -33,7 +33,7 @@ export function Sidebar() {
     <aside className="sidebar">
       <header className="sidebar-header">
         <div className="app-title">
-          <h1>Room Designer</h1>
+          <h1>Boardcut</h1>
           <button
             type="button"
             className="ghost-button"

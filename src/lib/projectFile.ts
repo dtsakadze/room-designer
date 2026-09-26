@@ -8,7 +8,7 @@ export function downloadProject(project: ProjectData) {
   link.href = url
   // Named after the project, minus characters file systems reject.
   const base = project.name?.replace(/[\\/:*?"<>|]+/g, ' ').trim()
-  link.download = `${base || `room-design-${localDate(new Date(project.savedAt))}`}.json`
+  link.download = `${base || `boardcut-${localDate(new Date(project.savedAt))}`}.json`
   link.click()
   // Revoking straight away can cancel the download in some browsers.
   setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -31,7 +31,7 @@ export async function readProjectFile(file: File): Promise<ProjectData> {
   throw new Error(
     result.problem === 'newer'
       ? `${file.name} was saved by a newer version of the app. Update to open it.`
-      : `${file.name} isn't a room designer project, or it's damaged.`,
+      : `${file.name} isn't a Boardcut project, or it's damaged.`,
   )
 }
 

@@ -140,3 +140,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Public repository, `main` protected** (2026-09-26)
 *Decision*: the repository is public; only the owner can push, others contribute through issues and pull requests (Actions on a first-time contributor's PR wait for approval). A GitHub ruleset, "Protect main", blocks force-pushes to and deletion of `main` for everyone, the owner included. Change it under Settings → Rules → Rulesets.
 *Why*: open to contributions without risking the history or the release tags that point into it.
+
+**Search and link-preview tags** (2026-09-26)
+*Decision*: `index.html` has a title, description, Open Graph and Twitter/X card tags (no image yet). The full-URL parts (canonical link, `og:url`, `sitemap.xml`, and the sitemap line in `robots.txt`) are added at build time only when `SITE_URL` is set, by a small plugin in `vite.config.ts`. The app is a single page, so there's one set of tags.
+*Why*: good previews when links are shared, and a clear main address for search engines. The address isn't chosen yet, and self-hosted copies shouldn't claim to be the main site or point at it, so the URL comes from the build, not the source.
+
+**Renamed to Boardcut, at boardcut.app** (2026-09-26)
+*Decision*: the app is called Boardcut (was Room Designer) and will be served at https://boardcut.app. The name appears in the page title, sidebar, messages, docs, the package name and release zips (`boardcut-v1.1.0.zip`); saved files default to `boardcut-<date>.json`. Browser storage keeps the old `room-designer` names (IndexedDB database and localStorage keys).
+*Why*: a short, memorable name that says what it's for (boards and a cut list), not tied to closets only. Storage names are invisible to people, and renaming them would lose everyone's stored projects and settings.

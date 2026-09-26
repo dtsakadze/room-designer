@@ -28,6 +28,7 @@ export type ProjectStorage = {
   migrateLegacyDesign: (convert: (legacy: unknown) => StoredProject | null) => Promise<void>
 }
 
+// The app's old name; renaming it would lose everyone's stored projects.
 const DB_NAME = 'room-designer'
 const DB_VERSION = 2
 const PROJECTS = 'projects'

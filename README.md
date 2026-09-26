@@ -1,4 +1,4 @@
-# Room Designer
+# Boardcut
 
 A browser tool for designing wardrobes, closets and shelving: a flat 2D front view you build out of individual boards, with a cut list of everything to cut. It runs entirely in the browser: no server, no account, and your projects stay on your machine.
 
@@ -35,9 +35,10 @@ pnpm build      # outputs dist/
 ```
 
 - Any static host works: nginx, Caddy, Apache, GitHub Pages, Netlify, Cloudflare Pages, an S3 bucket, and so on. No backend, database or environment variables are needed.
-- It works at a domain root or in a sub-folder (e.g. `https://example.com/tools/room-designer/`), because all asset paths are relative.
+- It works at a domain root or in a sub-folder (e.g. `https://example.com/tools/boardcut/`), because all asset paths are relative.
 - It must be served over `http(s)://`. Opening `dist/index.html` straight from disk (`file://`) doesn't work, because browsers block module scripts there.
 - For a quick local server: `npx serve dist` or `python3 -m http.server -d dist 8080`.
+- Search engines: the build always includes a `robots.txt`. Set `SITE_URL` when building (`SITE_URL=https://example.com pnpm build`, or in a `.env` file) to also add a canonical link, `og:url` and a `sitemap.xml` for that address. Leave it unset on a copy you don't want to present as the main site.
 - Caching: files in `dist/assets/` have content hashes in their names and can be cached forever. Serve `index.html` with `Cache-Control: no-cache` so people get updates.
 
 ## Where your data lives
@@ -72,5 +73,5 @@ Front-to-back positions for parts (for now every part sits flush against the bac
 
 ## Releases and licence
 
-Versions follow `MAJOR.MINOR.PATCH`; what changed in each is in [CHANGELOG.md](CHANGELOG.md), which the app also shows under "What's new". Room Designer is open source under the [MIT licence](LICENSE).
+Versions follow `MAJOR.MINOR.PATCH`; what changed in each is in [CHANGELOG.md](CHANGELOG.md), which the app also shows under "What's new". Boardcut is open source under the [MIT licence](LICENSE).
 

@@ -39,7 +39,7 @@ jobs:
       - run: pnpm build
 
       - name: Package the build for self-hosting
-        run: cd dist && zip -r "../room-designer-$GITHUB_REF_NAME.zip" .
+        run: cd dist && zip -r "../boardcut-$GITHUB_REF_NAME.zip" .
 
       - name: Create the GitHub release
         env:
@@ -49,4 +49,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md \
-            "room-designer-$GITHUB_REF_NAME.zip"
+            "boardcut-$GITHUB_REF_NAME.zip"
