@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
 import { contentBounds } from '../lib/geometry'
+import { WALL_LABELS, activeWalls, hasSideWalls, wallLength, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
 import { EditButtons } from '../ui/EditButtons'
@@ -15,14 +16,18 @@ import { HangingGuides } from './HangingGuides'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
+import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
 import type { Handle, Rect } from './handles'
 import { resizePiece } from './handles'
 import {
   VIEWS,
   type ViewName,
+  cornerGhosts,
+  endWalls,
   isHollow,
   piecesAt,
   projectPieces,
+  roomPlan,
   showsEdge,
   sizeLabel,
 } from './views'
@@ -107,13 +112,38 @@ export function Canvas2D() {
   const endBatch = useDesignStore((s) => s.endBatch)
 
   const thickness = useDesignStore((s) => s.thickness)
+  const room = useDesignStore((s) => s.room)
+  const activeWall = useDesignStore((s) => s.activeWall)
+  const setActiveWall = useDesignStore((s) => s.setActiveWall)
   const clashes = useClashes()
   const { len } = useUnits()
+  const multiWall = hasSideWalls(room)
+  // Each wall's unit is edited on its own; the top view shows the whole room.
+  const wallPieces = useMemo(
+    () => (multiWall ? pieces.filter((piece) => wallOf(piece) === activeWall) : pieces),
+    [pieces, multiWall, activeWall],
+  )
   // What's drawn: the pieces themselves in the front view, read-only
   // projections in the others.
   const shown = useMemo(
-    () => projectPieces(pieces, viewName, thickness),
-    [pieces, viewName, thickness],
+    () =>
+      viewName === 'top'
+        ? roomPlan(pieces, thickness, room)
+        : projectPieces(wallPieces, viewName, thickness),
+    [pieces, wallPieces, viewName, thickness, room],
+  )
+  // The room around the wall being edited, in the front view only.
+  const inRoom = multiWall && isFront
+  const unitDepth = useDesignStore((s) => s.unitDepth)
+  const ghosts = useMemo(() => {
+    if (!inRoom) return []
+    // As deep as this wall's unit, or as deep as one would start.
+    const reach = Math.max(unitDepth, ...wallPieces.map((piece) => piece.depth))
+    return cornerGhosts(pieces, thickness, room, activeWall, reach)
+  }, [inRoom, pieces, wallPieces, thickness, room, activeWall, unitDepth])
+  const obstacles = useMemo(
+    () => (inRoom ? [...endWalls(room, activeWall), ...ghosts] : []),
+    [inRoom, room, activeWall, ghosts],
   )
   // See-through panels go underneath everything, so a click on a part inside
   // reaches that part, and a click on bare panel selects the panel.
@@ -376,7 +406,12 @@ export function Canvas2D() {
       if (window.getSelection()?.toString()) return
       const store = useDesignStore.getState()
       const key = event.key.toLowerCase()
-      if (key === 'a') selectMany(store.pieces.map((piece) => piece.id))
+      // Everything in view: the wall being edited, or the whole room from the top.
+      const all =
+        viewName === 'top'
+          ? store.pieces
+          : store.pieces.filter((piece) => wallOf(piece) === store.activeWall)
+      if (key === 'a') selectMany(all.map((piece) => piece.id))
       else if (key === 'c' && store.selectedIds.length > 0) store.copySelection()
       else if (key === 'v' && store.canPaste) store.paste()
       else return
@@ -384,7 +419,7 @@ export function Canvas2D() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectMany])
+  }, [selectMany, viewName])
 
   // Arrow keys nudge the selection; Delete removes it.
   useEffect(() => {
@@ -434,7 +469,7 @@ export function Canvas2D() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece])
 
-  const fitTo = (list: Piece[]) => {
+  const fitTo = (list: Rect[]) => {
     const bounds = contentBounds(list)
     if (!bounds) {
       setView(INITIAL_VIEW)
@@ -451,12 +486,37 @@ export function Canvas2D() {
     })
   }
 
+  /** What a view should frame: its parts, and in a room, the wall or room around them. */
+  const framed = (name: ViewName, wall = activeWall) => {
+    if (name === 'top') {
+      const plan = roomPlan(pieces, thickness, room)
+      if (!multiWall) return plan
+      return [...plan, { x: -room.width / 2, y: -room.depth, width: room.width, height: room.depth }]
+    }
+    const onWall = multiWall ? pieces.filter((piece) => wallOf(piece) === wall) : pieces
+    const list: Rect[] = projectPieces(onWall, name, thickness)
+    if (!multiWall || name !== 'front') return list
+    const half = wallLength(room, wall) / 2
+    return [...list, { x: -half, y: 0, width: 2 * half, height: WALL_FRAME_HEIGHT }]
+  }
+
   const switchView = (name: ViewName) => {
     setViewName(name)
     setHoveredId(null)
     // Each view spans different sizes (a 600 deep side vs a 1200 wide front),
     // so frame the unit again.
-    fitTo(projectPieces(pieces, name, thickness))
+    fitTo(framed(name))
+  }
+
+  // Moving to another wall (with the wall switch, or by selecting a part on
+  // it) frames that wall. The top and 3D views show every wall, so they stay.
+  // Done while rendering rather than in an effect, so the old wall's framing
+  // never shows for a frame.
+  const [framedWall, setFramedWall] = useState(activeWall)
+  if (framedWall !== activeWall) {
+    setFramedWall(activeWall)
+    setHoveredId(null)
+    if (viewName !== 'top' && viewName !== '3d') fitTo(framed(viewName, activeWall))
   }
 
   return (
@@ -476,6 +536,10 @@ export function Canvas2D() {
         onPointerCancel={endGesture}
       >
         <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />
+        {inRoom && (
+          <RoomWallsFront room={room} wall={activeWall} view={view} unit={unit} />
+        )}
+        {multiWall && viewName === 'top' && <RoomWallsPlan room={room} unit={unit} />}
         {drawn.map((piece) => (
           <PieceRect
             key={piece.id}
@@ -499,10 +563,13 @@ export function Canvas2D() {
           />
         ))}
 
+        {inRoom && <CornerGhosts ghosts={ghosts} unit={unit} />}
+
         {/* Gaps to neighbours only make sense in the view where you move things. */}
         <Dimensions
           pieces={shown}
           selected={isFront && single ? selectedShown : null}
+          obstacles={obstacles}
           unit={unit}
         />
 
@@ -590,6 +657,23 @@ export function Canvas2D() {
       {showCutList && <CutListPanel onClose={() => setShowCutList(false)} />}
       {showShortcuts && <ShortcutsPanel onClose={() => setShowShortcuts(false)} />}
 
+      {/* Only there when the room has more than one wall, so a single unit looks as before. */}
+      {multiWall && viewName !== 'top' && viewName !== '3d' && (
+        <div className="view-switcher wall-switcher" role="group" aria-label="Wall">
+          {activeWalls(room).map((wall) => (
+            <button
+              key={wall}
+              type="button"
+              className="ghost-button"
+              aria-pressed={activeWall === wall}
+              onClick={() => setActiveWall(wall)}
+            >
+              {WALL_LABELS[wall]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="view-switcher" role="group" aria-label="View">
         {VIEWS.map(({ name, label }) => (
           <button
@@ -610,14 +694,19 @@ export function Canvas2D() {
         !isFront && (
           <p className="viewport-hint">
             {viewName === '3d'
-              ? 'Drag to rotate, scroll to zoom, right-drag to pan. Edit in Front.'
-              : 'View only. Switch to Front to move or resize parts.'}
+              ? `Drag to rotate, scroll to zoom, right-drag to pan.${multiWall ? ' Shows every wall.' : ''} Edit in Front.`
+              : viewName === 'top' && multiWall
+                ? 'The whole room, from above. Edit in Front.'
+                : 'View only. Switch to Front to move or resize parts.'}
           </p>
         )
       )}
     </div>
   )
 }
+
+/** How much of a wall's height to frame when it's shown, in mm. */
+const WALL_FRAME_HEIGHT = 2400
 
 const snap = (mm: number) => Math.round(mm / SNAP) * SNAP
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)

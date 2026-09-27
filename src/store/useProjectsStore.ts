@@ -8,7 +8,8 @@ import {
   toProjectData,
 } from '../lib/project'
 import { type StoredProject, browserStorage, requestPersistentStorage } from '../lib/storage'
-import type { Piece } from '../types'
+import type { Piece, Room } from '../types'
+import { DEFAULT_ROOM } from '../lib/room'
 import { useDesignStore } from './useDesignStore'
 
 export type SaveStatus = 'loading' | 'blocked' | 'saving' | 'saved' | 'unavailable'
@@ -21,6 +22,8 @@ export type ProjectSummary = {
   pieceCount: number
   /** The design's parts, for drawing its thumbnail in the project list. */
   pieces: Piece[]
+  /** The design's room, so the thumbnail can show every wall. */
+  room: Room
   /**
    * Why it can't be opened (saved by a newer version of the app, or damaged),
    * or null if it can. Such a project is never opened, so nothing overwrites it.
@@ -94,7 +97,13 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       projects: sortByEdited(
         projects.map((project) =>
           project.id === meta.id
-            ? { ...project, updatedAt, pieceCount: design.pieces.length, pieces: design.pieces }
+            ? {
+                ...project,
+                updatedAt,
+                pieceCount: design.pieces.length,
+                pieces: design.pieces,
+                room: design.room,
+              }
             : project,
         ),
       ),
@@ -133,7 +142,8 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         state.boxes === previous.boxes &&
         state.defaultColor === previous.defaultColor &&
         state.thickness === previous.thickness &&
-        state.unitDepth === previous.unitDepth
+        state.unitDepth === previous.unitDepth &&
+        state.room === previous.room
       if (unchanged) return
       pending = true
       set({ saveStatus: 'saving' })
@@ -311,6 +321,7 @@ function summarize(record: StoredProject): ProjectSummary {
     updatedAt: record.updatedAt,
     pieceCount: pieces.length,
     pieces,
+    room: result.ok ? result.project.room : DEFAULT_ROOM,
     problem: result.ok ? null : result.problem,
   }
 }

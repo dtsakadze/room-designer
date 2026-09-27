@@ -1,4 +1,4 @@
-import type { Box, Piece, PieceKind, Thickness } from '../types'
+import type { Box, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   DEFAULT_THICKNESS,
@@ -8,6 +8,7 @@ import {
   PIECE_LABELS,
 } from './defaults'
 import { isHexColor, normalizePiece } from './geometry'
+import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
 
 /**
  * The version saves are written in. To change the saved shape:
@@ -19,7 +20,7 @@ import { isHexColor, normalizePiece } from './geometry'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 2
+export const FORMAT_VERSION = 3
 
 type Raw = Record<string, unknown>
 
@@ -36,6 +37,13 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
     formatVersion: 2,
     unitDepth: data.unitDepth ?? DEFAULT_UNIT_DEPTH,
     boxes: data.boxes ?? [],
+  }),
+  // v3 adds the room: which walls have units on them, and its size. Everything
+  // saved before stood on the back wall alone.
+  2: (data) => ({
+    ...data,
+    formatVersion: 3,
+    room: { left: false, right: false, width: 2400, depth: 1800 },
   }),
 }
 
@@ -61,6 +69,8 @@ export type ProjectData = {
   boxes: Box[]
   /** Colour new parts start with. Absent means the standard look. */
   defaultColor?: string
+  /** Which walls have units on them, and the room's size. */
+  room: Room
 }
 
 export function toProjectData(
@@ -70,6 +80,7 @@ export function toProjectData(
     thickness: Thickness
     unitDepth?: number
     defaultColor?: string | null
+    room?: Room
   },
   name?: string,
 ): ProjectData {
@@ -82,6 +93,7 @@ export function toProjectData(
     pieces: design.pieces,
     boxes: design.boxes ?? [],
     ...(design.defaultColor ? { defaultColor: design.defaultColor } : {}),
+    room: design.room ?? DEFAULT_ROOM,
   }
 }
 
@@ -149,7 +161,8 @@ function validate(data: Raw): ProjectData | null {
     const railAt = raw.railAt === 'back' ? ('back' as const) : undefined
     const boxId = typeof raw.boxId === 'string' ? raw.boxId : undefined
     const color = isHexColor(raw.color) ? raw.color : undefined
-    const extras = { fixed: raw.fixed === true, railAt, boxId, color }
+    const wall = isSideWall(raw.wall) ? raw.wall : undefined
+    const extras = { fixed: raw.fixed === true, railAt, boxId, color, wall }
     return [normalizePiece({ ...piece, ...extras }, thickness)]
   })
 
@@ -167,9 +180,21 @@ function validate(data: Raw): ProjectData | null {
       height: raw.height as number,
       depth: raw.depth as number,
       joint: raw.joint === 'on' ? ('on' as const) : ('between' as const),
+      ...(isSideWall(raw.wall) ? { wall: raw.wall } : {}),
     }
     return [normalizeBox(box, thickness)]
   })
+
+  const storedRoom = isRecord(data.room) ? data.room : {}
+  // A wall with parts on it is always on, so no part can end up on a wall
+  // that isn't shown.
+  const used = new Set([...pieces, ...boxes].map(wallOf))
+  const room: Room = {
+    left: storedRoom.left === true || used.has('left'),
+    right: storedRoom.right === true || used.has('right'),
+    width: clampRoomSize(positive(storedRoom.width) ?? DEFAULT_ROOM.width),
+    depth: clampRoomSize(positive(storedRoom.depth) ?? DEFAULT_ROOM.depth),
+  }
 
   return {
     formatVersion: FORMAT_VERSION,
@@ -180,6 +205,7 @@ function validate(data: Raw): ProjectData | null {
     pieces: withBoxPanels(pieces, boxes, thickness),
     boxes,
     ...(isHexColor(data.defaultColor) ? { defaultColor: data.defaultColor } : {}),
+    room,
   }
 }
 

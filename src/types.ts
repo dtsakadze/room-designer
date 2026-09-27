@@ -46,6 +46,8 @@ export type Piece = {
   color?: string
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */
   boxId?: string
+  /** The wall the part stands against. Absent means the back wall. */
+  wall?: SideWall
 }
 
 /**
@@ -63,4 +65,25 @@ export type Box = {
   depth: number
   /** Top and bottom fit between the sides, or sit on them and run full width. */
   joint: 'between' | 'on'
+  /** The wall the box stands against; its panels share it. Absent means the back wall. */
+  wall?: SideWall
+}
+
+/** The walls of a room a unit can stand against, as seen from inside the room. */
+export type Wall = 'left' | 'back' | 'right'
+export type SideWall = Exclude<Wall, 'back'>
+
+/**
+ * The room the units stand in. The back wall is always used; switching on a
+ * side wall makes an L-shaped (one side) or U-shaped (both) wardrobe. The size
+ * is inside, in mm, and only matters once a side wall is on: it says where the
+ * corners are.
+ */
+export type Room = {
+  left: boolean
+  right: boolean
+  /** Along the back wall, corner to corner. */
+  width: number
+  /** Along the side walls, from the back wall out. */
+  depth: number
 }

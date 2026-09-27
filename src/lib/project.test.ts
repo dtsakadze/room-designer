@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FORMAT_VERSION, readProject, toProjectData } from './project'
+import { DEFAULT_ROOM } from './room'
 
 /**
  * Saved samples of every format version. `<name>.json` is a save as that
@@ -11,6 +12,16 @@ const fixture = (name: string) => structuredClone(fixtures[`./fixtures/${name}.j
 const samples = Object.keys(fixtures)
   .map((path) => path.replace('./fixtures/', '').replace('.json', ''))
   .filter((name) => !name.endsWith('.expected'))
+
+type RawSave = { room: unknown; pieces: Record<string, unknown>[]; boxes: { wall?: string }[] }
+
+/** The v3 sample with only its back wall's parts left. */
+const backWallOnly = () => {
+  const save = fixture('v3-room') as RawSave
+  save.pieces = save.pieces.filter((piece) => !piece.wall)
+  save.boxes = save.boxes.filter((box) => !box.wall)
+  return save
+}
 
 const withoutVersion = (project: object) => {
   const { formatVersion: _version, ...rest } = project as { formatVersion: number }
@@ -24,10 +35,55 @@ describe('readProject', () => {
     if (result.ok) expect(result.project.formatVersion).toBe(FORMAT_VERSION)
   })
 
-  it.each(['v1-minimal', 'v1-full'])('opens %s into the same design as when it was saved', (name) => {
-    const result = readProject(fixture(name))
-    if (!result.ok) throw new Error(`${name} didn't open`)
-    expect(withoutVersion(result.project)).toEqual(fixture(`${name}.expected`))
+  // Captured before v3 added the room: they must open into the same design,
+  // standing on the back wall alone.
+  it.each(['v1-minimal', 'v1-full', 'v2-full'])(
+    'opens %s into the same design as when it was saved',
+    (name) => {
+      const result = readProject(fixture(name))
+      if (!result.ok) throw new Error(`${name} didn't open`)
+      expect(withoutVersion(result.project)).toEqual({
+        ...(fixture(`${name}.expected`) as object),
+        room: DEFAULT_ROOM,
+      })
+    },
+  )
+
+  it('keeps each part on its wall', () => {
+    const result = readProject(fixture('v3-room'))
+    if (!result.ok) throw new Error("v3-room didn't open")
+    const walls = result.project.pieces.map((piece) => piece.wall ?? 'back')
+    expect(new Set(walls)).toEqual(new Set(['back', 'left', 'right']))
+    expect(result.project.room).toEqual({ left: true, right: true, width: 2600, depth: 2000 })
+    // A box's panels are rebuilt on its wall.
+    const box = result.project.boxes.find((candidate) => candidate.wall === 'left')!
+    const panels = result.project.pieces.filter((piece) => piece.boxId === box.id)
+    expect(panels.every((piece) => piece.wall === 'left')).toBe(true)
+  })
+
+  it('switches on a wall that has parts, so none are hidden', () => {
+    const save = fixture('v3-room') as { room: object }
+    save.room = { left: false, right: false, width: 2600, depth: 2000 }
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.room.left).toBe(true)
+    expect(result.project.room.right).toBe(true)
+  })
+
+  it('falls back to a standard room when the room is damaged', () => {
+    const save = backWallOnly()
+    save.room = { width: -5, depth: 'deep' }
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.room).toEqual(DEFAULT_ROOM)
+  })
+
+  it('treats an unknown wall as the back wall', () => {
+    const save = backWallOnly()
+    save.pieces.push({ ...save.pieces[0], id: 'loose', boxId: undefined, wall: 'ceiling' })
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.pieces.some((piece) => 'wall' in piece)).toBe(false)
   })
 
   it('has a sample for every older version, so each upgrade step is tested', () => {
@@ -51,9 +107,9 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it('reads back what it writes', () => {
-    const first = readProject(fixture('v1-full'))
-    if (!first.ok) throw new Error("v1-full didn't open")
+  it.each(['v1-full', 'v3-room'])('reads back what it writes (%s)', (name) => {
+    const first = readProject(fixture(name))
+    if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))
     const second = readProject(saved)
     if (!second.ok) throw new Error("the re-saved project didn't open")

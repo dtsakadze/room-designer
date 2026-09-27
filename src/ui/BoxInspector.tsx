@@ -4,6 +4,8 @@ import { FILLS } from '../canvas/colors'
 import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
+import { WallField } from './WallField'
+import { wallOf } from '../lib/room'
 
 /**
  * Settings for a box: its outside size, position and how the top and bottom
@@ -73,6 +75,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
 
       <hr className="rule" />
 
+      <WallField wall={wallOf(box)} onChange={(wall) => updateBox(box.id, { wall })} />
       <NumberField
         label="X (from centre)"
         value={box.x}

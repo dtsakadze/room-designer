@@ -6,5 +6,6 @@ import { useDesignStore } from '../store/useDesignStore'
 export function useClashes() {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
-  return useMemo(() => findClashes(pieces, thickness), [pieces, thickness])
+  const room = useDesignStore((s) => s.room)
+  return useMemo(() => findClashes(pieces, thickness, room), [pieces, thickness, room])
 }

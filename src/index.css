@@ -586,6 +586,13 @@ button kbd {
   border-radius: 9px;
 }
 
+/* Which wall of the room is shown: under undo/redo, clear of the view switch. */
+.wall-switcher {
+  top: 62px;
+  right: auto;
+  left: 16px;
+}
+
 .view-switcher .ghost-button {
   width: auto;
   padding: 5px 10px;
@@ -596,6 +603,16 @@ button kbd {
 .view-switcher .ghost-button[aria-pressed='true'] {
   background: #eef3fd;
   color: var(--accent);
+}
+
+/* A wall's heading in the parts list, when the room has more than one. */
+.parts-wall {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 
 .parts-list {
@@ -784,6 +801,15 @@ button kbd {
   background: transparent;
   font-size: 12px;
   color: var(--muted);
+}
+
+.unit-switch.wide-switch {
+  display: flex;
+}
+
+.wide-switch button {
+  flex: 1;
+  white-space: nowrap;
 }
 
 .unit-switch button[aria-checked='true'] {

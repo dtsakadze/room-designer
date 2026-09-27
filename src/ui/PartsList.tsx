@@ -1,22 +1,55 @@
 import { pieceLabel } from '../lib/defaults'
+import { WALL_LABELS, activeWalls, hasSideWalls, wallOf } from '../lib/room'
+import type { Piece } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
 
 /**
- * Every part in the design. Clicking one selects it, which also works for
- * parts that are hard to reach on the canvas (tiny, or covered by others).
+ * Every part in the design, under its wall when there's more than one.
+ * Clicking one selects it (and shows its wall), which also works for parts
+ * that are hard to reach on the canvas (tiny, or covered by others).
  */
 export function PartsList() {
   const pieces = useDesignStore((s) => s.pieces)
   const select = useDesignStore((s) => s.select)
   const toggleSelect = useDesignStore((s) => s.toggleSelect)
   const selectedIds = useDesignStore((s) => s.selectedIds)
+  const room = useDesignStore((s) => s.room)
   const clashes = useClashes()
   const { num, unit } = useUnits()
 
   if (pieces.length === 0) return <p className="muted">No parts yet.</p>
+
+  const list = (items: Piece[]) => (
+    <ul className="parts-list">
+      {items.map((piece) => (
+        <li key={piece.id}>
+          <button
+            type="button"
+            className={[
+              'part-row',
+              selectedIds.includes(piece.id) && 'part-row-selected',
+              clashes.has(piece.id) && 'part-row-clash',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-pressed={selectedIds.includes(piece.id)}
+            // ⌘/Ctrl-click adds to the selection, like on the canvas.
+            onClick={(event) => (hasModifier(event) ? toggleSelect(piece.id) : select(piece.id))}
+          >
+            <span>{pieceLabel(piece)}</span>
+            <span className="part-size">
+              {piece.kind === 'rod'
+                ? `⌀${num(piece.height)} × ${num(piece.width)} ${unit}`
+                : `${num(piece.width)} × ${num(piece.height)} × ${num(piece.depth)} ${unit}`}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
 
   return (
     <>
@@ -26,32 +59,17 @@ export function PartsList() {
           only touch.
         </p>
       )}
-      <ul className="parts-list">
-        {pieces.map((piece) => (
-          <li key={piece.id}>
-            <button
-              type="button"
-              className={[
-                'part-row',
-                selectedIds.includes(piece.id) && 'part-row-selected',
-                clashes.has(piece.id) && 'part-row-clash',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              aria-pressed={selectedIds.includes(piece.id)}
-              // ⌘/Ctrl-click adds to the selection, like on the canvas.
-              onClick={(event) => (hasModifier(event) ? toggleSelect(piece.id) : select(piece.id))}
-            >
-              <span>{pieceLabel(piece)}</span>
-              <span className="part-size">
-                {piece.kind === 'rod'
-                  ? `⌀${num(piece.height)} × ${num(piece.width)} ${unit}`
-                  : `${num(piece.width)} × ${num(piece.height)} × ${num(piece.depth)} ${unit}`}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {hasSideWalls(room)
+        ? activeWalls(room).map((wall) => {
+            const onWall = pieces.filter((piece) => wallOf(piece) === wall)
+            return (
+              <div key={wall}>
+                <h3 className="parts-wall">{WALL_LABELS[wall]}</h3>
+                {onWall.length > 0 ? list(onWall) : <p className="muted">No parts yet.</p>}
+              </div>
+            )
+          })
+        : list(pieces)}
     </>
   )
 }

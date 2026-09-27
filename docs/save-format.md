@@ -4,7 +4,7 @@ How projects are saved, and how to change what's saved without breaking projects
 
 ## What gets saved
 
-A project's design is saved as `ProjectData` (`src/lib/project.ts`): plain JSON with a `formatVersion` number, the board thicknesses, unit depth, the list of parts (`pieces`), boxes, and the colour for new parts. Selection, the view and undo history are not saved.
+A project's design is saved as `ProjectData` (`src/lib/project.ts`): plain JSON with a `formatVersion` number, the board thicknesses, unit depth, the list of parts (`pieces`), boxes, the colour for new parts, and the room (which walls are used and its size). Selection, the view and undo history are not saved.
 
 The same JSON is used in two places:
 
@@ -82,6 +82,7 @@ App changes that don't touch saved data (new buttons, visuals, fixes) never need
 |---|---|---|
 | 1 | (first version) | `v1-minimal` (earliest shape: thickness and parts only), `v1-full` (every v1 feature) |
 | 2 | 1→2: v1 gained `unitDepth` and `boxes` as optional fields over time. From v2 they're always there; the converter fills in 600 mm and no boxes when missing. | `v2-full` |
+| 3 | 2→3: adds `room` (which side walls are used, and the room's inside width and depth). The converter adds a one-wall room of 2400 × 1800 mm. Parts and boxes may have `wall: 'left' \| 'right'`; absent means the back wall, so older parts need no change. | `v3-room` (U-shaped, parts on every wall) |
 
 Add a row for every new version.
 

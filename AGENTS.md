@@ -13,18 +13,19 @@ Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 
 ## Layout
 
-- `src/types.ts`: `Piece` (one board or fitting), `Box` (a carcass sized as one) and `Thickness`
-- `src/lib/`: pure logic. `defaults.ts` (piece sizes, `BOARD` map), `geometry.ts` (`normalizePiece`, `neighbourGaps`, `depthStart`, `findClashes`), `cutList.ts`, `project.ts` (saved format), `projectFile.ts` (JSON import/export), `storage.ts` (IndexedDB), `box.ts` (a box's panels)
+- `src/types.ts`: `Piece` (one board or fitting), `Box` (a carcass sized as one), `Thickness`, `Room` and `Wall`
+- `src/lib/`: pure logic. `defaults.ts` (piece sizes, `BOARD` map), `geometry.ts` (`normalizePiece`, `neighbourGaps`, `depthStart`, `findClashes`), `cutList.ts`, `project.ts` (saved format), `projectFile.ts` (JSON import/export), `storage.ts` (IndexedDB), `box.ts` (a box's panels), `room.ts` (walls, the room, `roomBox`)
 - `src/store/`: `useDesignStore` (the open design, undo/redo) and `useProjectsStore` (project list, switching, autosave)
-- `src/canvas/`: the SVG drawing. `view.ts` owns every conversion between design and SVG coordinates. `views.ts` projects pieces for the left, right, top and back views, which are read-only; only the front view edits. `Preview3D.tsx` is the three.js preview, lazy-loaded so three.js stays out of the main bundle.
-- `src/ui/`: `Sidebar.tsx` (project header and foldable sections: Add, Parts, Settings, File; add a new one with `CollapsibleSection`), `Inspector.tsx` (the Selected panel right of the canvas), dialogs and panels, `shortcuts.ts`
+- `src/canvas/`: the SVG drawing. `view.ts` owns every conversion between design and SVG coordinates. `views.ts` projects pieces for the left, right, top and back views, which are read-only; only the front view edits. `Preview3D.tsx` is the three.js preview, lazy-loaded so three.js stays out of the main bundle. `RoomWalls.tsx` draws the room around a wall (end walls, the neighbouring walls' parts).
+- `src/ui/`: `Sidebar.tsx` (project header and foldable sections: Add, Room, Parts, Settings, File; add a new one with `CollapsibleSection`), `Inspector.tsx` (the Selected panel right of the canvas), dialogs and panels, `shortcuts.ts`
 
 ## Rules
 
 - **Units are mm everywhere in code and saves.** Design y counts up from the floor and x = 0 is the middle. SVG y counts down, so convert only through `toSvgY` / `toDesignY`. The Units setting (mm, cm, m, in) is display only: show lengths with `useUnits()` (`len` / `num`) and take typed lengths through `NumberField`, never raw mm numbers in the UI.
 - **Board thickness belongs to the project, not the piece.** `BOARD` says which dimension of each kind is its thickness, and `normalizePiece` resets it from `state.thickness` on every write. Never make thickness editable per piece. Rods and drawers aren't boards.
 - **Boxes own their panels.** A box's sides, top, bottom and back are ordinary pieces tagged `boxId`, always rebuilt from the box (`rebuildBox`), never edited one by one; moving, duplicating or deleting one of them acts on the whole box.
-- **Pieces have no front-to-back position (z) yet.** `depthStart` places every piece flush against the back panel (plinth and front rails excepted); the side, top and 3D views and the clash check all use it. Adding z means a `FORMAT_VERSION` bump.
+- **A part's wall is `piece.wall` (and `box.wall`); absent means the back wall.** Each wall is edited on its own in the front view, in that wall's coordinates (x = 0 its middle). Anything that compares parts across walls (top view, 3D, clashes) goes through `roomBox` and `wallDepthStart`; anything for one wall (gaps, ⌘A, placing new parts) looks only at the parts on `activeWall`. A one-wall project must look exactly as it did before rooms.
+- **Pieces have no front-to-back position (z) yet.** `depthStart` places every piece flush against the back panel (plinth and front rails excepted); the side, top and 3D views and the clash check all use it (per wall, through `wallDepthStart`). Adding z means a `FORMAT_VERSION` bump.
 - **Every design change goes through a store action** that calls `record(state)` for undo, and skips no-op changes so undo never does nothing. Group continuous edits (drags, typing in a field) with `beginBatch` / `endBatch`. Selection and view are not in history or saves.
 - **Browser storage names keep the old `room-designer` prefix** (the IndexedDB name and every localStorage key). Renaming one loses what people have stored; new keys use the same prefix.
 - **Storage goes through the `ProjectStorage` interface** so a cloud backend can plug in later. Changing the IndexedDB schema means bumping `DB_VERSION`, handling it in `onupgradeneeded`, and migrating data in one transaction. Writes must start in the same turn as the call, otherwise saves made while the page closes are lost.

@@ -1,15 +1,18 @@
 import { EDGE_FILLS, FILLS } from '../canvas/colors'
 import { isHollow, showsEdge } from '../canvas/views'
 import { contentBounds } from '../lib/geometry'
-import type { Piece } from '../types'
+import { unfold } from '../lib/room'
+import type { Piece, Room } from '../types'
 
 const SIZE = 60
 
 /**
  * A small front view of a project, in its parts' colours, for the project
- * list. Same look as the canvas, minus the grid, labels and measurements.
+ * list. Same look as the canvas, minus the grid, labels and measurements. A
+ * design on several walls is shown unfolded, the walls side by side.
  */
-export function ProjectThumbnail({ pieces }: { pieces: Piece[] }) {
+export function ProjectThumbnail({ pieces: all, room }: { pieces: Piece[]; room: Room }) {
+  const pieces = unfold(all, room)
   const bounds = contentBounds(pieces)
   if (!bounds) return <div className="project-thumbnail project-thumbnail-empty" />
 

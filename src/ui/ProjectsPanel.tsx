@@ -9,6 +9,7 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
   const projects = useProjectsStore((s) => s.projects)
   const currentId = useProjectsStore((s) => s.currentId)
   const livePieces = useDesignStore((s) => s.pieces)
+  const liveRoom = useDesignStore((s) => s.room)
   const { createProject, openProject, renameProject, duplicateProject, deleteProject } =
     useProjectsStore.getState()
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -48,7 +49,10 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
             return (
               <li key={project.id} className={isOpen ? 'project-row project-row-open' : 'project-row'}>
                 {/* The open project is drawn from the live design, so it's always current. */}
-                <ProjectThumbnail pieces={isOpen ? livePieces : project.pieces} />
+                <ProjectThumbnail
+                  pieces={isOpen ? livePieces : project.pieces}
+                  room={isOpen ? liveRoom : project.room}
+                />
                 <div className="project-info">
                   {renamingId === project.id ? (
                     <EditableName

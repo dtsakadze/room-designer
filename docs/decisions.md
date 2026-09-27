@@ -60,6 +60,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Decision*: adjustable shelves move freely. Snapping to a 32 mm hole line was built and removed.
 *Why*: the holes weren't visible in the front view, their positions were guessed from the floor, and nothing used them yet. Revisit with hardware and drilling plans, tied to the real side panels.
 
+**Wardrobes on two or three walls** (2026-09-28)
+*Decision*: a project has a room: the back wall is always used, and a left and/or right wall can be switched on (L- or U-shape), with the room's inside width and depth. Each part and box stores its wall (`wall`, absent = back). Each wall is edited on its own in the usual front view, with x = 0 the middle of that wall; a wall switch appears above the drawing only when there's more than one wall. The front view shows the walls at both ends and faint outlines of the parts on the neighbouring walls that come within this wall's unit depth, and the gap lines measure to both. Top and 3D show the whole room; the side and back views show the current wall's unit. Parts are placed in room coordinates through `roomBox` (walls only turn by right angles), each wall's unit gets its own `depthStart`, and clashes are checked across walls, so units that collide in a corner turn red. Switching a wall off deletes its parts after an inline warning, as one undoable step. The cut list covers every wall together.
+*Why*: closets are often built round two or three walls, and the app should stay as simple as it was for a single unit: editing one wall at a time keeps the 2D editing unchanged, and a one-wall project shows no new controls on the canvas. The room size says where the corners are, so the walls can be drawn and the runs placed correctly in Top and 3D.
+*Instead of*: one long unfolded front view with every wall side by side (moving parts across corners, gap lines and placing new parts all get more complicated), joining the runs where their parts end without a room size (a U's two sides would only be as far apart as the back run is wide), and keeping or moving the parts of a wall that's switched off (hidden parts would still be in the cut list). Corner units, a door wall and other room shapes are left for later.
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -73,6 +78,10 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **JSON project files** (2026-09-24)
 *Decision*: "Save to file" writes the same JSON as the autosave, named after the project. "Open file…" opens it as a new project rather than replacing the open one.
 *Why*: readable, easy to debug, and one format to maintain.
+
+**Save format v3: the room** (2026-09-28)
+*Decision*: `FORMAT_VERSION` 3 adds a required `room` (`left`, `right`, `width`, `depth`) and an optional `wall` on parts and boxes. Converter 2→3 adds a one-wall room (2400 × 1800 mm). `validate` switches on any wall that has parts, so no part can be hidden.
+*Why*: the room is part of the design. Every older save stood on the back wall alone, which is exactly what absent `wall` and a one-wall room mean.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

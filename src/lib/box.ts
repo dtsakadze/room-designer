@@ -1,5 +1,6 @@
 import type { Box, Piece, Thickness } from '../types'
 import { normalizePiece } from './geometry'
+import { isSideWall } from './room'
 
 export const BOX_WIDTH = 1200
 export const BOX_HEIGHT = 2000
@@ -24,7 +25,10 @@ export function boxPanels(box: Box, thickness: Thickness): Piece[] {
   const flatWidth = between ? box.width - 2 * t : box.width
 
   const panel = (role: string, piece: Omit<Piece, 'id' | 'boxId'>): Piece =>
-    normalizePiece({ ...piece, id: `${box.id}:${role}`, boxId: box.id }, thickness)
+    normalizePiece(
+      { ...piece, id: `${box.id}:${role}`, boxId: box.id, wall: box.wall },
+      thickness,
+    )
 
   return [
     panel('back', {
@@ -73,14 +77,17 @@ export function boxPanels(box: Box, thickness: Thickness): Piece[] {
 /** Keeps a box big enough to hold its own boards, in whole mm, above the floor. */
 export function normalizeBox(box: Box, thickness: Thickness): Box {
   const min = 2 * thickness.body + 1
+  const { wall, ...rest } = box
   return {
-    ...box,
+    ...rest,
     x: Math.round(box.x),
     y: Math.max(0, Math.round(box.y)),
     width: Math.max(min, Math.round(box.width)),
     height: Math.max(min, Math.round(box.height)),
     depth: Math.max(thickness.back + 1, Math.round(box.depth)),
     joint: box.joint === 'on' ? 'on' : 'between',
+    // The back wall (the default) is stored as no value.
+    ...(isSideWall(wall) ? { wall } : {}),
   }
 }
 

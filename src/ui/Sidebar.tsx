@@ -8,6 +8,8 @@ import { ProjectFileButtons } from './ProjectFileButtons'
 import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
 import { EditableName } from './EditableName'
 import { ProjectsPanel } from './ProjectsPanel'
+import { RoomSettings } from './RoomSettings'
+import { LAYOUT_LABELS, layoutOf } from '../lib/room'
 import { useClashes } from './useClashes'
 import { VersionInfo } from './WhatsNew'
 
@@ -28,6 +30,7 @@ export function Sidebar() {
   const hasClashes = useClashes().size > 0
   const count = useDesignStore((s) => s.pieces.length)
   const clear = useDesignStore((s) => s.clear)
+  const layout = useDesignStore((s) => layoutOf(s.room))
 
   return (
     <aside className="sidebar">
@@ -67,6 +70,14 @@ export function Sidebar() {
       <div className="sidebar-body">
         <CollapsibleSection id="add" title="Add" defaultOpen>
           <ComponentPalette />
+        </CollapsibleSection>
+        <CollapsibleSection
+          id="room"
+          title="Room"
+          // Shown while folded, so an L or U project says so at a glance.
+          badge={layout === 'one' ? undefined : LAYOUT_LABELS[layout]}
+        >
+          <RoomSettings />
         </CollapsibleSection>
         <CollapsibleSection
           id="parts"

@@ -1,5 +1,5 @@
 import type { Piece } from '../types'
-import { type Gap, contentBounds, neighbourGaps } from '../lib/geometry'
+import { type Gap, type Rect, contentBounds, neighbourGaps } from '../lib/geometry'
 import { useUnits } from '../store/useSettingsStore'
 import { toSvgY } from './view'
 
@@ -11,6 +11,8 @@ const HALO = '#f4f6f9'
 type DimensionsProps = {
   pieces: Piece[]
   selected: Piece | null
+  /** More to measure gaps to: the room's walls and the units on the walls next to it. */
+  obstacles?: Rect[]
   unit: number
 }
 
@@ -18,7 +20,7 @@ type DimensionsProps = {
  * Measurements drawn on the canvas: the overall size of everything placed,
  * along the top and left, and the clear gaps around the selected piece.
  */
-export function Dimensions({ pieces, selected, unit }: DimensionsProps) {
+export function Dimensions({ pieces, selected, obstacles, unit }: DimensionsProps) {
   const { len } = useUnits()
   const bounds = contentBounds(pieces)
   if (!bounds) return null
@@ -46,7 +48,7 @@ export function Dimensions({ pieces, selected, unit }: DimensionsProps) {
       {selected &&
         // Keyed by position: two gaps can share from/to (e.g. to the floor on
         // both sides of a part below), and the lines hold no state to keep.
-        neighbourGaps(selected, pieces).map((gap, index) => (
+        neighbourGaps(selected, pieces, obstacles).map((gap, index) => (
           <DimensionLine
             key={index}
             gap={gap}

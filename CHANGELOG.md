@@ -7,6 +7,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Room Designer is now called Boardcut. Your projects and settings are kept.
 - New app icon: a small wardrobe instead of the Vite logo.
 - A GitHub link in the sidebar, to Boardcut's source code.
+- Design wardrobes along two or three walls of a room (L- and U-shaped). Pick the layout and room size under Room, then switch between walls above the drawing. Each wall shows the walls at its ends and a faint outline of the unit on the next wall, parts that run into each other in a corner turn red, and Top and 3D show the whole room.
 
 ## 1.0.0 — 2026-09-26
 

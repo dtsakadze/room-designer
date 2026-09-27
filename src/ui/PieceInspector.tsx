@@ -5,6 +5,8 @@ import { BoxInspector } from './BoxInspector'
 import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
+import { WallField } from './WallField'
+import { wallOf } from '../lib/room'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -105,6 +107,7 @@ export function PieceInspector() {
 
       <hr className="rule" />
 
+      <WallField wall={wallOf(piece)} onChange={(wall) => updatePiece(piece.id, { wall })} />
       <NumberField
         label="X (from centre)"
         value={piece.x}

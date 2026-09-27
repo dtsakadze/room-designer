@@ -6,6 +6,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 
 - Add a whole box (sides, top, bottom and back) sized as one, or build in a front view from side, top/bottom and back panels, a plinth, rails, shelves, dividers, hanging rods and drawers. Drag to move, drag handles to resize, or type exact sizes.
 - Board thickness is a project setting (body and back), and every panel follows it.
+- Wardrobes along one, two or three walls of a room (L- and U-shaped): design each wall in its own front view, and see the whole room from the top or in 3D.
 - Dimension lines for the overall size and the gaps around the selected part.
 - A cut list: every board as length × width × thickness, with identical parts counted together.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
@@ -62,6 +63,7 @@ React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the d
 - **Units:** everything is millimetres, all the way through. SVG user units are mm, so the drawing needs no scale conversion, only a zoom/pan `viewBox`.
 - **Model** (`src/types.ts`): the design is a flat list of `Piece`s. There's no built-in cabinet: you assemble the carcass from side / top-bottom / back panels, then add shelves, dividers, rods and drawers. A piece's `x`/`y` is its bottom-left corner, `y` counts **up** from the floor, and `x = 0` is the middle of the drawing. `depth` is stored and used by the cut list, but isn't drawn in the front view. A hanging rod is round, so the inspector shows it as **length** and **diameter**.
 - **Board thickness** (`src/lib/defaults.ts`): `BOARD` says which dimension of each piece kind is its thickness (side = width, shelf = height, back = depth) and which project thickness it follows. `normalizePiece` (`src/lib/geometry.ts`) applies it on every change, so a piece can't drift from the setting.
+- **Walls** (`src/lib/room.ts`): a project's room says which walls are used (the back wall always; left and right for an L or U) and its inside size. A piece's `wall` says which one it stands against (absent = back). Each wall is edited in the same front view, with x = 0 the middle of that wall; `roomBox` turns a piece into room coordinates for the top view, 3D and the clash check.
 - **Coordinates** (`src/canvas/view.ts`): SVG counts y downwards and the design counts it upwards, so every flip goes through `toSvgY` / `toDesignY`. Screen→drawing conversion uses the SVG's own CTM, frozen at the start of a gesture so panning can't feed back into itself.
 - **State** (`src/store/`): `useDesignStore` holds the open design and its undo history. A drag or a typed number counts as one step (`beginBatch` / `endBatch`). `useProjectsStore` holds the project list and autosaves the open design half a second after each change, or straight away when the tab is hidden or closed.
 - **Saving** (`src/lib/project.ts`, `src/lib/storage.ts`): autosaves and files share one JSON format with a `formatVersion`. Everything loaded is validated and normalised, so a hand-edited or older file can't break the app. Storage sits behind a small `ProjectStorage` interface, so a cloud backend could be added later.
@@ -69,7 +71,7 @@ React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the d
 
 ## Not done yet
 
-Front-to-back positions for parts (for now every part sits flush against the back), editing in the side and top views, snapping to other panels, doors and drawer boxes, hardware lists, CSV/PDF export, and a mobile layout.
+Front-to-back positions for parts (for now every part sits flush against the back), corner units and a door wall for rooms, editing in the side and top views, snapping to other panels, doors and drawer boxes, hardware lists, CSV/PDF export, and a mobile layout.
 
 ## Releases and licence
 

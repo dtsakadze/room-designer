@@ -1,6 +1,7 @@
 import { BOARD } from '../lib/defaults'
-import { depthStart } from '../lib/geometry'
-import type { Piece, Thickness } from '../types'
+import { type Rect, depthStart, wallDepthStart } from '../lib/geometry'
+import { adjacentWalls, fromWall, roomBox, wallLength, wallOf } from '../lib/room'
+import type { Piece, Room, Thickness, Wall } from '../types'
 
 export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
 
@@ -53,6 +54,64 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
         .sort((a, b) => zStart(b) - zStart(a))
         .map((piece) => ({ ...piece, x: -(piece.x + piece.width) }))
   }
+}
+
+/**
+ * The top view of the whole room: every wall's pieces in plan, turned to face
+ * out from their wall. The back wall runs along the top (y = 0) and the room
+ * opens towards the bottom. With only the back wall this is the same as the
+ * top view of one unit.
+ */
+export function roomPlan(pieces: Piece[], thickness: Thickness, room: Room): Piece[] {
+  const zStart = wallDepthStart(pieces, thickness)
+  // Higher pieces are nearer, so they draw last.
+  return [...pieces]
+    .sort((a, b) => a.y + a.height - (b.y + b.height))
+    .map((piece) => {
+      const { min, max } = roomBox(piece, zStart(piece), room)
+      return { ...piece, x: min[0], width: max[0] - min[0], y: -max[2], height: max[2] - min[2] }
+    })
+}
+
+/**
+ * The parts on the walls next to this one that come within `reach` of it
+ * (how deep this wall's unit is), as they look from in front of it: a unit on
+ * a side wall shows up at the end of the back wall where it stands in the
+ * corner. Drawn faintly, so you can see how far into the corner it comes
+ * before placing anything there. Parts further out stand clear of this
+ * wall's unit, so they're left out.
+ */
+export function cornerGhosts(
+  pieces: Piece[],
+  thickness: Thickness,
+  room: Room,
+  wall: Wall,
+  reach: number,
+) {
+  const neighbours = new Set(adjacentWalls(wall, room))
+  const zStart = wallDepthStart(pieces, thickness)
+  return pieces
+    .filter((piece) => neighbours.has(wallOf(piece)))
+    .flatMap((piece) => {
+      const { distance, ...rect } = fromWall(roomBox(piece, zStart(piece), room), wall, room)
+      return distance < reach ? [{ id: piece.id, ...rect }] : []
+    })
+}
+
+/** Far enough to count as "the rest of the wall" beyond a corner, in mm. */
+const BEYOND = 100000
+
+/**
+ * The walls at each end of a wall, as solid blocks beyond its corners (for gap
+ * lines measured to the wall). Standing at a side wall, one end is the back
+ * wall and the other the room's front wall.
+ */
+export function endWalls(room: Room, wall: Wall): Rect[] {
+  const half = wallLength(room, wall) / 2
+  return [
+    { x: -half - BEYOND, y: 0, width: BEYOND, height: BEYOND },
+    { x: half, y: 0, width: BEYOND, height: BEYOND },
+  ]
 }
 
 /** The size shown next to a selected piece, in the view's own terms. */

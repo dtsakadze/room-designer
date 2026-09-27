@@ -1,5 +1,6 @@
-import type { Piece, Thickness } from '../types'
+import type { Piece, Room, Thickness, Wall } from '../types'
 import { BOARD, PLINTH_RECESS } from './defaults'
+import { DEFAULT_ROOM, isSideWall, roomBox, wallOf } from './room'
 
 /**
  * Keeps a piece a sane size and stops it sinking through the floor. A board's
@@ -23,12 +24,14 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   // Only rails have a side, and front (the default) is stored as no value.
   if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
   if (!piece.boxId) delete normalized.boxId
+  // The back wall (the default) is stored as no value.
+  if (!isSideWall(piece.wall)) delete normalized.wall
   if (!isHexColor(piece.color)) delete normalized.color
   return normalized
 }
 
 /** Bounding box of everything placed so far, in mm. */
-export function contentBounds(pieces: Piece[]) {
+export function contentBounds(pieces: Rect[]) {
   if (pieces.length === 0) return null
   return pieces.reduce(
     (bounds, piece) => ({
@@ -50,18 +53,24 @@ const atLeast = (value: number, min = 1) => Math.max(min, round(value))
  */
 export type Gap = { axis: 'x' | 'y'; from: number; to: number; at: number }
 
+/** A rectangle in the front view, in design mm (y up). */
+export type Rect = { x: number; y: number; width: number; height: number }
+
 /**
  * The clear distances from a piece to whatever it faces on each side, and to
  * the floor below where nothing is in between. Each side is scanned along its
  * whole edge, so a shelf with a divider standing on it gets the height of the
  * opening on both sides of the divider, not just the divider it touches. Parts
  * that touch (no gap) show nothing. The back panel sits behind everything, so
- * it's never in the way.
+ * it's never in the way. `obstacles` are other things to measure to, such as
+ * the room's walls and the parts of the unit on the next wall.
  */
-export function neighbourGaps(piece: Piece, pieces: Piece[]): Gap[] {
+export function neighbourGaps(piece: Piece, pieces: Piece[], obstacles: Rect[] = []): Gap[] {
   const box = edges(piece)
-  const others = pieces
-    .filter((other) => other.id !== piece.id && other.kind !== 'back')
+  const others = [
+    ...pieces.filter((other) => other.id !== piece.id && other.kind !== 'back'),
+    ...obstacles,
+  ]
     .map(edges)
     .filter((other) => !overlaps(box, other))
 
@@ -125,7 +134,7 @@ function sideGaps(box: Edges, others: Edges[], side: Side): Gap[] {
 
 type Edges = { left: number; right: number; bottom: number; top: number }
 
-const edges = (piece: Piece): Edges => ({
+const edges = (piece: Rect): Edges => ({
   left: piece.x,
   right: piece.x + piece.width,
   bottom: piece.y,
@@ -158,24 +167,37 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
   }
 }
 
+/**
+ * `depthStart` for a design on several walls: each wall's unit is placed on
+ * its own, so one run's plinth and front rails follow that run's depth.
+ */
+export function wallDepthStart(pieces: Piece[], thickness: Thickness) {
+  const byWall = new Map<Wall, (piece: Piece) => number>()
+  for (const wall of new Set(pieces.map(wallOf))) {
+    byWall.set(
+      wall,
+      depthStart(
+        pieces.filter((piece) => wallOf(piece) === wall),
+        thickness,
+      ),
+    )
+  }
+  return (piece: Piece) => byWall.get(wallOf(piece))?.(piece) ?? 0
+}
+
 /** Overlaps smaller than this (rounding, not a real clash) are ignored, in mm. */
 const CLASH_TOLERANCE = 0.5
 
 /**
- * Pieces that take up the same space as another, checked as real 3D boxes
- * (front-to-back placement from `depthStart`). Touching isn't a clash, and
- * neither is the back panel sitting behind everything in the front view.
+ * Pieces that take up the same space as another, checked as real 3D boxes in
+ * the room (front-to-back placement from `wallDepthStart`), so units on two
+ * walls that run into each other in a corner clash too. Touching isn't a
+ * clash, and neither is the back panel sitting behind everything in the front
+ * view.
  */
-export function findClashes(pieces: Piece[], thickness: Thickness) {
-  const zStart = depthStart(pieces, thickness)
-  const boxes = pieces.map((piece) => {
-    const z = zStart(piece)
-    return {
-      id: piece.id,
-      min: [piece.x, piece.y, z],
-      max: [piece.x + piece.width, piece.y + piece.height, z + piece.depth],
-    }
-  })
+export function findClashes(pieces: Piece[], thickness: Thickness, room: Room = DEFAULT_ROOM) {
+  const zStart = wallDepthStart(pieces, thickness)
+  const boxes = pieces.map((piece) => ({ id: piece.id, ...roomBox(piece, zStart(piece), room) }))
   const clashing = new Set<string>()
   for (let i = 0; i < boxes.length; i++) {
     for (let j = i + 1; j < boxes.length; j++) {
