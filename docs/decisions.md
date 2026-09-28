@@ -85,6 +85,16 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: drawers next to overlay doors have to line up with them, and fronts that fill their space exactly would rub. Sizing an overlay drawer by its front matches how you'd line it up with the doors.
 *Instead of*: working out each overlay front's reach from the boards around it (overlapping neighbours, rails, shelves: fragile for little gain; the one-board rule errs towards a slightly smaller box between stacked drawers), a gap setting (a fixed 3 mm is the common reveal; a setting can come later), and separate false fronts on a box front.
 
+**Hiding doors is a view setting** (2026-09-28)
+*Decision*: a Hide doors / Show doors button (only when the design has doors) takes doors out of every view, 2D and 3D, so they can't be clicked and the inside can be edited directly. It's a personal preference in localStorage (`room-designer:show-doors`), like the units, not part of the project or undo. Hidden doors stay in the cut list, the Parts list and the clash check. Hiding lets go of selected doors, so nothing unseen can be deleted or nudged; selecting a door from the Parts list shows doors again.
+*Why*: with doors drawn on top, every edit behind one took an extra click, and a drag grabbed the door. Drawer fronts don't need it: nothing sits behind a drawer but the back panel.
+*Instead of*: a per-door "open" state saved in the project (nothing to design with it), and hiding doors only in the front view (3D gets just as cluttered).
+
+**Door swings in the top view** (2026-09-28)
+*Decision*: the top view draws each door leaf swung open at a right angle from its hinge, on the door's front face, with a dashed quarter circle for the floor it sweeps (`doorSwings`, in room coordinates, so doors on side walls swing across the room). A double door's leaves each turn on their outer side. Framing the top view includes the swings. A selected door's swing is blue; hidden doors have none.
+*Why*: the front view already shows the hinge side; what it can't show is the floor a door needs and whether doors on neighbouring walls hit each other in a corner, which is easy to miss in an L- or U-shaped room.
+*Instead of*: warnings for overlapping swings or swings that hit a wall (worth adding later, once the arcs are there to see), and hinge marks in the side and back views (you don't design doors there).
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)

@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { pieceSolids, wallDepthStart } from '../lib/geometry'
 import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
+import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
 import type { Piece, Room, Thickness } from '../types'
 import { CLASH, FILLS, SELECTED } from './colors'
@@ -28,6 +29,7 @@ export default function Preview3D() {
   } | null>(null)
 
   const pieces = useDesignStore((s) => s.pieces)
+  const showDoors = useSettingsStore((s) => s.showDoors)
   const thickness = useDesignStore((s) => s.thickness)
   const room = useDesignStore((s) => s.room)
   const selectedId = useDesignStore((s) => s.selectedId)
@@ -126,13 +128,14 @@ export default function Preview3D() {
     disposeChildren(current.parts)
     const zStart = wallDepthStart(pieces, thickness)
     for (const piece of pieces) {
+      if (!showDoors && piece.kind === 'door') continue
       const tint = piece.id === selectedId ? SELECTED : clashes.has(piece.id) ? CLASH : null
       // A drawer as its boards, so you can see into it past a see-through door.
       for (const box of pieceSolids(piece, zStart(piece), thickness, room)) {
         current.parts.add(buildPiece(piece, box, tint))
       }
     }
-  }, [pieces, thickness, room, selectedId, clashes])
+  }, [pieces, thickness, room, selectedId, clashes, showDoors])
 
   // The room's outline on the floor, once there's more than one wall.
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { BOARD } from '../lib/defaults'
-import { type Rect, depthStart, wallDepthStart } from '../lib/geometry'
+import { type Rect, depthStart, doorLeaves, wallDepthStart } from '../lib/geometry'
 import { adjacentWalls, fromWall, roomBox, wallLength, wallOf } from '../lib/room'
 import type { Piece, Room, Thickness, Wall } from '../types'
 
@@ -71,6 +71,66 @@ export function roomPlan(pieces: Piece[], thickness: Thickness, room: Room): Pie
       const { min, max } = roomBox(piece, zStart(piece), room)
       return { ...piece, x: min[0], width: max[0] - min[0], y: -max[2], height: max[2] - min[2] }
     })
+}
+
+/** A point in the top view, in the same design mm as `roomPlan` (y = 0 at the back wall, down into the room). */
+export type PlanPoint = { x: number; y: number }
+
+/**
+ * How one door leaf swings, in the top view: it turns about `pivot` (its hinge,
+ * on the door's front face) from `closed` (the other end of the leaf, shut) to
+ * `open` (out into the room, at a right angle). The arc between them is the
+ * floor it sweeps.
+ */
+export type DoorSwing = { id: string; pivot: PlanPoint; closed: PlanPoint; open: PlanPoint }
+
+/**
+ * Where a spot on a wall's unit is in the top view: `along` the wall in that
+ * wall's front-view x, `out` from the wall.
+ */
+function planPoint(wall: Wall, along: number, out: number, room: Room): PlanPoint {
+  const [halfWidth, halfDepth] = [room.width / 2, room.depth / 2]
+  switch (wall) {
+    case 'back':
+      return { x: along, y: -out }
+    case 'left':
+      return { x: -halfWidth + out, y: -(halfDepth - along) }
+    case 'right':
+      return { x: halfWidth - out, y: -(halfDepth + along) }
+  }
+}
+
+/**
+ * The swing of every door leaf, for the top view: a single door turns on the
+ * side it's hinged, and each leaf of a double door on its outer side.
+ */
+export function doorSwings(pieces: Piece[], thickness: Thickness, room: Room): DoorSwing[] {
+  const zStart = wallDepthStart(pieces, thickness)
+  return pieces
+    .filter((piece) => piece.kind === 'door')
+    .flatMap((door) => {
+      const wall = wallOf(door)
+      const face = zStart(door) + door.depth
+      return doorLeaves(door, door.double).map((leaf, index) => {
+        const hingedLeft = door.double ? index === 0 : door.hinge !== 'right'
+        const [hinge, end] = hingedLeft ? [leaf.x, leaf.x + leaf.width] : [leaf.x + leaf.width, leaf.x]
+        return {
+          id: door.id,
+          pivot: planPoint(wall, hinge, face, room),
+          closed: planPoint(wall, end, face, room),
+          open: planPoint(wall, hinge, face + leaf.width, room),
+        }
+      })
+    })
+}
+
+/** The square a swing's quarter circle fits in, for framing the top view. */
+export function swingBounds({ pivot, closed, open }: DoorSwing): Rect {
+  const corner = { x: closed.x + open.x - pivot.x, y: closed.y + open.y - pivot.y }
+  const xs = [pivot.x, closed.x, open.x, corner.x]
+  const ys = [pivot.y, closed.y, open.y, corner.y]
+  const [x, y] = [Math.min(...xs), Math.min(...ys)]
+  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
 }
 
 /**

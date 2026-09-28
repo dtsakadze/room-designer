@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { type Unit, formatLength, formatNumber, isUnit } from '../lib/units'
 
 const UNIT_KEY = 'room-designer:unit'
+const SHOW_DOORS_KEY = 'room-designer:show-doors'
 
 /**
  * Preferences of the person using the app, not of a project: kept in
@@ -10,6 +11,9 @@ const UNIT_KEY = 'room-designer:unit'
 type SettingsState = {
   unit: Unit
   setUnit: (unit: Unit) => void
+  /** Doors drawn in every view; off to get at the inside of the unit. */
+  showDoors: boolean
+  setShowDoors: (show: boolean) => void
 }
 
 function storedUnit(): Unit {
@@ -22,6 +26,14 @@ function storedUnit(): Unit {
   return 'mm'
 }
 
+function storedShowDoors() {
+  try {
+    return localStorage.getItem(SHOW_DOORS_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
 export const useSettingsStore = create<SettingsState>()((set) => ({
   unit: storedUnit(),
   setUnit: (unit) => {
@@ -31,6 +43,15 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
       // Still applies for this visit.
     }
     set({ unit })
+  },
+  showDoors: storedShowDoors(),
+  setShowDoors: (showDoors) => {
+    try {
+      localStorage.setItem(SHOW_DOORS_KEY, String(showDoors))
+    } catch {
+      // Still applies for this visit.
+    }
+    set({ showDoors })
   },
 }))
 

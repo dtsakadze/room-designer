@@ -4,6 +4,10 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- The top view shows how each door opens: the leaf swung open and the arc it sweeps, so you can see the floor a door needs and whether doors in a corner would hit each other.
+
+- Hide doors: a button next to Fit view takes the doors out of every view, so you can click and drag the parts inside straight away. They stay in the cut list, and the setting is remembered.
+
 ## 1.3.0 — 2026-09-28
 
 - The cut list is easier to check: boards are grouped into Panels, Shelves and dividers, Doors and each drawer, with the same kind of part kept together, biggest first.

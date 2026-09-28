@@ -9,7 +9,7 @@ import { CutListPanel } from '../ui/CutListPanel'
 import { EditButtons } from '../ui/EditButtons'
 import { ShortcutsPanel } from '../ui/ShortcutsPanel'
 import { useClashes } from '../ui/useClashes'
-import { useUnits } from '../store/useSettingsStore'
+import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
@@ -17,6 +17,7 @@ import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
 import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
+import { DoorSwings } from './DoorSwings'
 import type { Handle, Rect } from './handles'
 import { resizePiece } from './handles'
 import {
@@ -28,6 +29,8 @@ import {
   isHollow,
   piecesAt,
   projectPieces,
+  doorSwings,
+  swingBounds,
   roomPlan,
   showsEdge,
   sizeLabel,
@@ -102,7 +105,16 @@ export function Canvas2D() {
   )
   const isFront = viewName === 'front'
 
-  const pieces = useDesignStore((s) => s.pieces)
+  const allPieces = useDesignStore((s) => s.pieces)
+  const showDoors = useSettingsStore((s) => s.showDoors)
+  const setShowDoors = useSettingsStore((s) => s.setShowDoors)
+  const hasDoors = allPieces.some((piece) => piece.kind === 'door')
+  // With doors hidden they're gone from every view and can't be clicked, so
+  // the inside can be edited directly. They stay in the cut list and clashes.
+  const pieces = useMemo(
+    () => (showDoors ? allPieces : allPieces.filter((piece) => piece.kind !== 'door')),
+    [allPieces, showDoors],
+  )
   const selectedId = useDesignStore((s) => s.selectedId)
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const select = useDesignStore((s) => s.select)
@@ -135,6 +147,11 @@ export function Canvas2D() {
         ? roomPlan(pieces, thickness, room)
         : projectPieces(wallPieces, viewName, thickness),
     [pieces, wallPieces, viewName, thickness, room],
+  )
+  // How each door opens, drawn in the top view.
+  const swings = useMemo(
+    () => (viewName === 'top' ? doorSwings(pieces, thickness, room) : []),
+    [viewName, pieces, thickness, room],
   )
   // The room around the wall being edited, in the front view only.
   const inRoom = multiWall && isFront
@@ -427,10 +444,11 @@ export function Canvas2D() {
       const store = useDesignStore.getState()
       const key = event.key.toLowerCase()
       // Everything in view: the wall being edited, or the whole room from the top.
-      const all =
-        viewName === 'top'
-          ? store.pieces
-          : store.pieces.filter((piece) => wallOf(piece) === store.activeWall)
+      const all = store.pieces.filter(
+        (piece) =>
+          (viewName === 'top' || wallOf(piece) === store.activeWall) &&
+          (showDoors || piece.kind !== 'door'),
+      )
       if (key === 'a') selectMany(all.map((piece) => piece.id))
       else if (key === 'c' && store.selectedIds.length > 0) store.copySelection()
       else if (key === 'v' && store.canPaste) store.paste()
@@ -439,7 +457,7 @@ export function Canvas2D() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectMany, viewName])
+  }, [selectMany, viewName, showDoors])
 
   // Arrow keys nudge the selection; Delete removes it.
   useEffect(() => {
@@ -493,6 +511,24 @@ export function Canvas2D() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces])
 
+  /** Hiding doors lets go of any that are selected, so nothing unseen can be deleted or moved. */
+  const toggleDoors = () => {
+    if (showDoors) {
+      const doors = new Set(allPieces.filter((p) => p.kind === 'door').map((p) => p.id))
+      if (selectedIds.some((id) => doors.has(id))) {
+        selectMany(selectedIds.filter((id) => !doors.has(id)))
+      }
+    }
+    setShowDoors(!showDoors)
+  }
+
+  // Picking a door some other way (the Parts list) while doors are hidden
+  // shows them again, rather than selecting something that isn't drawn.
+  const doorSelected = allPieces.some((piece) => piece.kind === 'door' && selectedIds.includes(piece.id))
+  useEffect(() => {
+    if (doorSelected && !showDoors) setShowDoors(true)
+  }, [doorSelected, showDoors, setShowDoors])
+
   const fitTo = (list: Rect[]) => {
     const bounds = contentBounds(list)
     if (!bounds) {
@@ -513,7 +549,11 @@ export function Canvas2D() {
   /** What a view should frame: its parts, and in a room, the wall or room around them. */
   const framed = (name: ViewName, wall = activeWall) => {
     if (name === 'top') {
-      const plan = roomPlan(pieces, thickness, room)
+      // Room for the doors to swing open, too.
+      const plan = [
+        ...roomPlan(pieces, thickness, room),
+        ...doorSwings(pieces, thickness, room).map(swingBounds),
+      ]
       if (!multiWall) return plan
       return [...plan, { x: -room.width / 2, y: -room.depth, width: room.width, height: room.depth }]
     }
@@ -590,6 +630,7 @@ export function Canvas2D() {
         ))}
 
         {inRoom && <CornerGhosts ghosts={ghosts} unit={unit} />}
+        {swings.length > 0 && <DoorSwings swings={swings} selected={selectedSet} unit={unit} />}
 
         {/* Gaps to neighbours only make sense in the view where you move things. */}
         <Dimensions
@@ -657,8 +698,22 @@ export function Canvas2D() {
       <EditButtons />
 
       <div className="canvas-tools">
+        {hasDoors && (
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={toggleDoors}
+            title="Doors stay in the cut list while hidden"
+          >
+            {showDoors ? 'Hide doors' : 'Show doors'}
+          </button>
+        )}
         {viewName !== '3d' && (
-          <button type="button" className="ghost-button" onClick={() => fitTo(shown)}>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => fitTo([...shown, ...swings.map(swingBounds)])}
+          >
             Fit view
           </button>
         )}
@@ -714,7 +769,7 @@ export function Canvas2D() {
         ))}
       </div>
 
-      {pieces.length === 0 ? (
+      {allPieces.length === 0 ? (
         <p className="viewport-hint">Pick a component from the sidebar to start building.</p>
       ) : (
         !isFront && (
