@@ -32,7 +32,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
   const { len } = useUnits()
   const rows: [string, string][] = [
     ...SHORTCUTS.slice(0, -3),
-    ['← → ↑ ↓', `Nudge the selected part ${len(SNAP)} (Front view)`],
+    ['← → ↑ ↓', `Nudge the selected parts ${len(SNAP)} (Front view)`],
     ['⇧ + arrows', `Nudge ${len(SNAP * 10)}`],
     ...SHORTCUTS.slice(-3),
   ]

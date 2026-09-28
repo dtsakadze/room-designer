@@ -54,6 +54,13 @@ type DesignState = {
    * same goes for `duplicatePiece` and `removePiece`.
    */
   updatePiece: (id: string, patch: Partial<Omit<Piece, 'id' | 'kind'>>) => void
+  /**
+   * Moves several parts together by the same distance, as one undo step; a
+   * box's panel moves its whole box. Only parts on the wall being edited move,
+   * and never below the floor: the lowest one stops there and the rest keep
+   * their places relative to it.
+   */
+  movePieces: (ids: string[], dx: number, dy: number) => void
   duplicatePiece: (id: string) => void
   removePiece: (id: string) => void
   select: (id: string | null) => void
@@ -297,6 +304,35 @@ export const useDesignStore = create<DesignState>()(
           state.pieces[index] = next
           // A part moved to another wall takes the view with it.
           followSelection(state)
+        }),
+
+      movePieces: (ids, dx, dy) =>
+        set((state) => {
+          const wanted = new Set(ids)
+          const onWall = state.pieces.filter(
+            (piece) => wanted.has(piece.id) && wallOf(piece) === state.activeWall,
+          )
+          const loose = onWall.filter((piece) => !piece.boxId)
+          const boxIds = new Set(onWall.map((piece) => piece.boxId).filter(Boolean))
+          const boxes = state.boxes.filter((box) => boxIds.has(box.id))
+          const lowest = Math.min(...loose.map((p) => p.y), ...boxes.map((box) => box.y))
+          if (!Number.isFinite(lowest)) return
+          const dropY = Math.max(Math.round(dy), -lowest)
+          const moveX = Math.round(dx)
+          if (moveX === 0 && dropY === 0) return
+          record(state)
+          const moved = new Set(loose.map((piece) => piece.id))
+          state.pieces = state.pieces.map((piece) =>
+            moved.has(piece.id)
+              ? normalizePiece({ ...piece, x: piece.x + moveX, y: piece.y + dropY }, state.thickness)
+              : piece,
+          )
+          // Not through `changeBox`, which would record a second undo step.
+          for (const box of boxes) {
+            const next = normalizeBox({ ...box, x: box.x + moveX, y: box.y + dropY }, state.thickness)
+            state.boxes = state.boxes.map((candidate) => (candidate.id === box.id ? next : candidate))
+            state.pieces = rebuildBox(state.pieces, next, state.thickness)
+          }
         }),
 
       duplicatePiece: (id) =>

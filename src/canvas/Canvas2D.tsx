@@ -71,6 +71,8 @@ type Gesture =
       editable: boolean
       /** Pieces under the pointer when an already-selected one was pressed. */
       stack: string[] | null
+      /** Set when the press was on part of a multi-selection, which then moves together. */
+      group: string[] | null
       moved: boolean
     }
   | {
@@ -107,6 +109,7 @@ export function Canvas2D() {
   const selectMany = useDesignStore((s) => s.selectMany)
   const removePieces = useDesignStore((s) => s.removePieces)
   const updatePiece = useDesignStore((s) => s.updatePiece)
+  const movePieces = useDesignStore((s) => s.movePieces)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const beginBatch = useDesignStore((s) => s.beginBatch)
   const endBatch = useDesignStore((s) => s.endBatch)
@@ -243,7 +246,11 @@ export function Canvas2D() {
     const keep = current && stack.includes(current.id) && !isHollow(current, viewName)
     const target = pieces.find((piece) => piece.id === (keep ? current.id : clicked.id))
     if (!target) return
-    select(target.id)
+    // Pressing a part of a multi-selection keeps the selection, to drag it all.
+    const inGroup =
+      !single &&
+      (selectedSet.has(target.id) || (!!target.boxId && selectedBoxIds.has(target.boxId)))
+    if (!inGroup) select(target.id)
 
     gesture.current = {
       mode: 'piece',
@@ -255,6 +262,7 @@ export function Canvas2D() {
       originY: target.y,
       editable: isFront,
       stack: keep ? stack : null,
+      group: inGroup ? selectedIds : null,
       moved: false,
     }
     // The whole drag undoes as one step.
@@ -328,6 +336,17 @@ export function Canvas2D() {
     if (!active.moved && Math.hypot(dx, dy) < unit * 4) return
     active.moved = true
     if (!active.editable) return
+    if (active.group) {
+      // The pressed part snaps to the grid; the rest keep their places around it.
+      const target = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
+      if (!target) return
+      movePieces(
+        active.group,
+        snap(active.originX + dx) - target.x,
+        snap(active.originY + dy) - target.y,
+      )
+      return
+    }
     updatePiece(active.id, {
       x: snap(active.originX + dx),
       y: snap(active.originY + dy),
@@ -358,7 +377,10 @@ export function Canvas2D() {
       setMarquee(null)
     }
     if (active.mode === 'resize' || (active.mode === 'piece' && active.editable)) endBatch()
-    if (active.mode === 'piece' && active.stack && !active.moved) {
+    if (active.mode === 'piece' && active.group && !active.moved) {
+      // A click (no drag) on part of a multi-selection selects just that part.
+      select(active.id)
+    } else if (active.mode === 'piece' && active.stack && !active.moved) {
       const next = active.stack[(active.stack.indexOf(active.id) + 1) % active.stack.length]
       select(next)
     }
@@ -435,13 +457,13 @@ export function Canvas2D() {
         return
       }
 
-      // Duplicating and nudging act on one part at a time.
-      if (useDesignStore.getState().selectedIds.length > 1) return
+      const selection = useDesignStore.getState().selectedIds
 
       // Also stops the browser's own ⌘D / Ctrl+D (bookmark this page).
       if (hasModifier(event) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'd') {
         event.preventDefault()
-        duplicatePiece(selectedId)
+        // Duplicating acts on one part at a time.
+        if (selection.length === 1) duplicatePiece(selectedId)
         return
       }
 
@@ -457,6 +479,10 @@ export function Canvas2D() {
       if (!delta || !isFront) return
 
       event.preventDefault()
+      if (selection.length > 1) {
+        movePieces(selection, delta.x ?? 0, delta.y ?? 0)
+        return
+      }
       const piece = useDesignStore.getState().pieces.find((p) => p.id === selectedId)
       if (!piece) return
       updatePiece(selectedId, {
@@ -467,7 +493,7 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece])
+  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces])
 
   const fitTo = (list: Rect[]) => {
     const bounds = contentBounds(list)

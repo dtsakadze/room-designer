@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Drag any of several selected parts to move them all together, and nudge them together with the arrow keys. Clicking one of them without dragging selects just that part.
+
 ## 1.1.0 — 2026-09-28
 
 - Room Designer is now called Boardcut. Your projects and settings are kept.

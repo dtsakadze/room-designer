@@ -151,3 +151,51 @@ describe('walls', () => {
     expect(store().pieces.map(wallOf)).toEqual(['back', 'left'])
   })
 })
+
+describe('moving several parts', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('moves loose parts and whole boxes together, as one undo step', () => {
+    store().addPiece('shelf')
+    store().addBox()
+    const shelf = store().pieces[0]
+    const box = store().boxes[0]
+    const panel = store().pieces.find((piece) => piece.id.endsWith(':left'))!
+    store().updatePiece(shelf.id, { y: 500 })
+    const shelfY = store().pieces[0].y
+
+    store().movePieces([shelf.id, panel.id], 100, 50)
+    expect(store().pieces[0]).toMatchObject({ x: shelf.x + 100, y: shelfY + 50 })
+    expect(store().boxes[0]).toMatchObject({ x: box.x + 100, y: box.y + 50 })
+
+    store().undo()
+    expect(store().pieces[0]).toMatchObject({ x: shelf.x, y: shelfY })
+    expect(store().boxes[0]).toMatchObject({ x: box.x, y: box.y })
+  })
+
+  it('stops the lowest part at the floor, keeping the others in place around it', () => {
+    store().addPiece('shelf')
+    store().addPiece('shelf')
+    const [low, high] = store().pieces.map((piece) => piece.id)
+    store().updatePiece(low, { y: 100 })
+    store().updatePiece(high, { y: 400 })
+    store().movePieces([low, high], 0, -300)
+    expect(store().pieces.map((piece) => piece.y)).toEqual([0, 300])
+  })
+
+  it('leaves parts on other walls, and records nothing for no movement', () => {
+    store().addPiece('shelf')
+    const back = store().selectedId!
+    store().setRoom({ left: true })
+    store().setActiveWall('left')
+    store().addPiece('shelf')
+    const left = store().selectedId!
+    const before = store().pieces.find((piece) => piece.id === back)!.x
+    store().movePieces([back, left], 100, 0)
+    expect(store().pieces.find((piece) => piece.id === back)!.x).toBe(before)
+
+    const steps = store().past.length
+    store().movePieces([left], 0, 0)
+    expect(store().past.length).toBe(steps)
+  })
+})
