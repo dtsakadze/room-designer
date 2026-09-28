@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- A tidier Settings section: units as one switch, each board in its own card (what it's for, its thickness and its material), and the depth for new parts in its own group.
+
 - Fronts and drawer boxes have boards of their own: set a thickness for doors and drawer fronts, and one for drawer sides and backs, under Settings → Boards. Every board can also be named (say, "19 mm oak-veneer MDF"), and the cut list shows that name, so you can see what to buy. Existing projects keep the sizes they had.
 
 - Hanging rods are in the cut list's Hardware section now, by diameter and the length to cut them to, with two end supports for each rod.

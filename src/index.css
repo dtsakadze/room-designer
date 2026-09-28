@@ -259,11 +259,41 @@ button {
 .board {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+/* A board's thickness is at most a few digits, so its box leaves room for the hint. */
+.board .field-input input {
+  width: 40px;
+}
+
+.board-intro {
+  margin: -4px 0 10px;
+}
+
+.board-role {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.board-label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.board-hint {
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 .board-name {
   width: 100%;
+  background: #fff;
   border: 1px solid var(--border);
   border-radius: 7px;
   padding: 7px 8px;

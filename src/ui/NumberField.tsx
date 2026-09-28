@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { UNITS, formatNumber, fromUnit } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 
 type NumberFieldProps = {
-  label: string
+  label: ReactNode
   /** A length in millimetres; shown and typed in the chosen unit. */
   value: number
   /** Gets the typed length back in millimetres. */

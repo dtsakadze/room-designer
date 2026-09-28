@@ -7,8 +7,9 @@ import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { NumberField } from './NumberField'
 
 /**
- * Project-wide sizes: the boards (a thickness every part of theirs follows,
- * and a name for the cut list), and the unit depth, which new parts start from.
+ * Project-wide settings, in three groups: the units lengths are shown in (a
+ * preference of this browser), the boards (a thickness every part of theirs
+ * follows, and a material name for the cut list), and how deep new parts start.
  */
 export function BoardSettings() {
   const thickness = useDesignStore((s) => s.thickness)
@@ -16,58 +17,70 @@ export function BoardSettings() {
   const unitDepth = useDesignStore((s) => s.unitDepth)
   const setUnitDepth = useDesignStore((s) => s.setUnitDepth)
   const setUnit = useSettingsStore((s) => s.setUnit)
-  const { unit, len } = useUnits()
+  const { unit, num } = useUnits()
 
   return (
     <>
       <section className="section">
         <h2>Units</h2>
-        <div className="field">
-          <span className="field-label">Show lengths in</span>
-          <span className="unit-switch" role="radiogroup" aria-label="Units">
-            {UNIT_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                role="radio"
-                aria-checked={unit === option}
-                onClick={() => setUnit(option)}
-              >
-                {UNITS[option].label}
-              </button>
-            ))}
-          </span>
+        <div className="unit-switch wide-switch" role="radiogroup" aria-label="Units">
+          {UNIT_ORDER.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={unit === option}
+              onClick={() => setUnit(option)}
+            >
+              {UNITS[option].label}
+            </button>
+          ))}
         </div>
       </section>
+
       <section className="section">
         <h2>Boards</h2>
+        <p className="hint board-intro">
+          Every part follows its board&apos;s thickness. Names show in the cut list.
+        </p>
         <div className="stack">
           {BOARDS.map((board) => (
             <div key={board.key} className="board">
               <NumberField
-                label={board.label}
+                label={
+                  <span className="board-role">
+                    <span className="board-label">{board.label}</span>
+                    <span className="board-hint">{board.hint}</span>
+                  </span>
+                }
                 value={thickness[board.key]}
                 onChange={(mm) => setThickness({ [board.key]: mm })}
               />
               <BoardNameField board={board.key} example={board.example} />
-              <p className="hint">{board.hint}</p>
             </div>
           ))}
-          <NumberField label="Unit depth" value={unitDepth} onChange={setUnitDepth} />
-          <div className="button-row">
+        </div>
+      </section>
+
+      <section className="section">
+        <h2>New parts</h2>
+        <div className="stack">
+          <NumberField label="Depth" value={unitDepth} onChange={setUnitDepth} />
+          <div className="unit-switch wide-switch" role="radiogroup" aria-label="Depth preset">
             {DEPTH_PRESETS.map((preset) => (
               <button
                 key={preset.label}
                 type="button"
-                className="add-button"
-                aria-pressed={unitDepth === preset.depth}
+                role="radio"
+                aria-checked={unitDepth === preset.depth}
                 onClick={() => setUnitDepth(preset.depth)}
               >
-                {preset.label} {len(preset.depth)}
+                {/* The unit is in the Depth field above; with it, the two don't fit. */}
+                {preset.label} {num(preset.depth)}
               </button>
             ))}
           </div>
-          <p className="hint">New parts start this deep. Parts already placed keep their size.</p>
+          <p className="hint">Parts you add from now on start this deep.</p>
         </div>
       </section>
     </>
@@ -91,7 +104,7 @@ function BoardNameField({ board, example }: { board: BoardKey; example: string }
       className="board-name"
       type="text"
       aria-label={`Name of the ${BOARDS.find((b) => b.key === board)!.label.toLowerCase()} board`}
-      placeholder={`Name, e.g. ${example}`}
+      placeholder={`Material, e.g. ${example}`}
       maxLength={MAX_BOARD_NAME}
       autoComplete="off"
       value={shown}

@@ -7,16 +7,16 @@ export const BOARDS: { key: BoardKey; label: string; hint: string; example: stri
   {
     key: 'body',
     label: 'Body',
-    hint: 'Sides, tops and bottoms, shelves, dividers, plinths and rails',
-    example: '18 mm white melamine',
+    hint: 'Carcass, shelves',
+    example: 'white melamine',
   },
-  { key: 'back', label: 'Back', hint: 'Back panels and drawer bottoms', example: '3 mm white HDF' },
-  { key: 'front', label: 'Fronts', hint: 'Doors and drawer fronts', example: '19 mm oak-veneer MDF' },
+  { key: 'back', label: 'Back', hint: 'Backs, drawer bases', example: 'white HDF' },
+  { key: 'front', label: 'Fronts', hint: 'Doors, drawer fronts', example: 'oak-veneer MDF' },
   {
     key: 'drawer',
     label: 'Drawer boxes',
-    hint: 'Sides and backs of drawers',
-    example: '15 mm birch plywood',
+    hint: 'Drawer sides, backs',
+    example: 'birch plywood',
   },
 ]
 
