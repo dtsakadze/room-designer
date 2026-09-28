@@ -1,4 +1,6 @@
-import { BOARD, pieceLabel } from '../lib/defaults'
+import { BOARD, EXTENSION_LABELS, RUNNER_LENGTHS, pieceLabel } from '../lib/defaults'
+import { drawerParts, runnerLength } from '../lib/drawer'
+import { useUnits } from '../store/useSettingsStore'
 import type { Piece } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
 import { FILLS } from '../canvas/colors'
@@ -72,6 +74,7 @@ export function PieceInspector() {
       )}
 
       {piece.kind === 'door' && <DoorOptions piece={piece} />}
+      {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
 
       {isRod ? (
         <>
@@ -216,3 +219,53 @@ function DoorOptions({ piece }: { piece: Piece }) {
 }
 
 type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset'>
+
+/** The runner type, and the box and runners the drawer's size works out to. */
+function DrawerOptions({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const thickness = useDesignStore((s) => s.thickness)
+  const { len } = useUnits()
+  const extension = piece.extension ?? 'standard'
+  const runner = runnerLength(piece, thickness)
+  const parts = drawerParts(piece, thickness)
+  const side = parts.find((part) => part.role === 'side')!
+  const bottom = parts.find((part) => part.role === 'bottom')!
+
+  return (
+    <>
+      <div className="field">
+        <span className="field-label">Runners</span>
+        <span className="unit-switch" role="radiogroup" aria-label="Runners">
+          {(['standard', 'full'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={extension === value}
+              onClick={() => updatePiece(piece.id, { extension: value })}
+            >
+              {EXTENSION_LABELS[value]}
+            </button>
+          ))}
+        </span>
+      </div>
+      <p className="hint">
+        {extension === 'full'
+          ? 'Full extension: the drawer pulls out all the way.'
+          : 'Standard: the drawer pulls out about three quarters of the way.'}{' '}
+        Size the drawer to its opening: the box is {len(bottom.width)} wide, leaving room for
+        the runners each side, and {len(side.height + bottom.height)} high.
+      </p>
+      {runner === null ? (
+        <p className="hint hint-error">
+          Too shallow for runners: the shortest is {len(RUNNER_LENGTHS[0])}, plus{' '}
+          {len(thickness.body)} for the front. Make the drawer deeper.
+        </p>
+      ) : (
+        <p className="hint">
+          A pair of {len(runner)} runners; the box is as long.
+        </p>
+      )}
+    </>
+  )
+}

@@ -4,11 +4,11 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 
 ## Features
 
-- Add a whole box (sides, top, bottom and back) sized as one, or build in a front view from side, top/bottom and back panels, a plinth, rails, shelves, dividers, hanging rods, drawers and hinged doors (single or double, overlay or inset). Drag to move, drag handles to resize, or type exact sizes.
+- Add a whole box (sides, top, bottom and back) sized as one, or build in a front view from side, top/bottom and back panels, a plinth, rails, shelves, dividers, hanging rods, drawers (built from a front, sides, back and bottom on standard or full-extension runners) and hinged doors (single or double, overlay or inset). Drag to move, drag handles to resize, or type exact sizes.
 - Board thickness is a project setting (body and back), and every panel follows it.
 - Wardrobes along one, two or three walls of a room (L- and U-shaped): design each wall in its own front view, and see the whole room from the top or in 3D.
 - Dimension lines for the overall size and the gaps around the selected part.
-- A cut list: every board as length × width × thickness, with identical parts counted together.
+- A cut list: every board as length × width × thickness, with identical parts counted together, and the drawer runners to buy.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
 - Select several parts (⌘/Ctrl-drag a selection rectangle, or ⌘/Ctrl-click) to move, nudge, colour or delete them together, and set a colour for new parts.
 - Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).
@@ -71,7 +71,7 @@ React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the d
 
 ## Not done yet
 
-Front-to-back positions for parts (for now every part sits flush against the back), corner units and a door wall for rooms, editing in the side and top views, snapping to other panels, drawer boxes, hardware lists (hinges, handles), CSV/PDF export, and a mobile layout.
+Front-to-back positions for parts (for now every part sits flush against the back), corner units and a door wall for rooms, editing in the side and top views, snapping to other panels, hinges and handles in the hardware list, CSV/PDF export, and a mobile layout.
 
 ## Releases and licence
 

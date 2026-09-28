@@ -83,7 +83,7 @@ App changes that don't touch saved data (new buttons, visuals, fixes) never need
 | 1 | (first version) | `v1-minimal` (earliest shape: thickness and parts only), `v1-full` (every v1 feature) |
 | 2 | 1→2: v1 gained `unitDepth` and `boxes` as optional fields over time. From v2 they're always there; the converter fills in 600 mm and no boxes when missing. | `v2-full` |
 | 3 | 2→3: adds `room` (which side walls are used, and the room's inside width and depth). The converter adds a one-wall room of 2400 × 1800 mm. Parts and boxes may have `wall: 'left' \| 'right'`; absent means the back wall, so older parts need no change. | `v3-room` (U-shaped, parts on every wall) |
-| 4 | 3→4: adds doors: a `door` part kind with optional `double`, `hinge: 'right'` (single doors; absent means left) and `inset` (absent means overlay). No older save has doors, so the converter only changes the version; the bump makes older apps refuse saves with doors instead of dropping them. | `v4-doors` (overlay double door on the back wall, inset right-hinged door on the left wall) |
+| 4 | 3→4: adds doors: a `door` part kind with optional `double`, `hinge: 'right'` (single doors; absent means left) and `inset` (absent means overlay), and drawers' optional `extension: 'full'` (absent means standard runners). No older save has either, so the converter only changes the version; the bump makes older apps refuse such saves instead of dropping them. | `v4-doors` (overlay double door on the back wall, inset right-hinged door on the left wall), `v4-drawers` (full-extension, standard and too-shallow drawers) |
 
 Add a row for every new version.
 

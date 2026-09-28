@@ -55,6 +55,11 @@ export type Piece = {
    * rather than in front of them. Absent means overlay.
    */
   inset?: boolean
+  /**
+   * Drawers only: runners that pull the drawer out all the way, rather than
+   * standard ones that leave about a quarter of it inside. Absent means standard.
+   */
+  extension?: 'standard' | 'full'
   /** Hex colour (`#rrggbb`). Absent means the project's default colour. */
   color?: string
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */

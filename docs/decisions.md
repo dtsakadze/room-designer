@@ -70,6 +70,16 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: the smallest change that fits the model: no new store, no z yet, and the size stays in the person's hands, since how much a door overlaps or how big its gaps are varies by hinge.
 *Instead of*: doors owned by a box and sized from it automatically (would tie doors to boxes, while many units are built from loose panels), and an open/closed state (nothing to design with it yet). Hinges and handles in a hardware list are left for later.
 
+**Drawers built from boards, on runners** (2026-09-28)
+*Decision*: a drawer stays one part, the space it fills: as wide as its opening, as high as its front, and as deep as it may go, front included. Its boards are worked out from that (`drawerParts`), not stored: a front of the full size, and behind it a box narrower by a 13 mm runner gap each side, 30 mm lower than the front, as long as the longest standard runner (250–700 mm in 50 mm steps) that fits behind the front. The sides stand on a bottom of back-panel board and the back fits between them. The parts go into the cut list and 3D. In the cut list they're grouped under their drawer, after the unit's boards, one group per drawer design (identical boards, whatever the runner type), so it's clear what builds a drawer; the panel also gets a Hardware list with a pair of runners per drawer, by type and length. A drawer's `extension` (standard or full) is recorded for the hardware list; it doesn't change the sizes. Drawers now sit with their front flush with the front of their wall's unit (they used to stand against the back).
+*Why*: the drawer as its opening is how it's sized on the drawing, and every size that follows from it is a rule of thumb that holds for common side-mounted runners, so deriving the boards keeps them right as the drawer is resized, with nothing to keep in sync. A drawer's front belongs at the front.
+*Instead of*: storing the boards as pieces owned by the drawer like a box's panels (a second copy of the same information, rebuilt on every change, for no gain while the boards aren't edited one by one), and exact gaps per runner brand (varies; a setting can come later). Overlay drawer fronts, undermount runners and handles are left for later.
+
+**Cut list in sections** (2026-09-28)
+*Decision*: the cut list is split into sections with headings: Panels (sides, tops and bottoms, back panels, plinths, rails), Shelves and dividers, Doors, then one group per drawer design. Within a section, parts of a kind stay together in a fixed order (sides before tops, a drawer's front, sides, back, bottom), biggest first. Every board kind must belong to a section (a test checks it).
+*Why*: a list sorted by thickness then size mixed kinds together, so checking it against the design meant hunting for each part. Grouped like the design is built, it reads in the order you'd check it.
+*Instead of*: the previous order, thickest boards first then biggest (useful for planning sheets, which matters less than checking the list while there's no sheet layout yet).
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -91,6 +101,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Save format v4: doors** (2026-09-28)
 *Decision*: `FORMAT_VERSION` 4 adds the `door` kind and its optional `double`, `hinge` and `inset` fields. Converter 3→4 only changes the version.
 *Why*: the new fields are optional, but an older app drops parts of a kind it doesn't know, so a save with doors opened there would lose them. With the bump, an older app refuses it as "newer" instead.
+Drawers' `extension` was added to v4 too (2026-09-28): v4 hadn't been released or pushed yet, so no save or app outside this machine knows v4 without it.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

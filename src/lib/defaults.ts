@@ -10,8 +10,9 @@ export const DEPTH_PRESETS = [
 export const DEFAULT_UNIT_DEPTH = 600
 export const MIN_UNIT_DEPTH = 100
 export const MAX_UNIT_DEPTH = 1500
-/** Shelves and dividers sit this far back from the front edge; drawers more. */
+/** Shelves and dividers sit this far back from the front edge. */
 const SHELF_SETBACK = 20
+/** A new drawer leaves this much room behind it, for runner lengths to fit. */
 const DRAWER_SETBACK = 50
 export const ROD_DIAMETER = 25
 export const PLINTH_HEIGHT = 80
@@ -20,6 +21,17 @@ export const PLINTH_RECESS = 50
 export const RAIL_DEPTH = 100
 /** The gap between the two leaves of a double door, so they don't rub. */
 export const DOOR_LEAF_GAP = 3
+/**
+ * Room each drawer runner takes between the drawer box and the side of the
+ * opening, per side. Most side-mounted runners need 12.5–13 mm.
+ */
+export const RUNNER_GAP = 13
+/** Runner lengths sold, shortest first; a drawer box is as long as its runners. */
+export const RUNNER_LENGTHS = [250, 300, 350, 400, 450, 500, 550, 600, 650, 700]
+export const EXTENSION_LABELS = { standard: 'Standard', full: 'Full extension' } as const
+
+/** How much lower the drawer box is than its front, so it can be lifted in and out. */
+export const DRAWER_BOX_CLEARANCE = 30
 
 /** Room clothes need below a hanging rod, measured down from the rod. */
 export const HANGING_GUIDES = [

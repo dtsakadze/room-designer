@@ -51,7 +51,7 @@ describe('doors', () => {
 
   it('are cut as two leaves when double', () => {
     const double = piece('d', 'door', { width: 603, height: 2000, double: true })
-    expect(cutList([double])).toEqual([
+    expect(cutList([double], thickness)[0].rows).toEqual([
       {
         kind: 'door',
         label: 'Double door leaf',

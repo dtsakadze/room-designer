@@ -28,6 +28,8 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'door' || !piece.double) delete normalized.double
   if (piece.kind !== 'door' || piece.double || piece.hinge !== 'right') delete normalized.hinge
   if (piece.kind !== 'door' || !piece.inset) delete normalized.inset
+  // Standard runners are the default, stored as no value.
+  if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
   if (!piece.boxId) delete normalized.boxId
   // The back wall (the default) is stored as no value.
   if (!isSideWall(piece.wall)) delete normalized.wall
@@ -155,8 +157,9 @@ const overlaps = (a: Edges, b: Edges) =>
  * don't store this yet, so everything sits flush against the back: the back
  * panel takes the first `thickness.back` mm, and the rest start in front of it.
  * The exceptions: the plinth sits at the front, set back a little, a rail
- * runs along the front unless it's marked as a back rail, and a door stands in
- * front of the unit (overlay) or just inside its front edge (inset).
+ * runs along the front unless it's marked as a back rail, a door stands in
+ * front of the unit (overlay) or just inside its front edge (inset), and a
+ * drawer's front is flush with the front edge, its box behind.
  */
 export function depthStart(pieces: Piece[], thickness: Thickness) {
   const hasBack = pieces.some((piece) => piece.kind === 'back')
@@ -164,13 +167,14 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
   const front = Math.max(
     0,
     ...pieces
-      .filter((piece) => !['plinth', 'rail', 'door'].includes(piece.kind))
+      .filter((piece) => !['plinth', 'rail', 'door', 'drawer'].includes(piece.kind))
       .map((piece) => behind(piece) + piece.depth),
   )
   return (piece: Piece) => {
     if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
     if (piece.kind === 'door') return piece.inset ? Math.max(0, front - piece.depth) : front
+    if (piece.kind === 'drawer') return Math.max(0, front - piece.depth)
     return behind(piece)
   }
 }

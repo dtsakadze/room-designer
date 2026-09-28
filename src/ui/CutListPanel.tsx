@@ -1,4 +1,5 @@
-import { cutList } from '../lib/cutList'
+import { CUT_LIST_SECTIONS, cutList, hardwareList } from '../lib/cutList'
+import { EXTENSION_LABELS } from '../lib/defaults'
 import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
@@ -8,10 +9,14 @@ const BOARD_LABELS = { body: 'Body', back: 'Back' } as const
 /** The boards to cut, grouped and counted, floating over the canvas. */
 export function CutListPanel({ onClose }: { onClose: () => void }) {
   const pieces = useDesignStore((s) => s.pieces)
-  const rows = cutList(pieces)
-  const { num, unit } = useUnits()
-  const total = rows.reduce((sum, row) => sum + row.quantity, 0)
-  const skipped = pieces.filter((piece) => piece.kind === 'rod' || piece.kind === 'drawer').length
+  const thickness = useDesignStore((s) => s.thickness)
+  const groups = cutList(pieces, thickness)
+  const hardware = hardwareList(pieces, thickness)
+  const { num, len, unit } = useUnits()
+  const total = groups
+    .flatMap((group) => group.rows)
+    .reduce((sum, row) => sum + row.quantity, 0)
+  const skipped = pieces.filter((piece) => piece.kind === 'rod').length
 
   return (
     <div className="cut-list">
@@ -25,7 +30,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
         </button>
       </header>
 
-      {rows.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="muted">No boards yet. Add panels or shelves to see what to cut.</p>
       ) : (
         <table>
@@ -39,25 +44,69 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
               <th>Board</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={`${row.label}|${row.length}|${row.width}|${row.thickness}`}>
-                <td>{row.label}</td>
-                <td className="num">{row.quantity}</td>
-                <td className="num">{num(row.length)}</td>
-                <td className="num">{num(row.width)}</td>
-                <td className="num">{num(row.thickness)}</td>
-                <td>{BOARD_LABELS[row.board]}</td>
+          {groups.map((group, index) => (
+            // One body per group; indexed, since two drawer designs can share a size.
+            <tbody key={index}>
+              <tr className="cut-list-group">
+                <th colSpan={6}>
+                  {group.drawers ? (
+                    <>
+                      {group.drawers.count === 1 ? 'Drawer' : `${group.drawers.count} drawers`}
+                      <span className="muted">
+                        {' '}
+                        · front {len(group.drawers.width)} × {len(group.drawers.height)}
+                      </span>
+                    </>
+                  ) : (
+                    CUT_LIST_SECTIONS.find((section) => section.id === group.section)?.title
+                  )}
+                </th>
               </tr>
-            ))}
-          </tbody>
+              {group.rows.map((row) => (
+                <tr key={`${row.label}|${row.length}|${row.width}|${row.thickness}`}>
+                  <td>{row.label}</td>
+                  <td className="num">{row.quantity}</td>
+                  <td className="num">{num(row.length)}</td>
+                  <td className="num">{num(row.width)}</td>
+                  <td className="num">{num(row.thickness)}</td>
+                  <td>{BOARD_LABELS[row.board]}</td>
+                </tr>
+              ))}
+            </tbody>
+          ))}
         </table>
+      )}
+
+      {hardware.length > 0 && (
+        <>
+          <h3>Hardware</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th className="num">Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hardware.map((row) => (
+                <tr key={`${row.extension}|${row.length}`}>
+                  <td>
+                    Drawer runners, {EXTENSION_LABELS[row.extension].toLowerCase()}, {len(row.length)}
+                  </td>
+                  <td className="num">
+                    {row.pairs} pair{row.pairs === 1 ? '' : 's'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
 
       <p className="hint">
         All sizes in {UNITS[unit].label}.
         {skipped > 0 &&
-          ` Rods and drawers aren't flat boards, so they're left out (${skipped} in the design).`}
+          ` Hanging rods aren't boards, so they're left out (${skipped} in the design).`}
       </p>
     </div>
   )

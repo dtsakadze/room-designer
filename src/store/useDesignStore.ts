@@ -623,16 +623,6 @@ export const useDesignStore = create<DesignState>()(
 
 const atLeastOne = (mm: number) => Math.max(1, Math.round(mm) || 1)
 
-const samePiece = (a: Piece, b: Piece) =>
-  a.x === b.x &&
-  a.y === b.y &&
-  a.width === b.width &&
-  a.height === b.height &&
-  a.depth === b.depth &&
-  !!a.fixed === !!b.fixed &&
-  a.color === b.color &&
-  a.railAt === b.railAt &&
-  a.wall === b.wall &&
-  !!a.double === !!b.double &&
-  a.hinge === b.hinge &&
-  !!a.inset === !!b.inset
+// Both are normalized, so the same fields come in the same order; comparing
+// every field means a new one can't be forgotten here.
+const samePiece = (a: Piece, b: Piece) => JSON.stringify(a) === JSON.stringify(b)
