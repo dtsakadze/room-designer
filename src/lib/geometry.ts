@@ -177,7 +177,8 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
     if (piece.kind === 'door') return piece.inset ? Math.max(0, front - piece.depth) : front
     if (piece.kind === 'drawer') {
-      return Math.max(0, front - piece.depth + (piece.overlay ? thickness.body : 0))
+      // An overlay front stands in front of the unit, by its own thickness.
+      return Math.max(0, front - piece.depth + (piece.overlay ? thickness.front : 0))
     }
     return behind(piece)
   }

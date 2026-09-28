@@ -314,7 +314,7 @@ function DrawerOptions({ piece }: { piece: Piece }) {
       {runner === null ? (
         <p className="hint hint-error">
           Too shallow for runners: the shortest is {len(RUNNER_LENGTHS[0])}, plus{' '}
-          {len(thickness.body)} for the front. Make the drawer deeper.
+          {len(thickness.front)} for the front. Make the drawer deeper.
         </p>
       ) : (
         <p className="hint">

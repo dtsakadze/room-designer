@@ -134,6 +134,19 @@ describe('drawers', () => {
     })
   })
 
+  it('cut the front and box from their own boards', () => {
+    const own = { ...thickness, front: 22, drawer: 12 }
+    const parts = drawerParts(drawer(), own)
+    const byRole = (role: string) => parts.find((part) => part.role === role)!
+    expect(byRole('front')).toMatchObject({ board: 'front', depth: 22, z: 550 - 22 })
+    expect(byRole('side')).toMatchObject({ board: 'drawer', width: 12 })
+    expect(byRole('back')).toMatchObject({ board: 'drawer', depth: 12 })
+    expect(byRole('back').width).toBe(564 - 2 * RUNNER_GAP - 2 * 12)
+    expect(byRole('bottom').board).toBe('back')
+    // The runners fit behind the front, whatever it's made of.
+    expect(runnerLength(drawer({ depth: 521 }), own)).toBe(450)
+  })
+
   it('store only the full-extension and overlay choices', () => {
     expect(drawer({ extension: 'standard' })).not.toHaveProperty('extension')
     expect(drawer({ overlay: false })).not.toHaveProperty('overlay')

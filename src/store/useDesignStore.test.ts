@@ -221,3 +221,28 @@ describe('doors', () => {
     expect(door()).not.toHaveProperty('double')
   })
 })
+
+describe('boards', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('gives doors the fronts board, and follows it when it changes', () => {
+    store().addPiece('door')
+    store().setThickness({ front: 22 })
+    expect(store().pieces[0].depth).toBe(22)
+    store().undo()
+    expect(store().pieces[0].depth).toBe(DEFAULT_THICKNESS.front)
+  })
+
+  it('names a board, trimmed, as an undo step, and forgets an empty name', () => {
+    store().setBoardName('front', '  19 mm oak MDF ')
+    expect(store().boardNames).toEqual({ front: '19 mm oak MDF' })
+    const steps = store().past.length
+    store().setBoardName('front', '19 mm oak MDF')
+    expect(store().past.length).toBe(steps)
+    store().setBoardName('front', '')
+    expect(store().boardNames).toEqual({})
+    store().undo()
+    expect(store().boardNames).toEqual({ front: '19 mm oak MDF' })
+    expect(toProjectData(store()).boardNames).toEqual({ front: '19 mm oak MDF' })
+  })
+})

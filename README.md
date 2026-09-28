@@ -5,7 +5,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 ## Features
 
 - Add a whole box (sides, top, bottom and back) sized as one, or build in a front view from side, top/bottom and back panels, a plinth, rails, shelves, dividers, hanging rods, drawers (built from a front, sides, back and bottom on standard or full-extension runners, with inset or overlay fronts) and hinged doors (single or double, overlay or inset). Drag to move, drag handles to resize, or type exact sizes.
-- Board thickness is a project setting (body and back), and every panel follows it.
+- Boards are project settings: body, back, fronts (doors and drawer fronts) and drawer boxes, each with a thickness every part of it follows and an optional name (e.g. "18 mm white melamine") for the cut list.
 - Wardrobes along one, two or three walls of a room (L- and U-shaped): design each wall in its own front view, and see the whole room from the top or in 3D.
 - Dimension lines for the overall size and the gaps around the selected part.
 - A cut list: every board as length × width × thickness, with identical parts counted together, and the hardware to buy: drawer runners, hanging rods cut to length and their end supports.

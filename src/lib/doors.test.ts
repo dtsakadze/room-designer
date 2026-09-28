@@ -58,8 +58,8 @@ describe('doors', () => {
         quantity: 2,
         length: 2000,
         width: (603 - DOOR_LEAF_GAP) / 2,
-        thickness: thickness.body,
-        board: 'body',
+        thickness: thickness.front,
+        board: 'front',
       },
     ])
   })

@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Fronts and drawer boxes have boards of their own: set a thickness for doors and drawer fronts, and one for drawer sides and backs, under Settings → Boards. Every board can also be named (say, "19 mm oak-veneer MDF"), and the cut list shows that name, so you can see what to buy. Existing projects keep the sizes they had.
+
 - Hanging rods are in the cut list's Hardware section now, by diameter and the length to cut them to, with two end supports for each rod.
 
 - The top view shows how each door opens: the leaf swung open to 110°, as far as most hinges go, and the arc it sweeps. In an L- or U-shaped room, a door that would hit a wall, a door on the next wall or a part there turns red, and its panel says what it hits.

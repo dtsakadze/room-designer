@@ -1,15 +1,21 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
+import type { BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { contentBounds, normalizePiece } from '../lib/geometry'
-import { DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
-import { type ProjectData, clampUnitDepth } from '../lib/project'
+import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
+import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
-type Snapshot = { pieces: Piece[]; boxes: Box[]; thickness: Thickness; room: Room }
+type Snapshot = {
+  pieces: Piece[]
+  boxes: Box[]
+  thickness: Thickness
+  boardNames: BoardNames
+  room: Room
+}
 
 /** Oldest steps are dropped past this, so a long session can't grow forever. */
 const HISTORY_LIMIT = 200
@@ -23,6 +29,8 @@ type DesignState = {
   /** Every selected part (the primary one included); more than one for a multi-selection. */
   selectedIds: string[]
   thickness: Thickness
+  /** What each board is, for the cut list. */
+  boardNames: BoardNames
   /**
    * Colour new parts start with; null means the standard look. Like `unitDepth`,
    * it only affects parts added later, so undo skips it.
@@ -86,6 +94,8 @@ type DesignState = {
   setPieceColors: (ids: string[], color: string | null) => void
   setDefaultColor: (color: string | null) => void
   setThickness: (patch: Partial<Thickness>) => void
+  /** Names a board for the cut list; an empty name goes back to its role. */
+  setBoardName: (board: BoardKey, name: string) => void
   setUnitDepth: (mm: number) => void
   /** Changes the room; a wall switched off takes its parts with it. */
   setRoom: (patch: Partial<Room>) => void
@@ -134,14 +144,15 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, room } = get()
-      return { pieces, boxes, thickness, room }
+      const { pieces, boxes, thickness, boardNames, room } = get()
+      return { pieces, boxes, thickness, boardNames, room }
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
       state.pieces = snapshot.pieces
       state.boxes = snapshot.boxes
       state.thickness = snapshot.thickness
+      state.boardNames = snapshot.boardNames
       state.room = snapshot.room
       const ids = new Set(snapshot.pieces.map((piece) => piece.id))
       state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
@@ -224,6 +235,7 @@ export const useDesignStore = create<DesignState>()(
       selectedId: null,
       selectedIds: [],
       thickness: DEFAULT_THICKNESS,
+      boardNames: {},
       defaultColor: null,
       unitDepth: DEFAULT_UNIT_DEPTH,
       room: DEFAULT_ROOM,
@@ -497,8 +509,10 @@ export const useDesignStore = create<DesignState>()(
       setThickness: (patch) =>
         set((state) => {
           const merged = { ...state.thickness, ...patch }
-          const next = { body: atLeastOne(merged.body), back: atLeastOne(merged.back) }
-          if (next.body === state.thickness.body && next.back === state.thickness.back) return
+          const next = Object.fromEntries(
+            BOARDS.map(({ key }) => [key, atLeastOne(merged[key])]),
+          ) as Thickness
+          if (BOARDS.every(({ key }) => next[key] === state.thickness[key])) return
           record(state)
           state.thickness = next
           state.boxes = state.boxes.map((box) => normalizeBox(box, next))
@@ -507,6 +521,15 @@ export const useDesignStore = create<DesignState>()(
             state.boxes,
             next,
           )
+        }),
+
+      setBoardName: (board, name) =>
+        set((state) => {
+          const cleaned = cleanBoardName(name)
+          if ((state.boardNames[board] ?? null) === cleaned) return
+          record(state)
+          if (cleaned) state.boardNames[board] = cleaned
+          else delete state.boardNames[board]
         }),
 
       setUnitDepth: (mm) =>
@@ -567,6 +590,7 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = project.pieces
           state.boxes = project.boxes ?? []
           state.thickness = project.thickness
+          state.boardNames = project.boardNames ?? {}
           state.defaultColor = project.defaultColor ?? null
           state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.room = project.room ?? DEFAULT_ROOM
@@ -584,6 +608,7 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = project.pieces
           state.boxes = project.boxes
           state.thickness = project.thickness
+          state.boardNames = project.boardNames ?? {}
           state.unitDepth = project.unitDepth
           state.defaultColor = project.defaultColor ?? null
           state.room = project.room

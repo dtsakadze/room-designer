@@ -1,0 +1,108 @@
+{
+  "formatVersion": 5,
+  "savedAt": "2026-09-29T12:00:00.000Z",
+  "name": "Named boards",
+  "thickness": {
+    "body": 18,
+    "back": 3,
+    "front": 19,
+    "drawer": 15
+  },
+  "boardNames": {
+    "body": "18 mm white melamine",
+    "back": "3 mm white HDF",
+    "front": "19 mm oak-veneer MDF",
+    "drawer": "15 mm birch plywood"
+  },
+  "unitDepth": 600,
+  "pieces": [
+    {
+      "kind": "back",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 3,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:back",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2"
+    },
+    {
+      "kind": "vertical",
+      "x": -600,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:left",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2"
+    },
+    {
+      "kind": "vertical",
+      "x": 582,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:right",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2"
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 0,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:bottom",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2"
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 1982,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:top",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2"
+    },
+    {
+      "id": "e88f65c8-07a0-4296-9207-4ca2b5825343",
+      "kind": "drawer",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 250,
+      "depth": 550,
+      "overlay": true,
+      "extension": "full"
+    },
+    {
+      "id": "99418ffe-66b5-4660-8786-9f79f9b6926c",
+      "kind": "door",
+      "x": -600,
+      "y": 250,
+      "width": 1200,
+      "height": 1750,
+      "depth": 19,
+      "double": true
+    }
+  ],
+  "boxes": [
+    {
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 600,
+      "joint": "between",
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2"
+    }
+  ],
+  "room": {
+    "left": false,
+    "right": false,
+    "width": 2400,
+    "depth": 1800
+  }
+}

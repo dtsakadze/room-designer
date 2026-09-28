@@ -256,6 +256,26 @@ button {
   color: var(--text);
 }
 
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.board-name {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+
+.board-name:focus {
+  border-color: var(--accent);
+}
+
 .field-unit {
   color: var(--muted);
   font-size: 12px;

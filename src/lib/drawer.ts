@@ -25,7 +25,7 @@ export type DrawerPart = {
  * the shortest one doesn't.
  */
 export function runnerLength(drawer: Piece, thickness: Thickness) {
-  const room = drawer.depth - thickness.body
+  const room = drawer.depth - thickness.front
   return RUNNER_LENGTHS.filter((length) => length <= room).at(-1) ?? null
 }
 
@@ -37,32 +37,34 @@ export function runnerLength(drawer: Piece, thickness: Thickness) {
  * - inset: the space is the opening, and the front sits inside it, flush with
  *   the front of the unit;
  * - overlay: the space is what the front covers, the opening plus the edges
- *   of the unit around it (a board's thickness all round), and the front sits
- *   in front of the unit.
+ *   of the unit around it (a body board's thickness all round), and the front
+ *   sits in front of the unit.
  *
- * Either way the front is `FRONT_GAP` smaller than the space on every edge.
- * Behind it, the box is narrower than the opening by a runner's gap each side,
- * lower by `DRAWER_BOX_CLEARANCE`, and as long as the runners (the space
- * behind the front when it's too shallow for any). The sides stand on the
- * bottom, a back-panel board, and the back fits between them.
+ * Either way the front is `FRONT_GAP` smaller than the space on every edge,
+ * cut from the fronts board. Behind it, the box is narrower than the opening
+ * by a runner's gap each side, lower by `DRAWER_BOX_CLEARANCE`, and as long as
+ * the runners (the space behind the front when it's too shallow for any). Its
+ * sides stand on the bottom, a back-panel board, and its back fits between
+ * them; sides and back are cut from the drawer-box board.
  */
 export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
-  const t = thickness.body
+  const front = thickness.front
+  const box = thickness.drawer
   const b = thickness.back
   const g = FRONT_GAP
-  const edge = drawer.overlay ? t : 0
+  const edge = drawer.overlay ? thickness.body : 0
   const opening = {
     x: drawer.x + edge,
     y: drawer.y + edge,
     width: Math.max(1, drawer.width - 2 * edge),
     height: Math.max(1, drawer.height - 2 * edge),
   }
-  const length = runnerLength(drawer, thickness) ?? Math.max(1, drawer.depth - t)
-  const boxWidth = Math.max(2 * t + 1, opening.width - 2 * RUNNER_GAP)
+  const length = runnerLength(drawer, thickness) ?? Math.max(1, drawer.depth - front)
+  const boxWidth = Math.max(2 * box + 1, opening.width - 2 * RUNNER_GAP)
   const boxX = opening.x + (opening.width - boxWidth) / 2
   const wallHeight = Math.max(1, opening.height - DRAWER_BOX_CLEARANCE - b)
   // The box runs from just behind the front, back towards the wall.
-  const frontZ = drawer.depth - t
+  const frontZ = drawer.depth - front
   const boxZ = Math.max(0, frontZ - length)
 
   const part = (
@@ -74,13 +76,13 @@ export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
   ): DrawerPart => ({ role, label, board, axis, ...rect })
 
   return [
-    part('front', 'Front', 'body', 'depth', {
+    part('front', 'Front', 'front', 'depth', {
       x: drawer.x + g,
       y: drawer.y + g,
       z: frontZ,
       width: Math.max(1, drawer.width - 2 * g),
       height: Math.max(1, drawer.height - 2 * g),
-      depth: t,
+      depth: front,
     }),
     part('bottom', 'Bottom', 'back', 'height', {
       x: boxX,
@@ -90,23 +92,23 @@ export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
       height: b,
       depth: length,
     }),
-    ...[boxX, boxX + boxWidth - t].map((x) =>
-      part('side', 'Side', 'body', 'width', {
+    ...[boxX, boxX + boxWidth - box].map((x) =>
+      part('side', 'Side', 'drawer', 'width', {
         x,
         y: opening.y + b,
         z: boxZ,
-        width: t,
+        width: box,
         height: wallHeight,
         depth: length,
       }),
     ),
-    part('back', 'Back', 'body', 'depth', {
-      x: boxX + t,
+    part('back', 'Back', 'drawer', 'depth', {
+      x: boxX + box,
       y: opening.y + b,
       z: boxZ,
-      width: boxWidth - 2 * t,
+      width: boxWidth - 2 * box,
       height: wallHeight,
-      depth: t,
+      depth: box,
     }),
   ]
 }

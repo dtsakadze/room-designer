@@ -100,6 +100,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: a rod is bought and cut to length, not cut from board, but it's still on the shopping list; leaving it out with a note meant working it out by hand.
 *Instead of*: listing rods with the boards (they have no board thickness, and the columns don't fit), and stock rod lengths (vary by shop; the cut length is what's needed).
 
+**Boards for fronts and drawer boxes, and board names** (2026-09-29)
+*Decision*: a project has four boards instead of two: body (carcass, shelves, dividers, plinths, rails), back (back panels, drawer bottoms), fronts (doors, drawer fronts) and drawer boxes (drawer sides and backs). Each has a thickness every part of it follows (`BOARD` and `drawerParts` say which board a part is cut from) and an optional name, shown in the cut list's Board column instead of the role. Both are part of the design: saved, and undone like any change. An overlay drawer still reaches over the carcass by a body board's thickness, and stands out in front of it by its front's thickness.
+*Why*: fronts are often a different material and thickness from the carcass (lacquered or veneered MDF), and drawer boxes thinner (12–16 mm), so a single body board made the cut list wrong or vague for common builds, and drawer boxes the wrong size when their sides are thinner.
+*Instead of*: a board per part kind (too many settings for what people actually vary), a material library shared across projects (worth it later, with prices or sheet sizes), and a per-part material choice (fights "thickness belongs to the project").
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -122,6 +127,10 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Decision*: `FORMAT_VERSION` 4 adds the `door` kind and its optional `double`, `hinge` and `inset` fields. Converter 3→4 only changes the version.
 *Why*: the new fields are optional, but an older app drops parts of a kind it doesn't know, so a save with doors opened there would lose them. With the bump, an older app refuses it as "newer" instead.
 Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't been released or pushed yet, so no save or app outside this machine knows v4 without it.
+
+**Save format v5: fronts and drawer-box boards, board names** (2026-09-29)
+*Decision*: `FORMAT_VERSION` 5 adds `front` and `drawer` to `thickness`, and an optional `boardNames`. Converter 4→5 sets both new thicknesses to the save's body thickness; `validate` falls back to the body thickness too, and keeps only known boards' names, trimmed to 60 characters.
+*Why*: fronts and drawer boxes were cut from the body board, so starting them at its thickness opens every older project into exactly the same design. A version bump because an older app would drop the new thicknesses and names.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

@@ -1,15 +1,14 @@
 import { CUT_LIST_SECTIONS, type HardwareRow, cutList, hardwareList } from '../lib/cutList'
-import { EXTENSION_LABELS } from '../lib/defaults'
+import { EXTENSION_LABELS, boardName } from '../lib/defaults'
 import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
-
-const BOARD_LABELS = { body: 'Body', back: 'Back' } as const
 
 /** The boards to cut, grouped and counted, floating over the canvas. */
 export function CutListPanel({ onClose }: { onClose: () => void }) {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
+  const boardNames = useDesignStore((s) => s.boardNames)
   const groups = cutList(pieces, thickness)
   const hardware = hardwareList(pieces, thickness)
   const { num, len, unit } = useUnits()
@@ -68,7 +67,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
                   <td className="num">{num(row.length)}</td>
                   <td className="num">{num(row.width)}</td>
                   <td className="num">{num(row.thickness)}</td>
-                  <td>{BOARD_LABELS[row.board]}</td>
+                  <td>{boardName(row.board, boardNames)}</td>
                 </tr>
               ))}
             </tbody>

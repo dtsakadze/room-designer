@@ -142,6 +142,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         state.boxes === previous.boxes &&
         state.defaultColor === previous.defaultColor &&
         state.thickness === previous.thickness &&
+        state.boardNames === previous.boardNames &&
         state.unitDepth === previous.unitDepth &&
         state.room === previous.room
       if (unchanged) return

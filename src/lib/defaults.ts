@@ -1,6 +1,31 @@
-import type { Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, Piece, PieceKind, Thickness } from '../types'
 
-export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3 }
+export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
+
+/** The boards in the order they're set up, with what each is for. */
+export const BOARDS: { key: BoardKey; label: string; hint: string; example: string }[] = [
+  {
+    key: 'body',
+    label: 'Body',
+    hint: 'Sides, tops and bottoms, shelves, dividers, plinths and rails',
+    example: '18 mm white melamine',
+  },
+  { key: 'back', label: 'Back', hint: 'Back panels and drawer bottoms', example: '3 mm white HDF' },
+  { key: 'front', label: 'Fronts', hint: 'Doors and drawer fronts', example: '19 mm oak-veneer MDF' },
+  {
+    key: 'drawer',
+    label: 'Drawer boxes',
+    hint: 'Sides and backs of drawers',
+    example: '15 mm birch plywood',
+  },
+]
+
+/** Longest board name kept, so a pasted paragraph can't take over the cut list. */
+export const MAX_BOARD_NAME = 60
+
+/** A board's name for the cut list: its own, or its role. */
+export const boardName = (key: BoardKey, names: Partial<Record<BoardKey, string>>) =>
+  names[key] ?? BOARDS.find((board) => board.key === key)!.label
 
 /** Typical unit depths: a wardrobe fits a coat on a hanger, shelving doesn't need to. */
 export const DEPTH_PRESETS = [
@@ -106,7 +131,7 @@ export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Th
   // A narrow strip joining the sides, used instead of a full top.
   rail: { axis: 'height', board: 'body' },
   // Faces forward, in front of the unit (overlay) or inside its opening (inset).
-  door: { axis: 'depth', board: 'body' },
+  door: { axis: 'depth', board: 'front' },
 }
 
 /**

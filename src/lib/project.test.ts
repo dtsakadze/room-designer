@@ -35,15 +35,19 @@ describe('readProject', () => {
     if (result.ok) expect(result.project.formatVersion).toBe(FORMAT_VERSION)
   })
 
-  // Captured before v3 added the room: they must open into the same design,
-  // standing on the back wall alone.
+  // Captured before v3 added the room and v5 the fronts and drawer-box
+  // boards: they must open into the same design, standing on the back wall
+  // alone, with fronts and drawer boxes cut from the body board as before.
   it.each(['v1-minimal', 'v1-full', 'v2-full'])(
     'opens %s into the same design as when it was saved',
     (name) => {
       const result = readProject(fixture(name))
       if (!result.ok) throw new Error(`${name} didn't open`)
+      const expected = fixture(`${name}.expected`) as { thickness: { body: number } }
+      const { body } = expected.thickness
       expect(withoutVersion(result.project)).toEqual({
-        ...(fixture(`${name}.expected`) as object),
+        ...expected,
+        thickness: { ...expected.thickness, front: body, drawer: body },
         room: DEFAULT_ROOM,
       })
     },
@@ -82,6 +86,38 @@ describe('readProject', () => {
     if (!result.ok) throw new Error("v4-drawer-fronts didn't open")
     const drawers = result.project.pieces.filter((piece) => piece.kind === 'drawer')
     expect(drawers.map((drawer) => drawer.overlay)).toEqual([true, true])
+  })
+
+  it('gives v4 saves fronts and drawer boxes of their body board, so nothing changes', () => {
+    const save = fixture('v4-drawers') as { thickness: Record<string, number> }
+    save.thickness = { body: 16, back: 4 }
+    const result = readProject(save)
+    if (!result.ok) throw new Error("v4-drawers didn't open")
+    expect(result.project.thickness).toEqual({ body: 16, back: 4, front: 16, drawer: 16 })
+    expect(result.project).not.toHaveProperty('boardNames')
+  })
+
+  it('keeps each board’s thickness and name', () => {
+    const result = readProject(fixture('v5-boards'))
+    if (!result.ok) throw new Error("v5-boards didn't open")
+    expect(result.project.thickness).toEqual({ body: 18, back: 3, front: 19, drawer: 15 })
+    expect(result.project.boardNames).toEqual({
+      body: '18 mm white melamine',
+      back: '3 mm white HDF',
+      front: '19 mm oak-veneer MDF',
+      drawer: '15 mm birch plywood',
+    })
+    // Doors take the fronts board.
+    const door = result.project.pieces.find((piece) => piece.kind === 'door')!
+    expect(door.depth).toBe(19)
+  })
+
+  it('drops board names that are empty, unknown or not text, and trims long ones', () => {
+    const save = fixture('v5-boards') as { boardNames: unknown }
+    save.boardNames = { body: '  ', back: 42, front: 'x'.repeat(100), shelf: 'Oak' }
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.boardNames).toEqual({ front: 'x'.repeat(60) })
   })
 
   it('drops door options on other parts, and a double door’s hinge side', () => {
@@ -145,7 +181,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

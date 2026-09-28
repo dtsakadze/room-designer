@@ -19,14 +19,24 @@ export type PieceKind =
  * drawn in this elevation view.
  */
 /**
+ * The boards a project is built from: `body` for the carcass, shelves and
+ * dividers, `back` for back panels and drawer bottoms, `front` for doors and
+ * drawer fronts, `drawer` for the sides and backs of drawer boxes.
+ */
+export type BoardKey = 'body' | 'back' | 'front' | 'drawer'
+
+/**
  * Board thicknesses for the whole project, in mm. Every board piece takes its
  * thickness from here rather than storing its own, so changing one number
  * updates every panel of that kind.
  */
-export type Thickness = {
-  body: number
-  back: number
-}
+export type Thickness = Record<BoardKey, number>
+
+/**
+ * What each board is, in the project's own words (e.g. "18 mm white
+ * melamine"), for the cut list. A board without one goes by its role.
+ */
+export type BoardNames = Partial<Record<BoardKey, string>>
 
 export type Piece = {
   id: string

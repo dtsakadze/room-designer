@@ -1,8 +1,10 @@
-import type { Box, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
+  BOARDS,
   DEFAULT_THICKNESS,
   DEFAULT_UNIT_DEPTH,
+  MAX_BOARD_NAME,
   MAX_UNIT_DEPTH,
   MIN_UNIT_DEPTH,
   PIECE_LABELS,
@@ -20,7 +22,7 @@ import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 4
+export const FORMAT_VERSION = 5
 
 type Raw = Record<string, unknown>
 
@@ -50,6 +52,19 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // version changes; the bump is there so an older app refuses such a save
   // rather than silently dropping them.
   3: (data) => ({ ...data, formatVersion: 4 }),
+  // v5 gives fronts (doors, drawer fronts) and drawer boxes (their sides and
+  // backs) boards of their own, and lets boards be named. Both were cut from
+  // the body board before, so they start at its thickness and the design comes
+  // out the same.
+  4: (data) => {
+    const thickness = isRecord(data.thickness) ? data.thickness : {}
+    const body = thickness.body
+    return {
+      ...data,
+      formatVersion: 5,
+      thickness: { ...thickness, front: thickness.front ?? body, drawer: thickness.drawer ?? body },
+    }
+  },
 }
 
 /** Why a save couldn't be opened. */
@@ -67,6 +82,8 @@ export type ProjectData = {
   /** Only in saved files, so opening one can name the new project. */
   name?: string
   thickness: Thickness
+  /** What each board is, for the cut list; absent when none is named. */
+  boardNames?: BoardNames
   /** How deep new parts start. */
   unitDepth: number
   pieces: Piece[]
@@ -83,17 +100,20 @@ export function toProjectData(
     pieces: Piece[]
     boxes?: Box[]
     thickness: Thickness
+    boardNames?: BoardNames
     unitDepth?: number
     defaultColor?: string | null
     room?: Room
   },
   name?: string,
 ): ProjectData {
+  const boardNames = design.boardNames ?? {}
   return {
     formatVersion: FORMAT_VERSION,
     savedAt: new Date().toISOString(),
     ...(name ? { name } : {}),
     thickness: design.thickness,
+    ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
     boxes: design.boxes ?? [],
@@ -143,10 +163,15 @@ function validate(data: Raw): ProjectData | null {
   if (data.formatVersion !== FORMAT_VERSION || !Array.isArray(data.pieces)) return null
 
   const stored = isRecord(data.thickness) ? data.thickness : {}
+  const body = positive(stored.body) ?? DEFAULT_THICKNESS.body
+  // Fronts and drawer boxes were body board until they had their own.
   const thickness: Thickness = {
-    body: positive(stored.body) ?? DEFAULT_THICKNESS.body,
+    body,
     back: positive(stored.back) ?? DEFAULT_THICKNESS.back,
+    front: positive(stored.front) ?? body,
+    drawer: positive(stored.drawer) ?? body,
   }
+  const boardNames = readBoardNames(data.boardNames)
 
   const pieces = data.pieces.flatMap((raw): Piece[] => {
     if (!isRecord(raw) || typeof raw.id !== 'string' || !isKind(raw.kind)) return []
@@ -212,12 +237,31 @@ function validate(data: Raw): ProjectData | null {
     savedAt: typeof data.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
     ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
     thickness,
+    ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
     pieces: withBoxPanels(pieces, boxes, thickness),
     boxes,
     ...(isHexColor(data.defaultColor) ? { defaultColor: data.defaultColor } : {}),
     room,
   }
+}
+
+/** Board names worth keeping: known boards, trimmed, not empty, not too long. */
+export function readBoardNames(value: unknown): BoardNames {
+  if (!isRecord(value)) return {}
+  const names: BoardNames = {}
+  for (const { key } of BOARDS) {
+    const name = cleanBoardName(value[key])
+    if (name) names[key] = name
+  }
+  return names
+}
+
+/** A board name as it's kept, or null for none. */
+export function cleanBoardName(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const name = value.trim().slice(0, MAX_BOARD_NAME).trim()
+  return name || null
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
