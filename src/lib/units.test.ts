@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLength, formatNumber, fromUnit } from './units'
+import { formatLength, formatNumber, fromUnit, isUnit } from './units'
 
 describe('units', () => {
   it.each([
@@ -34,5 +34,10 @@ describe('units', () => {
         expect(Math.abs(fromUnit(shown, unit) - mm)).toBeLessThan(unit === 'in' ? 0.2 : 1e-9)
       }
     }
+  })
+
+  it('knows its units', () => {
+    expect(['mm', 'cm', 'm', 'in'].every(isUnit)).toBe(true)
+    expect(['ft', '', null, 3].some(isUnit)).toBe(false)
   })
 })

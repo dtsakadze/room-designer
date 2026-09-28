@@ -51,7 +51,7 @@ Projects are saved as `ProjectData` JSON (`src/lib/project.ts`) in the browser (
 
 ## Checking changes
 
-- **Store and lib logic:** add a Vitest test for anything lasting (the save format has fixture tests). For a one-off check, load the module through Vite in a scratch script: `createServer({ server: { middlewareMode: true } })`, then `server.ssrLoadModule('/src/store/useDesignStore.ts')`. Import Vite from `node_modules/vite/dist/node/index.js` when the script lives outside the repo.
+- **Store and lib logic:** every lib module, both stores and the pure canvas helpers have Vitest tests; add or update one with every change (the save format has fixture tests). Tests run in Node: `src/test/browser.ts` has stand-ins for `localStorage` and page events, and `useProjectsStore.test.ts` swaps IndexedDB for an in-memory `ProjectStorage`. React components and `storage.ts` itself aren't unit-tested. For a one-off check, load the module through Vite in a scratch script: `createServer({ server: { middlewareMode: true } })`, then `server.ssrLoadModule('/src/store/useDesignStore.ts')`. Import Vite from `node_modules/vite/dist/node/index.js` when the script lives outside the repo.
 - **In the browser:** the user's real projects live in IndexedDB on localhost:5173. Back them up before anything destructive, test with undo or throwaway projects, and leave their data as it was.
 - **Browser-test pitfalls:**
   - Automation tabs count as hidden, so timers are throttled and "Saving…" can linger for seconds.

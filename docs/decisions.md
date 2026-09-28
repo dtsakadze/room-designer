@@ -138,6 +138,11 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 
 ## Engineering
 
+**Unit tests for all logic, no browser tests** (2026-09-29)
+*Decision*: every lib module, both stores and the canvas's pure helpers (views, handles, coordinates) have Vitest tests, run in Node with no extra libraries: small stand-ins for `localStorage` and page events (`src/test/browser.ts`), and an in-memory `ProjectStorage` in place of IndexedDB for the projects store. React components and the IndexedDB code itself aren't unit-tested.
+*Why*: changes kept touching shared logic (boards, drawers, the save format, undo), and the store and geometry were barely covered, so a regression could slip through unnoticed. Testing through the `ProjectStorage` interface covers autosave and project switching without a fake database.
+*Instead of*: Playwright browser tests (a new dependency, declined for now), and jsdom with Testing Library for components (more dependencies, for code that's mostly layout).
+
 **Tests with Vitest** (2026-09-25)
 *Decision*: Vitest as a dev dependency (`pnpm test`), starting with fixture tests for the save format.
 *Why*: correctness of old saves can't rest on one-off scripts. Replaced the earlier "no test framework" rule.

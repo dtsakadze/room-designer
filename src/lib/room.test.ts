@@ -2,7 +2,19 @@ import { describe, expect, it } from 'vitest'
 import type { Piece, Room } from '../types'
 import { DEFAULT_THICKNESS } from './defaults'
 import { findClashes } from './geometry'
-import { adjacentWalls, activeWalls, fromWall, roomBox, unfold } from './room'
+import {
+  adjacentWalls,
+  activeWalls,
+  clampRoomSize,
+  fromWall,
+  hasSideWalls,
+  isSideWall,
+  layoutOf,
+  roomBox,
+  unfold,
+  wallLength,
+  wallOf,
+} from './room'
 
 const room: Room = { left: true, right: true, width: 2000, depth: 1600 }
 
@@ -86,5 +98,34 @@ describe('findClashes across walls', () => {
   it("doesn't mix up parts that share a position on different walls", () => {
     const pieces = [block('back', 0), block('side', 0, 'left')]
     expect(findClashes(pieces, DEFAULT_THICKNESS, room).size).toBe(0)
+  })
+})
+
+describe('room basics', () => {
+  it('names the layout from the walls in use', () => {
+    expect(layoutOf({ ...room, left: false, right: false })).toBe('one')
+    expect(layoutOf({ ...room, right: false })).toBe('l')
+    expect(layoutOf({ ...room, left: false })).toBe('l')
+    expect(layoutOf(room)).toBe('u')
+    expect(hasSideWalls({ ...room, left: false, right: false })).toBe(false)
+  })
+
+  it('measures the back wall across the room and the side walls along it', () => {
+    expect(wallLength(room, 'back')).toBe(2000)
+    expect(wallLength(room, 'left')).toBe(1600)
+  })
+
+  it('keeps room sizes whole and within 0.5 to 20 m', () => {
+    expect(clampRoomSize(2400.4)).toBe(2400)
+    expect(clampRoomSize(10)).toBe(500)
+    expect(clampRoomSize(50000)).toBe(20000)
+    expect(clampRoomSize(Number.NaN)).toBe(500)
+  })
+
+  it('reads a missing wall as the back wall, and only left and right as side walls', () => {
+    expect(wallOf({})).toBe('back')
+    expect(wallOf({ wall: 'right' })).toBe('right')
+    expect(['left', 'right'].every(isSideWall)).toBe(true)
+    expect(['back', 'front', undefined].some(isSideWall)).toBe(false)
   })
 })
