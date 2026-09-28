@@ -80,6 +80,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: a list sorted by thickness then size mixed kinds together, so checking it against the design meant hunting for each part. Grouped like the design is built, it reads in the order you'd check it.
 *Instead of*: the previous order, thickest boards first then biggest (useful for planning sheets, which matters less than checking the list while there's no sheet layout yet).
 
+**Overlay drawer fronts and front gaps** (2026-09-28)
+*Decision*: a drawer's front is inset (the default, as before) or overlay (`overlay`). An inset drawer is sized to its opening; an overlay drawer is sized to its front, which covers the unit's edges, and the box is worked out for an opening a body board's thickness smaller all round. An overlay front stands in front of the unit, like an overlay door. Every front is 1.5 mm smaller than its space on each edge, so two fronts side by side or stacked leave the usual 3 mm between them. The clash check now tests a drawer's real boards (and a double door's leaves) rather than the whole space, since an overlay drawer's space reaches over the side panels without its box touching them.
+*Why*: drawers next to overlay doors have to line up with them, and fronts that fill their space exactly would rub. Sizing an overlay drawer by its front matches how you'd line it up with the doors.
+*Instead of*: working out each overlay front's reach from the boards around it (overlapping neighbours, rails, shelves: fragile for little gain; the one-board rule errs towards a slightly smaller box between stacked drawers), a gap setting (a fixed 3 mm is the common reveal; a setting can come later), and separate false fronts on a box front.
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -101,7 +106,7 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Save format v4: doors** (2026-09-28)
 *Decision*: `FORMAT_VERSION` 4 adds the `door` kind and its optional `double`, `hinge` and `inset` fields. Converter 3→4 only changes the version.
 *Why*: the new fields are optional, but an older app drops parts of a kind it doesn't know, so a save with doors opened there would lose them. With the bump, an older app refuses it as "newer" instead.
-Drawers' `extension` was added to v4 too (2026-09-28): v4 hadn't been released or pushed yet, so no save or app outside this machine knows v4 without it.
+Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't been released or pushed yet, so no save or app outside this machine knows v4 without it.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

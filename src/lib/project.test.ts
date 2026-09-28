@@ -77,6 +77,13 @@ describe('readProject', () => {
     expect(drawers.map((drawer) => drawer.extension)).toEqual(['full', undefined, undefined])
   })
 
+  it('keeps overlay drawer fronts', () => {
+    const result = readProject(fixture('v4-drawer-fronts'))
+    if (!result.ok) throw new Error("v4-drawer-fronts didn't open")
+    const drawers = result.project.pieces.filter((piece) => piece.kind === 'drawer')
+    expect(drawers.map((drawer) => drawer.overlay)).toEqual([true, true])
+  })
+
   it('drops door options on other parts, and a double door’s hinge side', () => {
     const save = backWallOnly()
     save.pieces.push(
@@ -138,7 +145,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

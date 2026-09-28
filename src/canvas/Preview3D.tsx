@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { drawerParts } from '../lib/drawer'
-import { doorLeaves, wallDepthStart } from '../lib/geometry'
+import { pieceSolids, wallDepthStart } from '../lib/geometry'
 import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { useClashes } from '../ui/useClashes'
@@ -128,7 +127,8 @@ export default function Preview3D() {
     const zStart = wallDepthStart(pieces, thickness)
     for (const piece of pieces) {
       const tint = piece.id === selectedId ? SELECTED : clashes.has(piece.id) ? CLASH : null
-      for (const box of solids(piece, zStart(piece), thickness, room)) {
+      // A drawer as its boards, so you can see into it past a see-through door.
+      for (const box of pieceSolids(piece, zStart(piece), thickness, room)) {
         current.parts.add(buildPiece(piece, box, tint))
       }
     }
@@ -191,29 +191,6 @@ function buildPiece(piece: Piece, box: RoomBox, tint: string | null) {
   const [cx, cy, cz] = [0, 1, 2].map((axis) => (box.min[axis] + box.max[axis]) / 2)
   group.position.set(cx, cy, cz)
   return group
-}
-
-/**
- * The solids a part is drawn as: a drawer's boards (so you can see into it
- * past the see-through door), a double door's two leaves, or the part itself.
- */
-function solids(piece: Piece, z: number, thickness: Thickness, room: Room): RoomBox[] {
-  if (piece.kind === 'drawer') {
-    return drawerParts(piece, thickness).map((part) =>
-      roomBox({ ...piece, ...part }, z + part.z, room),
-    )
-  }
-  const box = roomBox(piece, z, room)
-  if (piece.kind !== 'door' || !piece.double) return [box]
-  const axis = wallOf(piece) === 'back' ? 0 : 2
-  const span = { x: box.min[axis], width: box.max[axis] - box.min[axis] }
-  return doorLeaves(span, true).map((leaf) => {
-    const min = [...box.min] as RoomBox['min']
-    const max = [...box.max] as RoomBox['max']
-    min[axis] = leaf.x
-    max[axis] = leaf.x + leaf.width
-    return { min, max }
-  })
 }
 
 /**

@@ -220,7 +220,7 @@ function DoorOptions({ piece }: { piece: Piece }) {
 
 type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset'>
 
-/** The runner type, and the box and runners the drawer's size works out to. */
+/** The front's fit, the runner type, and what the drawer's size works out to. */
 function DrawerOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const thickness = useDesignStore((s) => s.thickness)
@@ -228,33 +228,61 @@ function DrawerOptions({ piece }: { piece: Piece }) {
   const extension = piece.extension ?? 'standard'
   const runner = runnerLength(piece, thickness)
   const parts = drawerParts(piece, thickness)
+  const front = parts.find((part) => part.role === 'front')!
   const side = parts.find((part) => part.role === 'side')!
   const bottom = parts.find((part) => part.role === 'bottom')!
+  const choices = [
+    {
+      label: 'Fit',
+      value: piece.overlay ? 'overlay' : 'inset',
+      options: [
+        { value: 'inset', text: 'Inset', patch: { overlay: false } },
+        { value: 'overlay', text: 'Overlay', patch: { overlay: true } },
+      ],
+    },
+    {
+      label: 'Runners',
+      value: extension,
+      options: (['standard', 'full'] as const).map((value) => ({
+        value,
+        text: EXTENSION_LABELS[value],
+        patch: { extension: value },
+      })),
+    },
+  ]
 
   return (
     <>
-      <div className="field">
-        <span className="field-label">Runners</span>
-        <span className="unit-switch" role="radiogroup" aria-label="Runners">
-          {(['standard', 'full'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={extension === value}
-              onClick={() => updatePiece(piece.id, { extension: value })}
-            >
-              {EXTENSION_LABELS[value]}
-            </button>
-          ))}
-        </span>
-      </div>
+      {choices.map((choice) => (
+        <div key={choice.label} className="field">
+          <span className="field-label">{choice.label}</span>
+          <span className="unit-switch" role="radiogroup" aria-label={choice.label}>
+            {choice.options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={choice.value === option.value}
+                onClick={() => updatePiece(piece.id, option.patch)}
+              >
+                {option.text}
+              </button>
+            ))}
+          </span>
+        </div>
+      ))}
+      <p className="hint">
+        {piece.overlay
+          ? `Overlay: the front covers the unit's edges. Size the drawer to its front, the opening plus ${len(thickness.body)} all round.`
+          : 'Inset: the front sits inside the opening, flush with the unit. Size the drawer to its opening.'}{' '}
+        The front is {len(front.width)} × {len(front.height)}, leaving a small gap all round.
+      </p>
       <p className="hint">
         {extension === 'full'
           ? 'Full extension: the drawer pulls out all the way.'
           : 'Standard: the drawer pulls out about three quarters of the way.'}{' '}
-        Size the drawer to its opening: the box is {len(bottom.width)} wide, leaving room for
-        the runners each side, and {len(side.height + bottom.height)} high.
+        The box is {len(bottom.width)} wide, leaving room for the runners each side, and{' '}
+        {len(side.height + bottom.height)} high.
       </p>
       {runner === null ? (
         <p className="hint hint-error">

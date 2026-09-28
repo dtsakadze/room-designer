@@ -30,6 +30,12 @@ export const RUNNER_GAP = 13
 export const RUNNER_LENGTHS = [250, 300, 350, 400, 450, 500, 550, 600, 650, 700]
 export const EXTENSION_LABELS = { standard: 'Standard', full: 'Full extension' } as const
 
+/**
+ * How much smaller a drawer front is than its space on each edge, so it
+ * clears the unit and the fronts next to it: 3 mm between two fronts.
+ */
+export const FRONT_GAP = 1.5
+
 /** How much lower the drawer box is than its front, so it can be lifted in and out. */
 export const DRAWER_BOX_CLEARANCE = 30
 

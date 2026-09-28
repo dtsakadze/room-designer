@@ -60,6 +60,11 @@ export type Piece = {
    * standard ones that leave about a quarter of it inside. Absent means standard.
    */
   extension?: 'standard' | 'full'
+  /**
+   * Drawers only: the front covers the edges of the unit around the opening,
+   * rather than sitting inside it (inset). Absent means inset.
+   */
+  overlay?: boolean
   /** Hex colour (`#rrggbb`). Absent means the project's default colour. */
   color?: string
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */

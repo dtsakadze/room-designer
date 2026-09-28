@@ -1,6 +1,7 @@
 import type { Piece, Room, Thickness, Wall } from '../types'
 import { BOARD, DOOR_LEAF_GAP, PLINTH_RECESS } from './defaults'
-import { DEFAULT_ROOM, isSideWall, roomBox, wallOf } from './room'
+import { drawerParts } from './drawer'
+import { DEFAULT_ROOM, type RoomBox, isSideWall, roomBox, wallOf } from './room'
 
 /**
  * Keeps a piece a sane size and stops it sinking through the floor. A board's
@@ -30,6 +31,7 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'door' || !piece.inset) delete normalized.inset
   // Standard runners are the default, stored as no value.
   if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
+  if (piece.kind !== 'drawer' || !piece.overlay) delete normalized.overlay
   if (!piece.boxId) delete normalized.boxId
   // The back wall (the default) is stored as no value.
   if (!isSideWall(piece.wall)) delete normalized.wall
@@ -158,8 +160,8 @@ const overlaps = (a: Edges, b: Edges) =>
  * panel takes the first `thickness.back` mm, and the rest start in front of it.
  * The exceptions: the plinth sits at the front, set back a little, a rail
  * runs along the front unless it's marked as a back rail, a door stands in
- * front of the unit (overlay) or just inside its front edge (inset), and a
- * drawer's front is flush with the front edge, its box behind.
+ * front of the unit (overlay) or just inside its front edge (inset), and so
+ * does a drawer's front, its box behind it inside the unit.
  */
 export function depthStart(pieces: Piece[], thickness: Thickness) {
   const hasBack = pieces.some((piece) => piece.kind === 'back')
@@ -174,7 +176,9 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
     if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
     if (piece.kind === 'door') return piece.inset ? Math.max(0, front - piece.depth) : front
-    if (piece.kind === 'drawer') return Math.max(0, front - piece.depth)
+    if (piece.kind === 'drawer') {
+      return Math.max(0, front - piece.depth + (piece.overlay ? thickness.body : 0))
+    }
     return behind(piece)
   }
 }
@@ -201,19 +205,49 @@ export function wallDepthStart(pieces: Piece[], thickness: Thickness) {
 const CLASH_TOLERANCE = 0.5
 
 /**
- * Pieces that take up the same space as another, checked as real 3D boxes in
- * the room (front-to-back placement from `wallDepthStart`), so units on two
+ * The solid boxes a piece is made of in the room, given where it starts front
+ * to back: a drawer's boards (its space is mostly empty, and an overlay front
+ * reaches over the unit's edges), a double door's two leaves, or the piece
+ * itself.
+ */
+export function pieceSolids(piece: Piece, z: number, thickness: Thickness, room: Room): RoomBox[] {
+  if (piece.kind === 'drawer') {
+    return drawerParts(piece, thickness).map((part) =>
+      roomBox({ ...piece, ...part }, z + part.z, room),
+    )
+  }
+  const box = roomBox(piece, z, room)
+  if (piece.kind !== 'door' || !piece.double) return [box]
+  // Split along the wall: across the room on the back wall, front to back on a side wall.
+  const axis = wallOf(piece) === 'back' ? 0 : 2
+  const span = { x: box.min[axis], width: box.max[axis] - box.min[axis] }
+  return doorLeaves(span, true).map((leaf) => {
+    const min = [...box.min] as RoomBox['min']
+    const max = [...box.max] as RoomBox['max']
+    min[axis] = leaf.x
+    max[axis] = leaf.x + leaf.width
+    return { min, max }
+  })
+}
+
+/**
+ * Pieces that take up the same space as another, checked as their real solids
+ * in the room (front-to-back placement from `wallDepthStart`), so units on two
  * walls that run into each other in a corner clash too. Touching isn't a
  * clash, and neither is the back panel sitting behind everything in the front
  * view.
  */
 export function findClashes(pieces: Piece[], thickness: Thickness, room: Room = DEFAULT_ROOM) {
   const zStart = wallDepthStart(pieces, thickness)
-  const boxes = pieces.map((piece) => ({ id: piece.id, ...roomBox(piece, zStart(piece), room) }))
+  const boxes = pieces.flatMap((piece) =>
+    pieceSolids(piece, zStart(piece), thickness, room).map((box) => ({ id: piece.id, ...box })),
+  )
   const clashing = new Set<string>()
   for (let i = 0; i < boxes.length; i++) {
     for (let j = i + 1; j < boxes.length; j++) {
       const [a, b] = [boxes[i], boxes[j]]
+      // A piece's own boards meet, but can't clash with each other.
+      if (a.id === b.id) continue
       const overlaps = [0, 1, 2].every((axis) => {
         const shared = Math.min(a.max[axis], b.max[axis]) - Math.max(a.min[axis], b.min[axis])
         return shared > CLASH_TOLERANCE

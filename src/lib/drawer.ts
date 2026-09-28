@@ -1,5 +1,5 @@
 import type { Piece, Thickness } from '../types'
-import { DRAWER_BOX_CLEARANCE, RUNNER_GAP, RUNNER_LENGTHS } from './defaults'
+import { DRAWER_BOX_CLEARANCE, FRONT_GAP, RUNNER_GAP, RUNNER_LENGTHS } from './defaults'
 
 /**
  * One board of a drawer (named for the cut list, where it's listed under its
@@ -30,24 +30,37 @@ export function runnerLength(drawer: Piece, thickness: Thickness) {
 }
 
 /**
- * The boards a drawer is built from. The drawer part is the space it fills: as
- * wide as its opening, as high as its front, and as deep as it may go, front
- * included. From that:
+ * The boards a drawer is built from. The drawer part is the space it fills,
+ * front included, as deep as it may go. How that space relates to the unit
+ * depends on the front:
  *
- * - the front is the whole width × height, flush with the front of the space;
- * - the box behind it is narrower by a runner's gap each side, lower than the
- *   front by `DRAWER_BOX_CLEARANCE`, and as long as the runners (the space
- *   behind the front when it's too shallow for any);
- * - the sides stand on the bottom and the back fits between them. The bottom
- *   is a back-panel board.
+ * - inset: the space is the opening, and the front sits inside it, flush with
+ *   the front of the unit;
+ * - overlay: the space is what the front covers, the opening plus the edges
+ *   of the unit around it (a board's thickness all round), and the front sits
+ *   in front of the unit.
+ *
+ * Either way the front is `FRONT_GAP` smaller than the space on every edge.
+ * Behind it, the box is narrower than the opening by a runner's gap each side,
+ * lower by `DRAWER_BOX_CLEARANCE`, and as long as the runners (the space
+ * behind the front when it's too shallow for any). The sides stand on the
+ * bottom, a back-panel board, and the back fits between them.
  */
 export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
   const t = thickness.body
   const b = thickness.back
+  const g = FRONT_GAP
+  const edge = drawer.overlay ? t : 0
+  const opening = {
+    x: drawer.x + edge,
+    y: drawer.y + edge,
+    width: Math.max(1, drawer.width - 2 * edge),
+    height: Math.max(1, drawer.height - 2 * edge),
+  }
   const length = runnerLength(drawer, thickness) ?? Math.max(1, drawer.depth - t)
-  const boxWidth = Math.max(2 * t + 1, drawer.width - 2 * RUNNER_GAP)
-  const boxX = drawer.x + (drawer.width - boxWidth) / 2
-  const wallHeight = Math.max(1, drawer.height - DRAWER_BOX_CLEARANCE - b)
+  const boxWidth = Math.max(2 * t + 1, opening.width - 2 * RUNNER_GAP)
+  const boxX = opening.x + (opening.width - boxWidth) / 2
+  const wallHeight = Math.max(1, opening.height - DRAWER_BOX_CLEARANCE - b)
   // The box runs from just behind the front, back towards the wall.
   const frontZ = drawer.depth - t
   const boxZ = Math.max(0, frontZ - length)
@@ -62,16 +75,16 @@ export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
 
   return [
     part('front', 'Front', 'body', 'depth', {
-      x: drawer.x,
-      y: drawer.y,
+      x: drawer.x + g,
+      y: drawer.y + g,
       z: frontZ,
-      width: drawer.width,
-      height: drawer.height,
+      width: Math.max(1, drawer.width - 2 * g),
+      height: Math.max(1, drawer.height - 2 * g),
       depth: t,
     }),
     part('bottom', 'Bottom', 'back', 'height', {
       x: boxX,
-      y: drawer.y,
+      y: opening.y,
       z: boxZ,
       width: boxWidth,
       height: b,
@@ -80,7 +93,7 @@ export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
     ...[boxX, boxX + boxWidth - t].map((x) =>
       part('side', 'Side', 'body', 'width', {
         x,
-        y: drawer.y + b,
+        y: opening.y + b,
         z: boxZ,
         width: t,
         height: wallHeight,
@@ -89,7 +102,7 @@ export function drawerParts(drawer: Piece, thickness: Thickness): DrawerPart[] {
     ),
     part('back', 'Back', 'body', 'depth', {
       x: boxX + t,
-      y: drawer.y + b,
+      y: opening.y + b,
       z: boxZ,
       width: boxWidth - 2 * t,
       height: wallHeight,

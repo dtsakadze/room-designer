@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece } from '../types'
 import { cutList, hardwareList } from './cutList'
-import { DEFAULT_THICKNESS, DRAWER_BOX_CLEARANCE, RUNNER_GAP } from './defaults'
+import { DEFAULT_THICKNESS, DRAWER_BOX_CLEARANCE, FRONT_GAP, RUNNER_GAP } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
-import { depthStart, normalizePiece } from './geometry'
+import { depthStart, findClashes, normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
 const drawer = (rect: Partial<Piece> = {}): Piece =>
@@ -28,7 +28,15 @@ describe('drawers', () => {
     const sides = byRole('side')
     const [back] = byRole('back')
 
-    expect(front).toMatchObject({ x: -282, width: 564, height: 200, depth: 18, z: 550 - 18 })
+    // Inset: the front fills the opening, less a small gap all round.
+    expect(front).toMatchObject({
+      x: -282 + FRONT_GAP,
+      y: 100 + FRONT_GAP,
+      width: 564 - 2 * FRONT_GAP,
+      height: 200 - 2 * FRONT_GAP,
+      depth: 18,
+      z: 550 - 18,
+    })
     const boxWidth = 564 - 2 * RUNNER_GAP
     expect(bottom).toMatchObject({ width: boxWidth, depth: 500, height: thickness.back })
     // The box ends at the back of the front.
@@ -87,8 +95,49 @@ describe('drawers', () => {
     expect(zStart(drawer()) + drawer().depth).toBe(600)
   })
 
-  it('store only the full-extension choice', () => {
+  it('leave the usual gap between two fronts stacked on each other', () => {
+    const [lower] = drawerParts(drawer(), thickness)
+    const [upper] = drawerParts(drawer({ y: 300 }), thickness)
+    expect(upper.y - (lower.y + lower.height)).toBe(2 * FRONT_GAP)
+  })
+
+  describe('with an overlay front', () => {
+    // A 600 wide unit: 18 mm sides, a 564 mm opening from y = 18 up.
+    const side = (id: string, x: number) =>
+      normalizePiece({ id, kind: 'vertical', x, y: 0, width: 18, height: 1000, depth: 600 }, thickness)
+    const bottom = normalizePiece(
+      { id: 'b', kind: 'horizontal', x: -282, y: 0, width: 564, height: 18, depth: 600 },
+      thickness,
+    )
+    const unit = [side('l', -300), side('r', 282), bottom]
+    // Sized to its front: the opening plus a board all round.
+    const overlay = drawer({ x: -300, y: 0, width: 600, height: 236, overlay: true })
+
+    it('build the box for the opening behind the front', () => {
+      const parts = drawerParts(overlay, thickness)
+      const front = parts.find((part) => part.role === 'front')!
+      const box = parts.find((part) => part.role === 'bottom')!
+      expect(front).toMatchObject({ width: 600 - 2 * FRONT_GAP, height: 236 - 2 * FRONT_GAP })
+      expect(box).toMatchObject({ x: -282 + RUNNER_GAP, y: 18, width: 564 - 2 * RUNNER_GAP })
+    })
+
+    it('stand in front of the unit, covering its edges without clashing', () => {
+      const zStart = depthStart([...unit, overlay], thickness)
+      const [front] = drawerParts(overlay, thickness)
+      expect(zStart(overlay) + front.z).toBe(600)
+      expect(findClashes([...unit, overlay], thickness).size).toBe(0)
+    })
+
+    it('clash as inset at the same size, the box running into the sides', () => {
+      const inset = { ...overlay, overlay: undefined }
+      expect(findClashes([...unit, inset], thickness).has('d')).toBe(true)
+    })
+  })
+
+  it('store only the full-extension and overlay choices', () => {
     expect(drawer({ extension: 'standard' })).not.toHaveProperty('extension')
+    expect(drawer({ overlay: false })).not.toHaveProperty('overlay')
+    expect(drawer({ overlay: true }).overlay).toBe(true)
     expect(drawer({ extension: 'full' }).extension).toBe('full')
     const shelf = normalizePiece(
       { id: 's', kind: 'shelf', x: 0, y: 0, width: 500, height: 18, depth: 300, extension: 'full' },
