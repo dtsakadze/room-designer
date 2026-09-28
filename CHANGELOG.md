@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+## 1.2.0 — 2026-09-28
+
 - Drag any of several selected parts to move them all together, and nudge them together with the arrow keys. Clicking one of them without dragging selects just that part.
 
 ## 1.1.0 — 2026-09-28
