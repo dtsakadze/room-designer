@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+## 1.3.0 — 2026-09-28
+
 - The cut list is easier to check: boards are grouped into Panels, Shelves and dividers, Doors and each drawer, with the same kind of part kept together, biggest first.
 
 - Drawers are now real drawers: each one is built from a front, two sides, a back and a bottom, sized to leave room for the runners, and those boards are in the cut list, grouped under their drawer (identical drawers together). Choose an inset front (inside the opening) or an overlay one (covering the unit's edges, to line up with overlay doors), and standard or full-extension runners. Fronts leave a small gap all round, so neighbouring fronts don't rub; the cut list lists the runner pairs to buy, in the longest length that fits. Drawers now sit flush with the front of the unit, and 3D shows the drawer box.
