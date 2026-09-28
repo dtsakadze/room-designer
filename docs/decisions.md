@@ -65,6 +65,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: closets are often built round two or three walls, and the app should stay as simple as it was for a single unit: editing one wall at a time keeps the 2D editing unchanged, and a one-wall project shows no new controls on the canvas. The room size says where the corners are, so the walls can be drawn and the runs placed correctly in Top and 3D.
 *Instead of*: one long unfolded front view with every wall side by side (moving parts across corners, gap lines and placing new parts all get more complicated), joining the runs where their parts end without a room size (a U's two sides would only be as far apart as the back run is wide), and keeping or moving the parts of a wall that's switched off (hidden parts would still be in the cut list). Corner units, a door wall and other room shapes are left for later.
 
+**Hinged doors as a part** (2026-09-28)
+*Decision*: a door is an ordinary part (`kind: 'door'`), a board of body thickness facing forward, sized and moved like any other. Options: `double` (two leaves meeting in the middle with a 3 mm gap, each hinged on its outer side), `hinge` (a single door's side, left by default) and `inset` (overlay by default). Parts still have no z, so `depthStart` places a door like the plinth and front rails: overlay just in front of its wall's unit, inset flush inside it. That makes an inset door sized over the carcass clash, and shows doors in the right place in the side, top and 3D views. Doors are see-through in the front and back views and in 3D, and don't count as neighbours in other parts' gap lines, so the inside stays visible and editable. In the front view they're drawn over everything else (they're nearest), and clicking goes down the stack from the front: the door, then the parts inside, then the back panel, then round to the door again. The front view draws the usual V pointing at the hinges. A double door is cut as two leaves.
+*Why*: the smallest change that fits the model: no new store, no z yet, and the size stays in the person's hands, since how much a door overlaps or how big its gaps are varies by hinge.
+*Instead of*: doors owned by a box and sized from it automatically (would tie doors to boxes, while many units are built from loose panels), and an open/closed state (nothing to design with it yet). Hinges and handles in a hardware list are left for later.
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -82,6 +87,10 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 **Save format v3: the room** (2026-09-28)
 *Decision*: `FORMAT_VERSION` 3 adds a required `room` (`left`, `right`, `width`, `depth`) and an optional `wall` on parts and boxes. Converter 2→3 adds a one-wall room (2400 × 1800 mm). `validate` switches on any wall that has parts, so no part can be hidden.
 *Why*: the room is part of the design. Every older save stood on the back wall alone, which is exactly what absent `wall` and a one-wall room mean.
+
+**Save format v4: doors** (2026-09-28)
+*Decision*: `FORMAT_VERSION` 4 adds the `door` kind and its optional `double`, `hinge` and `inset` fields. Converter 3→4 only changes the version.
+*Why*: the new fields are optional, but an older app drops parts of a kind it doesn't know, so a save with doors opened there would lose them. With the bump, an older app refuses it as "newer" instead.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

@@ -1,4 +1,5 @@
 import { BOARD, pieceLabel } from '../lib/defaults'
+import type { Piece } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
 import { FILLS } from '../canvas/colors'
 import { BoxInspector } from './BoxInspector'
@@ -69,6 +70,8 @@ export function PieceInspector() {
           ))}
         </div>
       )}
+
+      {piece.kind === 'door' && <DoorOptions piece={piece} />}
 
       {isRod ? (
         <>
@@ -146,3 +149,70 @@ const DIMENSIONS = [
   { key: 'height', label: 'Height' },
   { key: 'depth', label: 'Depth' },
 ] as const
+
+/** Single or double, which side a single door is hinged on, and overlay or inset. */
+function DoorOptions({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const choices: { label: string; value: string; options: [string, string, DoorPatch][] }[] = [
+    {
+      label: 'Door',
+      value: piece.double ? 'double' : 'single',
+      options: [
+        ['single', 'Single', { double: false }],
+        ['double', 'Double', { double: true }],
+      ],
+    },
+    // A double door is hinged on both outer sides.
+    ...(piece.double
+      ? []
+      : [
+          {
+            label: 'Hinges',
+            value: piece.hinge ?? 'left',
+            options: [
+              ['left', 'Left', { hinge: 'left' }],
+              ['right', 'Right', { hinge: 'right' }],
+            ] as [string, string, DoorPatch][],
+          },
+        ]),
+    {
+      label: 'Fit',
+      value: piece.inset ? 'inset' : 'overlay',
+      options: [
+        ['overlay', 'Overlay', { inset: false }],
+        ['inset', 'Inset', { inset: true }],
+      ],
+    },
+  ]
+
+  return (
+    <>
+      {choices.map((choice) => (
+        <div key={choice.label} className="field">
+          <span className="field-label">{choice.label}</span>
+          <span className="unit-switch" role="radiogroup" aria-label={choice.label}>
+            {choice.options.map(([value, text, patch]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={choice.value === value}
+                onClick={() => updatePiece(piece.id, patch)}
+              >
+                {text}
+              </button>
+            ))}
+          </span>
+        </div>
+      ))}
+      <p className="hint">
+        {piece.inset
+          ? 'Inset: sits inside the opening, flush with the front. Size it to the opening, less a small gap all round so it can swing.'
+          : 'Overlay: sits in front of the unit, covering its edges. Size it to the front it covers.'}
+        {piece.double && ' The width is both leaves together.'}
+      </p>
+    </>
+  )
+}
+
+type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset'>

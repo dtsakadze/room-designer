@@ -61,6 +61,30 @@ describe('readProject', () => {
     expect(panels.every((piece) => piece.wall === 'left')).toBe(true)
   })
 
+  it('keeps doors and their options', () => {
+    const result = readProject(fixture('v4-doors'))
+    if (!result.ok) throw new Error("v4-doors didn't open")
+    const doors = result.project.pieces.filter((piece) => piece.kind === 'door')
+    expect(doors).toHaveLength(2)
+    expect(doors[0]).toMatchObject({ double: true, depth: 18 })
+    expect(doors[1]).toMatchObject({ hinge: 'right', inset: true, wall: 'left' })
+  })
+
+  it('drops door options on other parts, and a double door’s hinge side', () => {
+    const save = backWallOnly()
+    save.pieces.push(
+      { id: 's', kind: 'shelf', x: 0, y: 0, width: 500, height: 18, depth: 300, inset: true },
+      { id: 'd', kind: 'door', x: 0, y: 0, width: 600, height: 900, depth: 5, double: true, hinge: 'right' },
+    )
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    const shelf = result.project.pieces.find((piece) => piece.id === 's')!
+    const door = result.project.pieces.find((piece) => piece.id === 'd')!
+    expect('inset' in shelf).toBe(false)
+    expect(door).toMatchObject({ double: true, depth: 18 })
+    expect('hinge' in door).toBe(false)
+  })
+
   it('switches on a wall that has parts, so none are hidden', () => {
     const save = fixture('v3-room') as { room: object }
     save.room = { left: false, right: false, width: 2600, depth: 2000 }
@@ -107,7 +131,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

@@ -1,5 +1,6 @@
 import type { Piece, PieceKind, Thickness } from '../types'
 import { BOARD, pieceLabel } from './defaults'
+import { doorLeaves } from './geometry'
 
 export type CutListRow = {
   kind: PieceKind
@@ -19,12 +20,15 @@ export type CutListRow = {
  *
  * A board's thickness axis comes from `BOARD`; the other two dimensions are its
  * face, listed longest first. Rods and drawers aren't flat boards, so they
- * aren't here.
+ * aren't here. A double door is cut as two leaves.
  */
 export function cutList(pieces: Piece[]): CutListRow[] {
   const rows = new Map<string, CutListRow>()
+  const boards = pieces.flatMap((piece) =>
+    piece.kind === 'door' ? doorLeaves(piece, piece.double) : [piece],
+  )
 
-  for (const piece of pieces) {
+  for (const piece of boards) {
     const board = BOARD[piece.kind]
     if (!board) continue
 
@@ -35,7 +39,8 @@ export function cutList(pieces: Piece[]): CutListRow[] {
     const width = Math.min(a, b)
     const thickness = piece[board.axis]
 
-    const label = pieceLabel(piece)
+    // One row per leaf, so "2 × Double door" can't read as two pairs.
+    const label = piece.kind === 'door' && piece.double ? 'Double door leaf' : pieceLabel(piece)
     const key = `${label}|${length}|${width}|${thickness}`
     const row = rows.get(key)
     if (row) {

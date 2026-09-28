@@ -126,28 +126,45 @@ export function sizeLabel(piece: Piece, view: ViewName, len: (mm: number) => str
 }
 
 /**
- * The panels that cover the whole unit in a view (the back panel from the
- * front or back, the sides from either side, the top and bottom from above). They
- * are drawn see-through, or the view would show one solid panel.
+ * The panels that cover the whole unit in a view (the back panel and doors from
+ * the front or back, the sides from either side, the top and bottom from above).
+ * They are drawn see-through, or the view would show one solid panel and the
+ * inside couldn't be edited.
  */
 export function isHollow(piece: Piece, view: ViewName) {
   if (view === 'left' || view === 'right') return piece.kind === 'vertical'
   if (view === 'top') return piece.kind === 'horizontal'
-  return piece.kind === 'back'
+  return piece.kind === 'back' || piece.kind === 'door'
 }
 
 /**
- * Every shown piece under a point, topmost first. See-through panels go last,
- * so clicking through a stack reaches the parts inside before the panel.
+ * Doors are nearest of all from the front, so there they're drawn over the
+ * parts inside, see-through, rather than underneath like the back panel.
+ */
+const isOnTop = (piece: Piece, view: ViewName) => view === 'front' && piece.kind === 'door'
+
+/**
+ * The order to draw pieces in: see-through panels underneath everything, then
+ * the rest, then doors on top in the front view.
+ */
+export function drawOrder(pieces: Piece[], view: ViewName) {
+  const under = (piece: Piece) => isHollow(piece, view) && !isOnTop(piece, view)
+  return [
+    ...pieces.filter(under),
+    ...pieces.filter((piece) => !under(piece) && !isOnTop(piece, view)),
+    ...pieces.filter((piece) => isOnTop(piece, view)),
+  ]
+}
+
+/**
+ * Every shown piece under a point, topmost first: a door, then the parts
+ * inside, then the see-through panels behind them. Clicking again through a
+ * stack goes down it in this order.
  */
 export function piecesAt(shown: Piece[], x: number, y: number, view: ViewName) {
-  const under = shown
+  return drawOrder(shown, view)
     .filter((p) => x >= p.x && x <= p.x + p.width && y >= p.y && y <= p.y + p.height)
     .reverse()
-  return [
-    ...under.filter((piece) => !isHollow(piece, view)),
-    ...under.filter((piece) => isHollow(piece, view)),
-  ]
 }
 
 /** Which of a board's dimensions points at the viewer in each flat view. */

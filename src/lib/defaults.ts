@@ -18,6 +18,8 @@ export const PLINTH_HEIGHT = 80
 /** How far the plinth sits back from the front, so toes don't hit it. */
 export const PLINTH_RECESS = 50
 export const RAIL_DEPTH = 100
+/** The gap between the two leaves of a double door, so they don't rub. */
+export const DOOR_LEAF_GAP = 3
 
 /** Room clothes need below a hanging rod, measured down from the rod. */
 export const HANGING_GUIDES = [
@@ -44,18 +46,24 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
   drawer: 'Drawer',
   plinth: 'Plinth',
   rail: 'Rail',
+  door: 'Door',
 }
 
-/** A piece's name: tells fixed shelves from adjustable ones, front rails from back. */
-export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt'>) {
+/**
+ * A piece's name: tells fixed shelves from adjustable ones, front rails from
+ * back, single doors from double.
+ */
+export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double'>) {
   if (piece.kind === 'shelf') return piece.fixed ? 'Fixed shelf' : 'Adjustable shelf'
   if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
+  if (piece.kind === 'door') return piece.double ? 'Double door' : 'Door'
   return PIECE_LABELS[piece.kind]
 }
 
 export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth', 'rail'] },
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
+  { title: 'Fronts', kinds: ['door'] },
 ]
 
 type Dimension = 'width' | 'height' | 'depth'
@@ -74,6 +82,8 @@ export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Th
   plinth: { axis: 'depth', board: 'body' },
   // A narrow strip joining the sides, used instead of a full top.
   rail: { axis: 'height', board: 'body' },
+  // Faces forward, in front of the unit (overlay) or inside its opening (inset).
+  door: { axis: 'depth', board: 'body' },
 }
 
 /**
@@ -107,6 +117,9 @@ function dimensions(
       return { width: inside, height: 0, depth: RAIL_DEPTH }
     case 'plinth':
       return { width: inside, height: PLINTH_HEIGHT, depth: 0 }
+    // Half the default unit: one of a pair of single doors, or resized to fit.
+    case 'door':
+      return { width: UNIT_WIDTH / 2, height: 2000, depth: 0 }
   }
 }
 

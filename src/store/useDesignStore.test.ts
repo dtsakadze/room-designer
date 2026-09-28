@@ -199,3 +199,25 @@ describe('moving several parts', () => {
     expect(store().past.length).toBe(steps)
   })
 })
+
+describe('doors', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('changes a door’s options, each as an undo step', () => {
+    store().addPiece('door')
+    const id = store().selectedId!
+    const door = () => store().pieces.find((piece) => piece.id === id)!
+    store().updatePiece(id, { hinge: 'right' })
+    expect(door().hinge).toBe('right')
+    store().updatePiece(id, { inset: true })
+    expect(door().inset).toBe(true)
+    store().updatePiece(id, { double: true })
+    expect(door().double).toBe(true)
+    // A double door is hinged on both sides.
+    expect(door()).not.toHaveProperty('hinge')
+
+    store().undo()
+    expect(door()).toMatchObject({ hinge: 'right', inset: true })
+    expect(door()).not.toHaveProperty('double')
+  })
+})

@@ -1,5 +1,5 @@
 import { EDGE_FILLS, FILLS } from '../canvas/colors'
-import { isHollow, showsEdge } from '../canvas/views'
+import { drawOrder, isHollow, showsEdge } from '../canvas/views'
 import { contentBounds } from '../lib/geometry'
 import { unfold } from '../lib/room'
 import type { Piece, Room } from '../types'
@@ -21,11 +21,8 @@ export function ProjectThumbnail({ pieces: all, room }: { pieces: Piece[]; room:
   const y = -(bounds.maxY + margin)
   const w = bounds.maxX - bounds.minX + margin * 2
   const h = bounds.maxY - bounds.minY + margin * 2
-  // See-through panels underneath, like on the canvas.
-  const ordered = [
-    ...pieces.filter((piece) => isHollow(piece, 'front')),
-    ...pieces.filter((piece) => !isHollow(piece, 'front')),
-  ]
+  // See-through panels underneath and doors on top, like on the canvas.
+  const ordered = drawOrder(pieces, 'front')
 
   return (
     <svg

@@ -24,6 +24,7 @@ import {
   type ViewName,
   cornerGhosts,
   endWalls,
+  drawOrder,
   isHollow,
   piecesAt,
   projectPieces,
@@ -149,14 +150,9 @@ export function Canvas2D() {
     [inRoom, room, activeWall, ghosts],
   )
   // See-through panels go underneath everything, so a click on a part inside
-  // reaches that part, and a click on bare panel selects the panel.
-  const drawn = useMemo(
-    () => [
-      ...shown.filter((piece) => isHollow(piece, viewName)),
-      ...shown.filter((piece) => !isHollow(piece, viewName)),
-    ],
-    [shown, viewName],
-  )
+  // reaches that part, and a click on bare panel selects the panel. Doors are
+  // nearest, so they go on top.
+  const drawn = useMemo(() => drawOrder(shown, viewName), [shown, viewName])
 
   const unit = view.w / 1400
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
@@ -230,20 +226,22 @@ export function Canvas2D() {
     // Right-drag pans, even when it starts on a part.
     if (event.button !== 0) return
     event.stopPropagation()
-    if (hasModifier(event)) {
-      beginMarquee(event, clicked.id)
-      return
-    }
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
     if (!svg || !inverse) return
     const point = svgPoint(inverse, event.clientX, event.clientY)
 
     const stack = piecesAt(drawn, point.x, toDesignY(point.y), viewName).map((piece) => piece.id)
+    if (hasModifier(event)) {
+      beginMarquee(event, clicked.id)
+      return
+    }
     const current = shown.find((piece) => piece.id === selectedId)
-    // A see-through panel stays selectable, but pressing a part inside it
-    // should grab that part, not the panel.
-    const keep = current && stack.includes(current.id) && !isHollow(current, viewName)
+    // A see-through panel underneath stays selectable, but pressing a part
+    // inside it should grab that part, not the panel. Pressing it again starts
+    // over from the top of the stack, so clicking keeps going round.
+    const underneath = current && isHollow(current, viewName) && stack.at(-1) === current.id
+    const keep = current && stack.includes(current.id) && !underneath
     const target = pieces.find((piece) => piece.id === (keep ? current.id : clicked.id))
     if (!target) return
     // Pressing a part of a multi-selection keeps the selection, to drag it all.
@@ -583,6 +581,8 @@ export function Canvas2D() {
             // Screws show where the shelf meets the sides: from the front or back.
             clashing={clashes.has(piece.id)}
             screws={!!piece.fixed && (viewName === 'front' || viewName === 'back')}
+            // From behind, a door's hinges would show on the wrong side.
+            doorMarks={isFront}
             unit={unit}
             onPointerDown={beginPieceDrag}
             onHoverChange={setHoveredId}

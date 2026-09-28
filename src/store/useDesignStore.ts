@@ -632,4 +632,7 @@ const samePiece = (a: Piece, b: Piece) =>
   !!a.fixed === !!b.fixed &&
   a.color === b.color &&
   a.railAt === b.railAt &&
-  a.wall === b.wall
+  a.wall === b.wall &&
+  !!a.double === !!b.double &&
+  a.hinge === b.hinge &&
+  !!a.inset === !!b.inset

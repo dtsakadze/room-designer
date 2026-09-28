@@ -8,6 +8,7 @@ export type PieceKind =
   | 'drawer'
   | 'plinth'
   | 'rail'
+  | 'door'
 
 /**
  * One board, seen head-on. Everything lives in a single 2D world measured in
@@ -42,6 +43,18 @@ export type Piece = {
   fixed?: boolean
   /** Rails only: which edge of the unit the strip runs along. Absent means front. */
   railAt?: 'front' | 'back'
+  /**
+   * Doors only: two leaves meeting in the middle, each hinged on its outer
+   * side, instead of one. `width` is both leaves together, gap included.
+   */
+  double?: boolean
+  /** Single doors only: the side the hinges are on, seen from the front. Absent means left. */
+  hinge?: 'left' | 'right'
+  /**
+   * Doors only: sits inside the unit's opening, flush with its front edges,
+   * rather than in front of them. Absent means overlay.
+   */
+  inset?: boolean
   /** Hex colour (`#rrggbb`). Absent means the project's default colour. */
   color?: string
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */

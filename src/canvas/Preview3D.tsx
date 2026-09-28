@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { wallDepthStart } from '../lib/geometry'
+import { doorLeaves, wallDepthStart } from '../lib/geometry'
 import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { useClashes } from '../ui/useClashes'
@@ -127,7 +127,9 @@ export default function Preview3D() {
     const zStart = wallDepthStart(pieces, thickness)
     for (const piece of pieces) {
       const tint = piece.id === selectedId ? SELECTED : clashes.has(piece.id) ? CLASH : null
-      current.parts.add(buildPiece(piece, roomBox(piece, zStart(piece), room), tint))
+      for (const box of leaves(piece, roomBox(piece, zStart(piece), room))) {
+        current.parts.add(buildPiece(piece, box, tint))
+      }
     }
   }, [pieces, thickness, room, selectedId, clashes])
 
@@ -161,9 +163,11 @@ function buildPiece(piece: Piece, box: RoomBox, tint: string | null) {
       ? new THREE.Color(piece.color ?? FILLS[piece.kind]).lerp(new THREE.Color(tint), 0.45)
       : (piece.color ?? FILLS[piece.kind]),
     roughness: 0.85,
-    // The back panel would hide the inside from most angles, so it's faint.
-    transparent: piece.kind === 'back',
-    opacity: piece.kind === 'back' ? 0.45 : 1,
+    // The back panel and doors would hide the inside from most angles, so they're faint.
+    transparent: piece.kind === 'back' || piece.kind === 'door',
+    opacity: piece.kind === 'back' ? 0.45 : piece.kind === 'door' ? 0.35 : 1,
+    // Keeps a faint door from hiding the parts behind it.
+    depthWrite: piece.kind !== 'door',
   })
 
   const [sx, sy, sz] = [0, 1, 2].map((axis) => box.max[axis] - box.min[axis])
@@ -186,6 +190,20 @@ function buildPiece(piece: Piece, box: RoomBox, tint: string | null) {
   const [cx, cy, cz] = [0, 1, 2].map((axis) => (box.min[axis] + box.max[axis]) / 2)
   group.position.set(cx, cy, cz)
   return group
+}
+
+/** A double door's two leaves, split along its wall; any other part as it is. */
+function leaves(piece: Piece, box: RoomBox): RoomBox[] {
+  if (piece.kind !== 'door' || !piece.double) return [box]
+  const axis = wallOf(piece) === 'back' ? 0 : 2
+  const span = { x: box.min[axis], width: box.max[axis] - box.min[axis] }
+  return doorLeaves(span, true).map((leaf) => {
+    const min = [...box.min] as RoomBox['min']
+    const max = [...box.max] as RoomBox['max']
+    min[axis] = leaf.x
+    max[axis] = leaf.x + leaf.width
+    return { min, max }
+  })
 }
 
 /**

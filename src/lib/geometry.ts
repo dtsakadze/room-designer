@@ -1,5 +1,5 @@
 import type { Piece, Room, Thickness, Wall } from '../types'
-import { BOARD, PLINTH_RECESS } from './defaults'
+import { BOARD, DOOR_LEAF_GAP, PLINTH_RECESS } from './defaults'
 import { DEFAULT_ROOM, isSideWall, roomBox, wallOf } from './room'
 
 /**
@@ -23,6 +23,11 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'shelf' || !piece.fixed) delete normalized.fixed
   // Only rails have a side, and front (the default) is stored as no value.
   if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
+  // Door options, each stored only when it isn't the default (single, hinged
+  // on the left, overlay). A double door is hinged on both sides.
+  if (piece.kind !== 'door' || !piece.double) delete normalized.double
+  if (piece.kind !== 'door' || piece.double || piece.hinge !== 'right') delete normalized.hinge
+  if (piece.kind !== 'door' || !piece.inset) delete normalized.inset
   if (!piece.boxId) delete normalized.boxId
   // The back wall (the default) is stored as no value.
   if (!isSideWall(piece.wall)) delete normalized.wall
@@ -61,16 +66,17 @@ export type Rect = { x: number; y: number; width: number; height: number }
  * the floor below where nothing is in between. Each side is scanned along its
  * whole edge, so a shelf with a divider standing on it gets the height of the
  * opening on both sides of the divider, not just the divider it touches. Parts
- * that touch (no gap) show nothing. The back panel sits behind everything, so
- * it's never in the way. `obstacles` are other things to measure to, such as
- * the room's walls and the parts of the unit on the next wall.
+ * that touch (no gap) show nothing. The back panel sits behind everything and
+ * doors in front of it, so neither is in the way of the parts inside (a door
+ * still measures to the parts around it). `obstacles` are other things to
+ * measure to, such as the room's walls and the parts of the unit on the next
+ * wall.
  */
 export function neighbourGaps(piece: Piece, pieces: Piece[], obstacles: Rect[] = []): Gap[] {
   const box = edges(piece)
-  const others = [
-    ...pieces.filter((other) => other.id !== piece.id && other.kind !== 'back'),
-    ...obstacles,
-  ]
+  const inTheWay = (other: Piece) =>
+    other.id !== piece.id && other.kind !== 'back' && (piece.kind === 'door' || other.kind !== 'door')
+  const others = [...pieces.filter(inTheWay), ...obstacles]
     .map(edges)
     .filter((other) => !overlaps(box, other))
 
@@ -148,8 +154,9 @@ const overlaps = (a: Edges, b: Edges) =>
  * Where each piece starts, front to back, in mm from the wall (z = 0). Pieces
  * don't store this yet, so everything sits flush against the back: the back
  * panel takes the first `thickness.back` mm, and the rest start in front of it.
- * The exceptions: the plinth sits at the front, set back a little, and a rail
- * runs along the front unless it's marked as a back rail.
+ * The exceptions: the plinth sits at the front, set back a little, a rail
+ * runs along the front unless it's marked as a back rail, and a door stands in
+ * front of the unit (overlay) or just inside its front edge (inset).
  */
 export function depthStart(pieces: Piece[], thickness: Thickness) {
   const hasBack = pieces.some((piece) => piece.kind === 'back')
@@ -157,12 +164,13 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
   const front = Math.max(
     0,
     ...pieces
-      .filter((piece) => piece.kind !== 'plinth' && piece.kind !== 'rail')
+      .filter((piece) => !['plinth', 'rail', 'door'].includes(piece.kind))
       .map((piece) => behind(piece) + piece.depth),
   )
   return (piece: Piece) => {
     if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
+    if (piece.kind === 'door') return piece.inset ? Math.max(0, front - piece.depth) : front
     return behind(piece)
   }
 }
@@ -225,12 +233,30 @@ export function clearanceBelow(rod: Piece, pieces: Piece[]) {
     (piece) =>
       piece.id !== rod.id &&
       piece.kind !== 'back' &&
+      piece.kind !== 'door' &&
       piece.x < rod.x + rod.width &&
       piece.x + piece.width > rod.x &&
       piece.y + piece.height <= rod.y,
   )
   const floor = Math.max(0, ...below.map((piece) => piece.y + piece.height))
   return rod.y - floor
+}
+
+/**
+ * A door's leaves as they're cut: the door itself, or for a double door two
+ * halves with a small gap between them. Along the door's width only, so it
+ * works on any rectangle that spans it (the front view, or a wall's run in 3D).
+ */
+export function doorLeaves<T extends { x: number; width: number }>(
+  piece: T,
+  double: boolean | undefined,
+): T[] {
+  if (!double) return [piece]
+  const width = Math.max(1, (piece.width - DOOR_LEAF_GAP) / 2)
+  return [
+    { ...piece, width },
+    { ...piece, x: piece.x + piece.width - width, width },
+  ]
 }
 
 export const isHexColor = (value: unknown): value is string =>

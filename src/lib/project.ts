@@ -20,7 +20,7 @@ import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 3
+export const FORMAT_VERSION = 4
 
 type Raw = Record<string, unknown>
 
@@ -45,6 +45,10 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
     formatVersion: 3,
     room: { left: false, right: false, width: 2400, depth: 1800 },
   }),
+  // v4 adds doors (a new part kind, with `double`, `hinge` and `inset`).
+  // Nothing older has any, so only the version changes; the bump is there so
+  // an older app refuses a save with doors rather than silently dropping them.
+  3: (data) => ({ ...data, formatVersion: 4 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -162,7 +166,9 @@ function validate(data: Raw): ProjectData | null {
     const boxId = typeof raw.boxId === 'string' ? raw.boxId : undefined
     const color = isHexColor(raw.color) ? raw.color : undefined
     const wall = isSideWall(raw.wall) ? raw.wall : undefined
-    const extras = { fixed: raw.fixed === true, railAt, boxId, color, wall }
+    const hinge = raw.hinge === 'right' ? ('right' as const) : undefined
+    const door = { double: raw.double === true, hinge, inset: raw.inset === true }
+    const extras = { fixed: raw.fixed === true, railAt, boxId, color, wall, ...door }
     return [normalizePiece({ ...piece, ...extras }, thickness)]
   })
 

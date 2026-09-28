@@ -1,0 +1,177 @@
+{
+  "formatVersion": 4,
+  "savedAt": "2026-09-28T12:00:00.000Z",
+  "name": "Doors",
+  "thickness": {
+    "body": 18,
+    "back": 3
+  },
+  "unitDepth": 600,
+  "pieces": [
+    {
+      "kind": "back",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 3,
+      "id": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0:back",
+      "boxId": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0"
+    },
+    {
+      "kind": "vertical",
+      "x": -600,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0:left",
+      "boxId": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0"
+    },
+    {
+      "kind": "vertical",
+      "x": 582,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0:right",
+      "boxId": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0"
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 0,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0:bottom",
+      "boxId": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0"
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 1982,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0:top",
+      "boxId": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0"
+    },
+    {
+      "id": "f999c124-d8e4-4158-a640-2511845a74fa",
+      "kind": "door",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 18,
+      "double": true,
+      "color": "#b08d57"
+    },
+    {
+      "kind": "back",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 3,
+      "id": "5050b5e9-db78-4d47-aa73-7cb710699707:back",
+      "boxId": "5050b5e9-db78-4d47-aa73-7cb710699707",
+      "wall": "left"
+    },
+    {
+      "kind": "vertical",
+      "x": -600,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "5050b5e9-db78-4d47-aa73-7cb710699707:left",
+      "boxId": "5050b5e9-db78-4d47-aa73-7cb710699707",
+      "wall": "left"
+    },
+    {
+      "kind": "vertical",
+      "x": 582,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "5050b5e9-db78-4d47-aa73-7cb710699707:right",
+      "boxId": "5050b5e9-db78-4d47-aa73-7cb710699707",
+      "wall": "left"
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 0,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "5050b5e9-db78-4d47-aa73-7cb710699707:bottom",
+      "boxId": "5050b5e9-db78-4d47-aa73-7cb710699707",
+      "wall": "left"
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 1982,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "5050b5e9-db78-4d47-aa73-7cb710699707:top",
+      "boxId": "5050b5e9-db78-4d47-aa73-7cb710699707",
+      "wall": "left"
+    },
+    {
+      "id": "20b73fb8-1a58-4c67-bc20-bc11f4f9a635",
+      "kind": "door",
+      "x": -580,
+      "y": 20,
+      "width": 1160,
+      "height": 1960,
+      "depth": 18,
+      "wall": "left",
+      "hinge": "right",
+      "inset": true
+    },
+    {
+      "id": "f42de2e0-d856-4e87-98cf-b4f24edbbb2b",
+      "kind": "shelf",
+      "x": 700,
+      "y": 0,
+      "width": 1164,
+      "height": 18,
+      "depth": 580,
+      "wall": "left"
+    }
+  ],
+  "boxes": [
+    {
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 600,
+      "joint": "between",
+      "id": "ae1f00ca-7163-4994-b3f5-7d96a58e7ad0"
+    },
+    {
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 600,
+      "joint": "between",
+      "id": "5050b5e9-db78-4d47-aa73-7cb710699707",
+      "wall": "left"
+    }
+  ],
+  "room": {
+    "left": true,
+    "right": false,
+    "width": 2400,
+    "depth": 1800
+  }
+}

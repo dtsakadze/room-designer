@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Hinged doors: add a door from Fronts, make it single (hinged left or right) or double, and set it in front of the unit (overlay) or inside its opening (inset). Doors are see-through in the front view and 3D so you can still work on the inside, show which side they open from, and a double door's two leaves are in the cut list.
+
 ## 1.2.0 — 2026-09-28
 
 - Drag any of several selected parts to move them all together, and nudge them together with the arrow keys. Clicking one of them without dragging selects just that part.

@@ -1,5 +1,6 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
+import { doorLeaves } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
 import { CLASH, EDGE_FILLS, FILLS } from './colors'
 import { toSvgY } from './view'
@@ -20,6 +21,8 @@ type PieceRectProps = {
   edgeOn: boolean
   /** Marks a fixed shelf with a screw at each end. */
   screws: boolean
+  /** Shows how a door opens: its leaves, and a V pointing at each leaf's hinges. */
+  doorMarks: boolean
   /** Overlaps another part: drawn red. */
   clashing: boolean
   unit: number
@@ -40,6 +43,7 @@ export function PieceRect({
   hollow,
   edgeOn,
   screws,
+  doorMarks,
   clashing,
   unit,
   onPointerDown,
@@ -71,7 +75,8 @@ export function PieceRect({
         fillOpacity={hollow ? 0.35 : 1}
         stroke={selected ? '#2563eb' : clashing ? CLASH : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
-        strokeDasharray={hollow ? `${unit * 8} ${unit * 6}` : undefined}
+        // A door's own marks are dashed, so its outline stays solid.
+        strokeDasharray={hollow && piece.kind !== 'door' ? `${unit * 8} ${unit * 6}` : undefined}
         style={{ cursor: editable ? 'move' : 'pointer' }}
         {...handlers}
       />
@@ -86,6 +91,7 @@ export function PieceRect({
             style={{ pointerEvents: 'none' }}
           />
         ))}
+      {doorMarks && piece.kind === 'door' && <DoorMarks piece={piece} y={y} unit={unit} />}
       {clashing && (
         <rect
           x={piece.x}
@@ -122,6 +128,41 @@ export function PieceRect({
           {label}
         </text>
       )}
+    </g>
+  )
+}
+
+/**
+ * The usual drawing convention for a hinged door: lines from the corners of
+ * the side that opens to the middle of the hinged side, so the V points at the
+ * hinges. A double door opens in the middle, each leaf hinged on its outer side.
+ */
+function DoorMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+  const leaves = doorLeaves(piece, piece.double)
+  const mid = y + piece.height / 2
+  const bottom = y + piece.height
+  const hingedLeft = (index: number) => (piece.double ? index === 0 : piece.hinge !== 'right')
+  return (
+    <g
+      fill="none"
+      stroke="#6f6450"
+      strokeWidth={unit}
+      strokeDasharray={`${unit * 6} ${unit * 4}`}
+      style={{ pointerEvents: 'none' }}
+    >
+      {leaves.map((leaf, index) => {
+        const [hinge, open] = hingedLeft(index)
+          ? [leaf.x, leaf.x + leaf.width]
+          : [leaf.x + leaf.width, leaf.x]
+        return (
+          <g key={index}>
+            {piece.double && (
+              <rect x={leaf.x} y={y} width={leaf.width} height={piece.height} strokeDasharray="none" />
+            )}
+            <polyline points={`${open},${y} ${hinge},${mid} ${open},${bottom}`} />
+          </g>
+        )
+      })}
     </g>
   )
 }
