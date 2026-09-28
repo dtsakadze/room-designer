@@ -90,10 +90,10 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: with doors drawn on top, every edit behind one took an extra click, and a drag grabbed the door. Drawer fronts don't need it: nothing sits behind a drawer but the back panel.
 *Instead of*: a per-door "open" state saved in the project (nothing to design with it), and hiding doors only in the front view (3D gets just as cluttered).
 
-**Door swings in the top view** (2026-09-28)
-*Decision*: the top view draws each door leaf swung open at a right angle from its hinge, on the door's front face, with a dashed quarter circle for the floor it sweeps (`doorSwings`, in room coordinates, so doors on side walls swing across the room). A double door's leaves each turn on their outer side. Framing the top view includes the swings. A selected door's swing is blue; hidden doors have none.
-*Why*: the front view already shows the hinge side; what it can't show is the floor a door needs and whether doors on neighbouring walls hit each other in a corner, which is easy to miss in an L- or U-shaped room.
-*Instead of*: warnings for overlapping swings or swings that hit a wall (worth adding later, once the arcs are there to see), and hinge marks in the side and back views (you don't design doors there).
+**Door swings in the top view, checked in a room** (2026-09-28)
+*Decision*: the top view draws each door leaf swung open to 110° (`DOOR_OPEN_ANGLE`, what concealed hinges usually allow) from its hinge on the door's front face, with a dashed arc for the floor it sweeps (`lib/swing.ts`, in room coordinates, so doors on side walls swing across the room). A double door's leaves each turn on their outer side. In a room with side walls, each swing is checked against the room's back and side walls (the front of the room is open) and against parts and door swings on the other walls where their heights overlap; a swing that hits something is red, and the door's panel names what it hits. Doors on the same wall aren't checked against each other, nor are rooms with one wall. Framing the top view includes the swings; a selected door's swing is blue, hidden doors have none (but are still checked).
+*Why*: the front view already shows the hinge side; what it can't show is the floor a door needs and whether it runs into something, which in an L- or U-shaped room is the classic corner mistake. Past 90° a door swings back behind its hinge side, which is exactly where it meets a wall or the next unit, so the check uses the full 110°.
+*Instead of*: a 90° arc (the drawing convention, but it hides the corner problems), checking neighbouring doors on the same wall (doors hinged on one panel from both sides meet past square when both are fully open, as designed; flagging it would be noise), checking a one-wall design against a room size that doesn't mean anything there, and hinge marks in the side and back views.
 
 ## Data and storage
 

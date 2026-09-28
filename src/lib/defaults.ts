@@ -19,6 +19,11 @@ export const PLINTH_HEIGHT = 80
 /** How far the plinth sits back from the front, so toes don't hit it. */
 export const PLINTH_RECESS = 50
 export const RAIL_DEPTH = 100
+/**
+ * How far a door opens, in degrees: concealed hinges usually open to 110°,
+ * which takes the door past square and back behind its hinge side.
+ */
+export const DOOR_OPEN_ANGLE = 110
 /** The gap between the two leaves of a double door, so they don't rub. */
 export const DOOR_LEAF_GAP = 3
 /**

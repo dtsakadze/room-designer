@@ -4,7 +4,7 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
-- The top view shows how each door opens: the leaf swung open and the arc it sweeps, so you can see the floor a door needs and whether doors in a corner would hit each other.
+- The top view shows how each door opens: the leaf swung open to 110°, as far as most hinges go, and the arc it sweeps. In an L- or U-shaped room, a door that would hit a wall, a door on the next wall or a part there turns red, and its panel says what it hits.
 
 - Hide doors: a button next to Fit view takes the doors out of every view, so you can click and drag the parts inside straight away. They stay in the cut list, and the setting is remembered.
 

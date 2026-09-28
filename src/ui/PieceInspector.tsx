@@ -1,4 +1,5 @@
-import { BOARD, EXTENSION_LABELS, RUNNER_LENGTHS, pieceLabel } from '../lib/defaults'
+import { BOARD, DOOR_OPEN_ANGLE, EXTENSION_LABELS, RUNNER_LENGTHS, pieceLabel } from '../lib/defaults'
+import { swingConflicts } from '../lib/swing'
 import { drawerParts, runnerLength } from '../lib/drawer'
 import { useUnits } from '../store/useSettingsStore'
 import type { Piece } from '../types'
@@ -9,7 +10,7 @@ import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
-import { wallOf } from '../lib/room'
+import { WALL_LABELS, wallOf } from '../lib/room'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -214,9 +215,35 @@ function DoorOptions({ piece }: { piece: Piece }) {
           : 'Overlay: sits in front of the unit, covering its edges. Size it to the front it covers.'}
         {piece.double && ' The width is both leaves together.'}
       </p>
+      <SwingWarning door={piece} />
     </>
   )
 }
+
+/** What the door runs into as it opens to 110°, if anything (only in a room with side walls). */
+function SwingWarning({ door }: { door: Piece }) {
+  const pieces = useDesignStore((s) => s.pieces)
+  const thickness = useDesignStore((s) => s.thickness)
+  const room = useDesignStore((s) => s.room)
+  const hits = swingConflicts(pieces, thickness, room).get(door.id)
+  if (!hits) return null
+
+  const names = hits.map((hit) => {
+    if (hit.kind === 'wall') return `the ${WALL_LABELS[hit.wall].toLowerCase()}`
+    const part = pieces.find((candidate) => candidate.id === hit.id)
+    if (!part) return 'another part'
+    return `the ${pieceLabel(part).toLowerCase()} on the ${WALL_LABELS[wallOf(part)].toLowerCase()}`
+  })
+  return (
+    <p className="hint hint-error">
+      Opening to {DOOR_OPEN_ANGLE}°, it hits {listed(names)}. See the Top view.
+    </p>
+  )
+}
+
+/** "a", "a and b", "a, b and c". */
+const listed = (items: string[]) =>
+  items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
 
 type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset'>
 

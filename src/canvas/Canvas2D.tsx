@@ -18,6 +18,7 @@ import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
 import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
 import { DoorSwings } from './DoorSwings'
+import { doorSwings, swingBounds, swingConflicts } from '../lib/swing'
 import type { Handle, Rect } from './handles'
 import { resizePiece } from './handles'
 import {
@@ -29,8 +30,6 @@ import {
   isHollow,
   piecesAt,
   projectPieces,
-  doorSwings,
-  swingBounds,
   roomPlan,
   showsEdge,
   sizeLabel,
@@ -152,6 +151,14 @@ export function Canvas2D() {
   const swings = useMemo(
     () => (viewName === 'top' ? doorSwings(pieces, thickness, room) : []),
     [viewName, pieces, thickness, room],
+  )
+  // Checked against everything, hidden doors included: hiding is only a view.
+  const hitting = useMemo(
+    () =>
+      viewName === 'top'
+        ? new Set(swingConflicts(allPieces, thickness, room).keys())
+        : new Set<string>(),
+    [viewName, allPieces, thickness, room],
   )
   // The room around the wall being edited, in the front view only.
   const inRoom = multiWall && isFront
@@ -630,7 +637,7 @@ export function Canvas2D() {
         ))}
 
         {inRoom && <CornerGhosts ghosts={ghosts} unit={unit} />}
-        {swings.length > 0 && <DoorSwings swings={swings} selected={selectedSet} unit={unit} />}
+        {swings.length > 0 && <DoorSwings swings={swings} selected={selectedSet} hitting={hitting} unit={unit} />}
 
         {/* Gaps to neighbours only make sense in the view where you move things. */}
         <Dimensions
