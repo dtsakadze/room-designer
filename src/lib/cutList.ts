@@ -173,25 +173,54 @@ const kindOrder = (kind: PieceKind) =>
     .find((kinds) => kinds.includes(kind))
     ?.indexOf(kind) ?? 0
 
-/** Pairs of drawer runners of one type and length (mm). */
-export type HardwareRow = { extension: 'standard' | 'full'; length: number; pairs: number }
+/**
+ * Something to buy rather than cut from board: pairs of drawer runners of one
+ * type and length, hanging rods of one diameter and length, or the supports
+ * that hold rods of one diameter at each end. Sizes in mm.
+ */
+export type HardwareRow =
+  | { item: 'runners'; extension: 'standard' | 'full'; length: number; quantity: number }
+  | { item: 'rod'; diameter: number; length: number; quantity: number }
+  | { item: 'rod-supports'; diameter: number; quantity: number }
+
+/** Supports a hanging rod needs: one at each end. */
+const SUPPORTS_PER_ROD = 2
 
 /**
- * What to buy besides boards: for now, a pair of runners per drawer, by type
- * and length. Drawers too shallow for any runner are left out; the drawer's
- * panel says so.
+ * What to buy besides boards, identical items counted together: a pair of
+ * runners per drawer (by type and length), each hanging rod (by diameter and
+ * the length to cut it to), and its end supports. Drawers too shallow for any
+ * runner are left out; the drawer's panel says so. Runners come first, then
+ * rods and their supports.
  */
 export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow[] {
   const rows = new Map<string, HardwareRow>()
-  for (const piece of pieces) {
-    if (piece.kind !== 'drawer') continue
-    const length = runnerLength(piece, thickness)
-    if (length === null) continue
-    const extension = piece.extension ?? 'standard'
-    const key = `${extension}|${length}`
-    const row = rows.get(key)
-    if (row) row.pairs += 1
-    else rows.set(key, { extension, length, pairs: 1 })
+  const add = (row: HardwareRow) => {
+    const { quantity, ...what } = row
+    const key = JSON.stringify(what)
+    const existing = rows.get(key)
+    if (existing) existing.quantity += quantity
+    else rows.set(key, { ...row })
   }
-  return [...rows.values()].sort((a, b) => a.extension.localeCompare(b.extension) || a.length - b.length)
+
+  for (const piece of pieces) {
+    if (piece.kind === 'drawer') {
+      const length = runnerLength(piece, thickness)
+      if (length === null) continue
+      add({ item: 'runners', extension: piece.extension ?? 'standard', length, quantity: 1 })
+    } else if (piece.kind === 'rod') {
+      // A rod's height is its diameter and its width its length.
+      add({ item: 'rod', diameter: piece.height, length: piece.width, quantity: 1 })
+      add({ item: 'rod-supports', diameter: piece.height, quantity: SUPPORTS_PER_ROD })
+    }
+  }
+
+  const order = { runners: 0, rod: 1, 'rod-supports': 2 }
+  return [...rows.values()].sort(
+    (a, b) =>
+      order[a.item] - order[b.item] ||
+      ('extension' in a && 'extension' in b ? a.extension.localeCompare(b.extension) : 0) ||
+      ('diameter' in a && 'diameter' in b ? a.diameter - b.diameter : 0) ||
+      ('length' in a && 'length' in b ? b.length - a.length : 0),
+  )
 }

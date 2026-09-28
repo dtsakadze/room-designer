@@ -8,7 +8,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - Board thickness is a project setting (body and back), and every panel follows it.
 - Wardrobes along one, two or three walls of a room (L- and U-shaped): design each wall in its own front view, and see the whole room from the top or in 3D.
 - Dimension lines for the overall size and the gaps around the selected part.
-- A cut list: every board as length × width × thickness, with identical parts counted together, and the drawer runners to buy.
+- A cut list: every board as length × width × thickness, with identical parts counted together, and the hardware to buy: drawer runners, hanging rods cut to length and their end supports.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
 - Select several parts (⌘/Ctrl-drag a selection rectangle, or ⌘/Ctrl-click) to move, nudge, colour or delete them together, and set a colour for new parts.
 - Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).

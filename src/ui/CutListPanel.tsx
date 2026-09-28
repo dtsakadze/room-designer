@@ -1,4 +1,4 @@
-import { CUT_LIST_SECTIONS, cutList, hardwareList } from '../lib/cutList'
+import { CUT_LIST_SECTIONS, type HardwareRow, cutList, hardwareList } from '../lib/cutList'
 import { EXTENSION_LABELS } from '../lib/defaults'
 import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
@@ -16,7 +16,6 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
   const total = groups
     .flatMap((group) => group.rows)
     .reduce((sum, row) => sum + row.quantity, 0)
-  const skipped = pieces.filter((piece) => piece.kind === 'rod').length
 
   return (
     <div className="cut-list">
@@ -88,16 +87,15 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
               </tr>
             </thead>
             <tbody>
-              {hardware.map((row) => (
-                <tr key={`${row.extension}|${row.length}`}>
-                  <td>
-                    Drawer runners, {EXTENSION_LABELS[row.extension].toLowerCase()}, {len(row.length)}
-                  </td>
-                  <td className="num">
-                    {row.pairs} pair{row.pairs === 1 ? '' : 's'}
-                  </td>
-                </tr>
-              ))}
+              {hardware.map((row) => {
+                const { name, count } = hardwareText(row, len)
+                return (
+                  <tr key={JSON.stringify(row)}>
+                    <td>{name}</td>
+                    <td className="num">{count}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </>
@@ -105,9 +103,23 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
 
       <p className="hint">
         All sizes in {UNITS[unit].label}.
-        {skipped > 0 &&
-          ` Hanging rods aren't boards, so they're left out (${skipped} in the design).`}
+        {hardware.some((row) => row.item === 'rod') && ' Rod lengths are what to cut them to.'}
       </p>
     </div>
   )
+}
+
+/** A hardware row's name and how many, in words: runners come in pairs. */
+function hardwareText(row: HardwareRow, len: (mm: number) => string) {
+  switch (row.item) {
+    case 'runners':
+      return {
+        name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}, ${len(row.length)}`,
+        count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`,
+      }
+    case 'rod':
+      return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}` }
+    case 'rod-supports':
+      return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}` }
+  }
 }

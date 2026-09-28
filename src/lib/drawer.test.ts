@@ -60,8 +60,8 @@ describe('drawers', () => {
       Bottom: 2,
     })
     expect(hardwareList([drawer(), drawer({ id: 'e', extension: 'full' }), drawer({ id: 'f' })], thickness)).toEqual([
-      { extension: 'full', length: 500, pairs: 1 },
-      { extension: 'standard', length: 500, pairs: 2 },
+      { item: 'runners', extension: 'full', length: 500, quantity: 1 },
+      { item: 'runners', extension: 'standard', length: 500, quantity: 2 },
     ])
   })
 

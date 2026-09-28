@@ -95,6 +95,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: the front view already shows the hinge side; what it can't show is the floor a door needs and whether it runs into something, which in an L- or U-shaped room is the classic corner mistake. Past 90° a door swings back behind its hinge side, which is exactly where it meets a wall or the next unit, so the check uses the full 110°.
 *Instead of*: a 90° arc (the drawing convention, but it hides the corner problems), checking neighbouring doors on the same wall (doors hinged on one panel from both sides meet past square when both are fully open, as designed; flagging it would be noise), checking a one-wall design against a room size that doesn't mean anything there, and hinge marks in the side and back views.
 
+**Hanging rods in the hardware list** (2026-09-28)
+*Decision*: hanging rods go in the cut list's Hardware section, by diameter and length (the length to cut a stock rod to), identical rods counted together, each with two end supports (listed by diameter). Hardware rows are one list of item kinds (`runners`, `rod`, `rod-supports`), runners first.
+*Why*: a rod is bought and cut to length, not cut from board, but it's still on the shopping list; leaving it out with a note meant working it out by hand.
+*Instead of*: listing rods with the boards (they have no board thickness, and the columns don't fit), and stock rod lengths (vary by shop; the cut length is what's needed).
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)

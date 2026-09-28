@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
-import { CUT_LIST_SECTIONS, cutList } from './cutList'
+import { CUT_LIST_SECTIONS, cutList, hardwareList } from './cutList'
 import { BOARD, DEFAULT_THICKNESS } from './defaults'
 import { normalizePiece } from './geometry'
 
@@ -59,5 +59,35 @@ describe('cut list', () => {
   it('lists a drawer’s boards in the order it’s put together', () => {
     const [group] = cutList([piece('drawer', { width: 564, height: 200, depth: 550 })], thickness)
     expect(group.rows.map((row) => row.label)).toEqual(['Front', 'Side', 'Back', 'Bottom'])
+  })
+})
+
+describe('hardware list', () => {
+  it('lists hanging rods by diameter and length, with two end supports each', () => {
+    const rods = [
+      piece('rod', { width: 1164, height: 25 }),
+      piece('rod', { width: 1164, height: 25 }),
+      piece('rod', { width: 564, height: 25 }),
+      piece('rod', { width: 564, height: 32 }),
+    ]
+    expect(hardwareList(rods, thickness)).toEqual([
+      { item: 'rod', diameter: 25, length: 1164, quantity: 2 },
+      { item: 'rod', diameter: 25, length: 564, quantity: 1 },
+      { item: 'rod', diameter: 32, length: 564, quantity: 1 },
+      { item: 'rod-supports', diameter: 25, quantity: 6 },
+      { item: 'rod-supports', diameter: 32, quantity: 2 },
+    ])
+  })
+
+  it('puts drawer runners first, then rods', () => {
+    const list = hardwareList(
+      [piece('rod', { width: 1164, height: 25 }), piece('drawer', { width: 564, height: 200, depth: 550 })],
+      thickness,
+    )
+    expect(list.map((row) => row.item)).toEqual(['runners', 'rod', 'rod-supports'])
+  })
+
+  it('leaves rods out of the boards', () => {
+    expect(cutList([piece('rod', { width: 1164, height: 25 })], thickness)).toEqual([])
   })
 })
