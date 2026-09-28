@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 
@@ -60,8 +61,26 @@ function seo(siteUrl: string | null): Plugin {
   }
 }
 
+// `version` is read once, when the config loads, and Vite doesn't reload the
+// config when package.json changes, so a release left the dev server showing the
+// old version until it was restarted by hand.
+function restartOnVersionChange(): Plugin {
+  const file = fileURLToPath(new URL('./package.json', import.meta.url))
+  return {
+    name: 'restart-on-version-change',
+    configureServer(server) {
+      server.watcher.add(file)
+      server.watcher.on('change', (changed) => {
+        if (changed !== file) return
+        const next = JSON.parse(readFileSync(file, 'utf8')).version
+        if (next !== version) void server.restart()
+      })
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
+  plugins: [react(), restartOnVersionChange(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
   define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative asset paths, so the build works from any folder on any host
   base: './',
