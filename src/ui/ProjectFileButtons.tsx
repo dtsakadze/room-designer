@@ -67,10 +67,11 @@ export function ProjectFileButtons({ onPrint }: { onPrint: () => void }) {
         className="add-button"
         onClick={onPrint}
         disabled={isEmpty}
-        title={`Print drawings and the cut list (${PRINT_SHORTCUT})`}
+        title={`Print drawings and the cut list, or save them as a PDF (${PRINT_SHORTCUT})`}
       >
         Print… <kbd>{PRINT_SHORTCUT}</kbd>
       </button>
+      <p className="hint">Prints the drawings and cut list, or saves them as a PDF.</p>
       <input
         ref={inputRef}
         type="file"
