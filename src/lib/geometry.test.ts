@@ -7,6 +7,7 @@ import {
   depthStart,
   doorLeaves,
   findClashes,
+  fitBetweenSides,
   isHexColor,
   neighbourGaps,
   normalizePiece,
@@ -238,5 +239,35 @@ describe('isHexColor', () => {
   it('accepts #rrggbb only', () => {
     expect(['#000000', '#a1B2c3'].every(isHexColor)).toBe(true)
     expect(['#fff', 'red', '000000', 42, null].some(isHexColor)).toBe(false)
+  })
+})
+
+describe('fitBetweenSides', () => {
+  // The sides in the reported project: an odd gap of 1211 mm, from -1182 to 29.
+  const left = piece('l', 'vertical', { x: -1200, height: 2000 })
+  const right = piece('r', 'vertical', { x: 29, height: 2000 })
+
+  it('fills the gap between the nearest panels, face to face, to the mm', () => {
+    const plinth = piece('p', 'plinth', { x: -1180, y: 20, width: 1200, height: 80 })
+    expect(fitBetweenSides(plinth, [left, right, plinth])).toEqual({ x: -1182, width: 1211 })
+  })
+
+  it('stops at a divider nearer than the side', () => {
+    const divider = piece('d', 'divider', { x: -400, height: 2000 })
+    const shelf = piece('s', 'shelf', { x: -300, y: 990, width: 100 })
+    expect(fitBetweenSides(shelf, [left, right, divider, shelf])).toEqual({ x: -382, width: 411 })
+  })
+
+  it('runs an overlay drawer across the panels’ edges', () => {
+    const drawer = piece('w', 'drawer', { x: -1100, y: 100, width: 800, height: 200, overlay: true })
+    expect(fitBetweenSides(drawer, [left, right, drawer])).toEqual({ x: -1200, width: 1247 })
+  })
+
+  it('needs a panel on both sides, at the part’s height, on its wall', () => {
+    const shelf = piece('s', 'shelf', { x: -600, y: 990, width: 100 })
+    expect(fitBetweenSides(shelf, [left, shelf])).toBeNull()
+    const low = piece('r2', 'vertical', { x: 29, height: 500 })
+    expect(fitBetweenSides(shelf, [left, low, shelf])).toBeNull()
+    expect(fitBetweenSides(shelf, [left, { ...right, wall: 'left' }, shelf])).toBeNull()
   })
 })

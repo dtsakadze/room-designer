@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
-import { contentBounds, normalizePiece } from '../lib/geometry'
+import { FITS_BETWEEN_SIDES, contentBounds, fitBetweenSides, normalizePiece } from '../lib/geometry'
 import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
@@ -77,6 +77,12 @@ type DesignState = {
    * their places relative to it.
    */
   movePieces: (ids: string[], dx: number, dy: number) => void
+  /**
+   * Moves and resizes a shelf, top, plinth, rail, drawer or rod to fill the
+   * gap between the panels either side of it, as one undo step. Nothing
+   * happens without a panel on both sides, or on a box's panel.
+   */
+  fitBetweenSides: (id: string) => void
   duplicatePiece: (id: string) => void
   removePiece: (id: string) => void
   select: (id: string | null) => void
@@ -390,6 +396,14 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = pieces
           state.boxes = nextBoxes
         }),
+
+      fitBetweenSides: (id) => {
+        const { pieces, updatePiece } = get()
+        const piece = pieces.find((candidate) => candidate.id === id)
+        if (!piece || piece.boxId || !FITS_BETWEEN_SIDES.includes(piece.kind)) return
+        const fit = fitBetweenSides(piece, pieces)
+        if (fit) updatePiece(id, fit)
+      },
 
       duplicatePiece: (id) =>
         set((state) => {

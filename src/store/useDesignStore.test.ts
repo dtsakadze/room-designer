@@ -264,6 +264,35 @@ describe('boards', () => {
   })
 })
 
+describe('fit between sides', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('fills the gap between the sides as one undo step, and does nothing without sides', () => {
+    store().addPiece('vertical')
+    const left = store().selectedId!
+    store().updatePiece(left, { x: -1200 })
+    store().addPiece('vertical')
+    store().updatePiece(store().selectedId!, { x: 29 })
+    store().addPiece('plinth')
+    const plinth = store().selectedId!
+    store().updatePiece(plinth, { x: -1000, y: 20 })
+    const steps = store().past.length
+    store().fitBetweenSides(plinth)
+    expect(byId(plinth)).toMatchObject({ x: -1182, width: 1211 })
+    expect(store().past.length).toBe(steps + 1)
+    // Already fitting: nothing to undo.
+    store().fitBetweenSides(plinth)
+    expect(store().past.length).toBe(steps + 1)
+    store().undo()
+    expect(byId(plinth).x).toBe(-1000)
+
+    store().removePiece(left)
+    const before = store().past.length
+    store().fitBetweenSides(plinth)
+    expect(store().past.length).toBe(before)
+  })
+})
+
 describe('adjustable shelves', () => {
   beforeEach(() => store().loadProject(emptyProject()))
 

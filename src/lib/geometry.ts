@@ -1,4 +1,4 @@
-import type { Piece, Room, Thickness, Wall } from '../types'
+import type { Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { BOARD, DOOR_LEAF_GAP, PLINTH_RECESS } from './defaults'
 import { drawerParts } from './drawer'
 import { autoBands, autoGrain, boardEdges, faceDimensions } from './edges'
@@ -309,6 +309,40 @@ export function doorLeaves<T extends { x: number; width: number }>(
     { ...piece, width },
     { ...piece, x: piece.x + piece.width - width, width },
   ]
+}
+
+/** Parts that run across a unit, from one side to the other, and can be fitted between its sides. */
+export const FITS_BETWEEN_SIDES: readonly PieceKind[] = ['shelf', 'horizontal', 'plinth', 'rail', 'drawer', 'rod']
+
+/**
+ * Where a part goes to fill the gap between the side panels or dividers left
+ * and right of it, on its wall: the nearest one each side of its middle that
+ * reaches its height. It runs from face to face, except an overlay drawer,
+ * whose front covers the panels' edges, so it runs across them. Null when
+ * there isn't a panel on both sides.
+ */
+export function fitBetweenSides(piece: Piece, pieces: Piece[]): { x: number; width: number } | null {
+  const middle = piece.x + piece.width / 2
+  const wall = wallOf(piece)
+  const panels = pieces.filter(
+    (p) =>
+      p.id !== piece.id &&
+      (p.kind === 'vertical' || p.kind === 'divider') &&
+      wallOf(p) === wall &&
+      p.y < piece.y + piece.height &&
+      piece.y < p.y + p.height,
+  )
+  const left = panels
+    .filter((p) => p.x + p.width <= middle)
+    .reduce<Piece | null>((best, p) => (!best || p.x + p.width > best.x + best.width ? p : best), null)
+  const right = panels
+    .filter((p) => p.x >= middle)
+    .reduce<Piece | null>((best, p) => (!best || p.x < best.x ? p : best), null)
+  if (!left || !right) return null
+  const overlay = piece.kind === 'drawer' && piece.overlay
+  const from = overlay ? left.x : left.x + left.width
+  const to = overlay ? right.x + right.width : right.x
+  return to > from ? { x: from, width: to - from } : null
 }
 
 export const isHexColor = (value: unknown): value is string =>

@@ -12,6 +12,7 @@ import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
 import { WALL_LABELS, wallOf } from '../lib/room'
+import { FITS_BETWEEN_SIDES, fitBetweenSides } from '../lib/geometry'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -21,6 +22,7 @@ export function PieceInspector() {
   const removePiece = useDesignStore((s) => s.removePiece)
   const boxes = useDesignStore((s) => s.boxes)
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
+  const fitPiece = useDesignStore((s) => s.fitBetweenSides)
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
@@ -114,6 +116,10 @@ export function PieceInspector() {
         </>
       )}
 
+      {FITS_BETWEEN_SIDES.includes(piece.kind) && (
+        <FitButton piece={piece} pieces={pieces} onFit={() => fitPiece(piece.id)} />
+      )}
+
       <hr className="rule" />
 
       <WallField wall={wallOf(piece)} onChange={(wall) => updatePiece(piece.id, { wall })} />
@@ -147,6 +153,32 @@ export function PieceInspector() {
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Fills the gap between the side panels or dividers either side of the part,
+ * to the mm. Says why it can't when there's no panel on one side, and that
+ * it already fits when it does.
+ */
+function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; onFit: () => void }) {
+  const fit = fitBetweenSides(piece, pieces)
+  const fits = !!fit && fit.x === piece.x && fit.width === piece.width
+  return (
+    <>
+      <button type="button" className="ghost-button" disabled={!fit || fits} onClick={onFit}>
+        Fit between sides
+      </button>
+      <p className="hint">
+        {!fit
+          ? 'Needs a side panel or divider on both sides, at this height.'
+          : fits
+            ? 'Fits exactly between the sides.'
+            : piece.kind === 'drawer' && piece.overlay
+              ? 'Sets the width and X so the front covers both sides.'
+              : 'Sets the width and X to fill the gap between the sides.'}
+      </p>
+    </>
   )
 }
 
