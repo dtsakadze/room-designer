@@ -4,6 +4,7 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- The cut list's Hardware section counts screws for fixed shelves too: four per shelf, two through each side.
 - Fit between sides: select a shelf, top or bottom, plinth, rail, drawer or hanging rod and click Fit between sides to make it fill the gap between the side panels (or dividers) next to it, exactly to the mm. An overlay drawer is sized to cover both sides.
 - Press Esc to deselect whatever is selected. With a dialog open, Esc still just closes the dialog.
 - Edge banding in the cut list: an Edges column sketches which edges of each board to band, and a new Edge banding section adds up how much each board needs. Parts start with the edges that show (the front edge of panels and shelves, all round on doors and drawer fronts); select a part to tick other edges. For a box, select one of its panels.

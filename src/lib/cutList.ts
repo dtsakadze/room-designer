@@ -223,13 +223,20 @@ export function bandingTotals(groups: CutListGroup[]): { board: BoardKey; length
  * Something to buy rather than cut from board: pairs of drawer runners of one
  * type and length, hanging rods of one diameter and length, the supports
  * that hold rods of one diameter at each end, or the pins adjustable shelves
- * rest on. Sizes in mm.
+ * rest on, or the screws fixed shelves are held by. Sizes in mm.
  */
 export type HardwareRow =
   | { item: 'runners'; extension: 'standard' | 'full'; length: number; quantity: number }
   | { item: 'rod'; diameter: number; length: number; quantity: number }
   | { item: 'rod-supports'; diameter: number; quantity: number }
   | { item: 'shelf-pins'; quantity: number }
+  | { item: 'shelf-screws'; quantity: number }
+
+/**
+ * Screws a fixed shelf needs: two through each side, near its front and back
+ * edges, so it holds the sides straight.
+ */
+const SCREWS_PER_FIXED_SHELF = 4
 
 /** Supports a hanging rod needs: one at each end. */
 const SUPPORTS_PER_ROD = 2
@@ -237,9 +244,10 @@ const SUPPORTS_PER_ROD = 2
 /**
  * What to buy besides boards, identical items counted together: a pair of
  * runners per drawer (by type and length), each hanging rod (by diameter and
- * the length to cut it to), its end supports, and four pins per adjustable
- * shelf. Drawers too shallow for any runner are left out; the drawer's panel
- * says so. Runners come first, then rods and their supports, then shelf pins.
+ * the length to cut it to), its end supports, four pins per adjustable
+ * shelf and four screws per fixed one. Drawers too shallow for any runner are
+ * left out; the drawer's panel says so. Runners come first, then rods and
+ * their supports, then shelf pins and screws.
  */
 export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow[] {
   const rows = new Map<string, HardwareRow>()
@@ -262,10 +270,12 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
       add({ item: 'rod-supports', diameter: piece.height, quantity: SUPPORTS_PER_ROD })
     } else if (isAdjustable(piece)) {
       add({ item: 'shelf-pins', quantity: PINS_PER_SHELF })
+    } else if (piece.kind === 'shelf') {
+      add({ item: 'shelf-screws', quantity: SCREWS_PER_FIXED_SHELF })
     }
   }
 
-  const order = { runners: 0, rod: 1, 'rod-supports': 2, 'shelf-pins': 3 }
+  const order = { runners: 0, rod: 1, 'rod-supports': 2, 'shelf-pins': 3, 'shelf-screws': 4 }
   return [...rows.values()].sort(
     (a, b) =>
       order[a.item] - order[b.item] ||

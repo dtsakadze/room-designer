@@ -156,12 +156,15 @@ describe('hardware list', () => {
     expect(list.map((row) => row.item)).toEqual(['runners', 'rod', 'rod-supports'])
   })
 
-  it('counts four pins per adjustable shelf, and none for fixed ones', () => {
+  it('counts four pins per adjustable shelf and four screws per fixed one', () => {
     const list = hardwareList(
       [piece('shelf'), piece('shelf'), piece('shelf', { fixed: true }), piece('rod', { width: 564 })],
       thickness,
     )
-    expect(list.at(-1)).toEqual({ item: 'shelf-pins', quantity: 8 })
+    expect(list.slice(-2)).toEqual([
+      { item: 'shelf-pins', quantity: 8 },
+      { item: 'shelf-screws', quantity: 4 },
+    ])
   })
 
   it('leaves rods out of the boards', () => {
