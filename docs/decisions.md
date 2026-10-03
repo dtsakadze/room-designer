@@ -110,6 +110,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: most parts need the same banding and grain, so making people set every part would be busywork and easy to get wrong, but real builds have exceptions (a visible top end, open shelving, horizontal-grain doors). Plain boards (white melamine) have no grain, and forcing length along an arbitrary direction there would stop the shop turning parts to save board.
 *Instead of*: setting everything by hand per part, a fixed rule with no overrides, grain on every board, and taking banding thickness off the cut sizes (shops differ on whether they want finished or pre-banding sizes; finished is the safer default to state).
 
+**Adjustable shelves on shelf-pin holes** (2026-10-03)
+*Decision*: an adjustable shelf (one not ticked Fixed) sits on a hole of the side or divider it rests on (the one its left end meets, or its right end if there's none on the left, within 20 mm): holes are every `holePitch` mm (a project setting, 32 by default) up from that panel's bottom edge, from one pitch up to one pitch below its top, and the shelf's underside sits on the hole. With no panel next to it, holes count up from the floor. It snaps whenever the shelf itself is written (added, moved, resized, duplicated, made adjustable) and every adjustable shelf re-snaps when the spacing changes; moving only a side doesn't move the shelves, and opening a project doesn't move anything, so older projects look the same until a shelf is touched. Arrow keys move an adjustable shelf one hole at a time. The front view draws a tick at each hole on the faces adjustable shelves rest on; the left and right views, which show those faces, draw the holes as dots in two columns 37 mm in from the front and back edges (the usual System 32 setback; one column in the middle of a panel under 111 mm deep). The Hardware list counts four pins per adjustable shelf. The spacing is part of the design (saved, undone).
+*Why*: a shelf on pins can only go where holes are drilled, so a free height would give a design that can't be built; 32 mm ("System 32") is what most hinges, drills and pre-drilled panels use. Fixed shelves are screwed and stay free, so any height is still possible.
+*Instead of*: snapping only while dragging (typed heights would still miss holes), holes counted from the floor everywhere (wrong when a unit stands on a plinth or isn't on the floor), drawing holes on every side (clutter on sides with no adjustable shelves), and re-snapping every shelf on every change (moving a side would shift shelves unexpectedly).
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -140,6 +145,7 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **Save format v6: grain and edge banding** (2026-10-03)
 *Decision*: `FORMAT_VERSION` 6 adds an optional `grainedBoards` (boards with a grain) and parts' optional `bands` and `grain`. Converter 5→6 only changes the version: absent, each means the usual banding and no grain, which is what older saves had. `validate` keeps only known boards and edge names, and `normalizePiece` drops edges and grain a part can't have, and any that match the usual.
 *Why*: an older app would drop the new fields silently, so a project opened there would lose its banding and grain; with the bump it refuses the save as "newer" instead.
+`holePitch` (the shelf-pin hole spacing, always present from v6 on; converter 5→6 sets 32) was added to v6 too (2026-10-03): v6 hadn't been released yet, so no save outside this machine knows v6 without it.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

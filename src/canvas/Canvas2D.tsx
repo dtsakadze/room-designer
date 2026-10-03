@@ -13,6 +13,8 @@ import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
+import { HoleLines } from './HoleLines'
+import { isAdjustable } from '../lib/shelfPins'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
@@ -127,6 +129,7 @@ export function Canvas2D() {
   const endBatch = useDesignStore((s) => s.endBatch)
 
   const thickness = useDesignStore((s) => s.thickness)
+  const holePitch = useDesignStore((s) => s.holePitch)
   const room = useDesignStore((s) => s.room)
   const activeWall = useDesignStore((s) => s.activeWall)
   const setActiveWall = useDesignStore((s) => s.setActiveWall)
@@ -506,11 +509,14 @@ export function Canvas2D() {
         movePieces(selection, delta.x ?? 0, delta.y ?? 0)
         return
       }
-      const piece = useDesignStore.getState().pieces.find((p) => p.id === selectedId)
+      const { pieces: all, holePitch: pitch } = useDesignStore.getState()
+      const piece = all.find((p) => p.id === selectedId)
       if (!piece) return
+      // An adjustable shelf only sits on a hole, so it steps a hole at a time.
+      const dy = delta.y && isAdjustable(piece) && !event.shiftKey ? Math.sign(delta.y) * pitch : (delta.y ?? 0)
       updatePiece(selectedId, {
         x: piece.x + (delta.x ?? 0),
-        y: piece.y + (delta.y ?? 0),
+        y: piece.y + dy,
       })
     }
 
@@ -636,6 +642,10 @@ export function Canvas2D() {
           />
         ))}
 
+        {/* Where adjustable shelves can go: ticks from the front, dots on the sides' faces. */}
+        {(isFront || viewName === 'left' || viewName === 'right') && (
+          <HoleLines pieces={wallPieces} shown={shown} view={viewName} pitch={holePitch} unit={unit} />
+        )}
         {inRoom && <CornerGhosts ghosts={ghosts} unit={unit} />}
         {swings.length > 0 && <DoorSwings swings={swings} selected={selectedSet} hitting={hitting} unit={unit} />}
 

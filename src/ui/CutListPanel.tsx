@@ -204,5 +204,7 @@ function hardwareText(row: HardwareRow, len: (mm: number) => string) {
       return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}` }
     case 'rod-supports':
       return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}` }
+    case 'shelf-pins':
+      return { name: 'Shelf pins', count: `${row.quantity}` }
   }
 }

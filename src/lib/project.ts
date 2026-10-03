@@ -12,6 +12,7 @@ import {
 import { isDimension, isEdge } from './edges'
 import { isHexColor, normalizePiece } from './geometry'
 import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
+import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
 
 /**
  * The version saves are written in. To change the saved shape:
@@ -68,10 +69,10 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   },
   // v6 adds edge banding and grain: boards with a grain (`grainedBoards`) and
   // a part's own banded edges (`bands`) and grain (`grain`). Absent, each
-  // means the usual ones, which is what older saves get, so only the version
-  // changes; the bump makes an older app refuse such a save rather than drop
-  // them.
-  5: (data) => ({ ...data, formatVersion: 6 }),
+  // means the usual ones, which is what older saves get. It also adds the
+  // spacing of shelf-pin holes (`holePitch`), the usual 32 mm for older saves;
+  // their shelves stay where they were until moved.
+  5: (data) => ({ ...data, formatVersion: 6, holePitch: 32 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -93,6 +94,8 @@ export type ProjectData = {
   boardNames?: BoardNames
   /** Boards with a grain, whose parts the cut list gives grain-first; absent when none has. */
   grainedBoards?: BoardKey[]
+  /** Spacing of the shelf-pin holes adjustable shelves sit on, in mm. */
+  holePitch: number
   /** How deep new parts start. */
   unitDepth: number
   pieces: Piece[]
@@ -111,6 +114,7 @@ export function toProjectData(
     thickness: Thickness
     boardNames?: BoardNames
     grainedBoards?: BoardKey[]
+    holePitch?: number
     unitDepth?: number
     defaultColor?: string | null
     room?: Room
@@ -125,6 +129,7 @@ export function toProjectData(
     thickness: design.thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
+    holePitch: design.holePitch ?? DEFAULT_HOLE_PITCH,
     unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
     boxes: design.boxes ?? [],
@@ -256,6 +261,7 @@ function validate(data: Raw): ProjectData | null {
     thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
+    holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
     pieces: withBoxPanels(pieces, boxes, thickness),
     boxes,

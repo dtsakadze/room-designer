@@ -5,12 +5,13 @@ import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { NumberField } from './NumberField'
+import { DEFAULT_HOLE_PITCH } from '../lib/shelfPins'
 
 /**
- * Project-wide settings, in three groups: the units lengths are shown in (a
+ * Project-wide settings, in four groups: the units lengths are shown in (a
  * preference of this browser), the boards (a thickness every part of theirs
- * follows, a material name for the cut list, and whether it has a grain), and
- * how deep new parts start.
+ * follows, a material name for the cut list, and whether it has a grain), the
+ * spacing of shelf-pin holes, and how deep new parts start.
  */
 export function BoardSettings() {
   const thickness = useDesignStore((s) => s.thickness)
@@ -19,8 +20,10 @@ export function BoardSettings() {
   const setUnitDepth = useDesignStore((s) => s.setUnitDepth)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const setBoardGrain = useDesignStore((s) => s.setBoardGrain)
+  const holePitch = useDesignStore((s) => s.holePitch)
+  const setHolePitch = useDesignStore((s) => s.setHolePitch)
   const setUnit = useSettingsStore((s) => s.setUnit)
-  const { unit, num } = useUnits()
+  const { unit, num, len } = useUnits()
 
   return (
     <>
@@ -70,6 +73,17 @@ export function BoardSettings() {
               </label>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <h2>Shelf pins</h2>
+        <div className="stack">
+          <NumberField label="Hole spacing" value={holePitch} onChange={setHolePitch} />
+          <p className="hint">
+            Adjustable shelves rest on pins in holes drilled this far apart in the sides, usually{' '}
+            {len(DEFAULT_HOLE_PITCH)}. They snap to the holes; fixed shelves go anywhere.
+          </p>
         </div>
       </section>
 

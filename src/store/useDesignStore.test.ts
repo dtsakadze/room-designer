@@ -156,7 +156,8 @@ describe('moving several parts', () => {
   beforeEach(() => store().loadProject(emptyProject()))
 
   it('moves loose parts and whole boxes together, as one undo step', () => {
-    store().addPiece('shelf')
+    // A rail, since an adjustable shelf would snap to the holes.
+    store().addPiece('rail')
     store().addBox()
     const shelf = store().pieces[0]
     const box = store().boxes[0]
@@ -174,8 +175,8 @@ describe('moving several parts', () => {
   })
 
   it('stops the lowest part at the floor, keeping the others in place around it', () => {
-    store().addPiece('shelf')
-    store().addPiece('shelf')
+    store().addPiece('rail')
+    store().addPiece('rail')
     const [low, high] = store().pieces.map((piece) => piece.id)
     store().updatePiece(low, { y: 100 })
     store().updatePiece(high, { y: 400 })
@@ -260,6 +261,62 @@ describe('boards', () => {
     store().undo()
     expect(store().grainedBoards).toEqual([])
     expect(toProjectData(store())).not.toHaveProperty('grainedBoards')
+  })
+})
+
+describe('adjustable shelves', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  /** A box's left side, and a shelf added and moved in between its sides. */
+  const shelfInBox = () => {
+    store().addBox()
+    const box = store().boxes[0]
+    store().addPiece('shelf')
+    const shelf = store().selectedId!
+    store().updatePiece(shelf, { x: box.x + 18, width: box.width - 36, y: 500 })
+    return { box, shelf }
+  }
+
+  it('sit on the nearest hole of the sides', () => {
+    const { box, shelf } = shelfInBox()
+    // The sides start at the box's bottom; holes every 32 mm above it.
+    expect((byId(shelf).y - box.y) % 32).toBe(0)
+    expect(byId(shelf).y).toBe(512)
+    // Moved with the rest of a selection, it lands on a hole too.
+    store().movePieces([shelf], 0, 40)
+    expect(byId(shelf).y).toBe(544)
+  })
+
+  it('records nothing for a move too small to reach another hole', () => {
+    const { shelf } = shelfInBox()
+    const steps = store().past.length
+    store().updatePiece(shelf, { y: byId(shelf).y + 10 })
+    store().movePieces([shelf], 0, 10)
+    expect(store().past.length).toBe(steps)
+  })
+
+  it('leaves fixed shelves where they’re put', () => {
+    const { shelf } = shelfInBox()
+    store().updatePiece(shelf, { fixed: true })
+    store().updatePiece(shelf, { y: 503 })
+    expect(byId(shelf).y).toBe(503)
+    // Making it adjustable again puts it on a hole.
+    store().updatePiece(shelf, { fixed: false })
+    expect(byId(shelf).y).toBe(512)
+  })
+
+  it('moves every adjustable shelf onto the new holes when the spacing changes, as one undo step', () => {
+    const { shelf } = shelfInBox()
+    store().setHolePitch(37)
+    expect(store().holePitch).toBe(37)
+    expect(byId(shelf).y).toBe(518)
+    expect(toProjectData(store()).holePitch).toBe(37)
+    store().undo()
+    expect(store().holePitch).toBe(32)
+    expect(byId(shelf).y).toBe(512)
+    const steps = store().past.length
+    store().setHolePitch(32)
+    expect(store().past.length).toBe(steps)
   })
 })
 

@@ -7,6 +7,7 @@ import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
+import { DEFAULT_HOLE_PITCH, clampHolePitch, isAdjustable, snapToHoles } from '../lib/shelfPins'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
 type Snapshot = {
@@ -15,6 +16,7 @@ type Snapshot = {
   thickness: Thickness
   boardNames: BoardNames
   grainedBoards: BoardKey[]
+  holePitch: number
   room: Room
 }
 
@@ -34,6 +36,8 @@ type DesignState = {
   boardNames: BoardNames
   /** Boards with a grain, in the order of `BOARDS`. */
   grainedBoards: BoardKey[]
+  /** Spacing of the shelf-pin holes in sides and dividers; adjustable shelves sit on them. */
+  holePitch: number
   /**
    * Colour new parts start with; null means the standard look. Like `unitDepth`,
    * it only affects parts added later, so undo skips it.
@@ -102,6 +106,8 @@ type DesignState = {
   setBoardName: (board: BoardKey, name: string) => void
   /** Says whether a board has a grain, which the cut list then follows. */
   setBoardGrain: (board: BoardKey, grain: boolean) => void
+  /** Changes the hole spacing, and moves every adjustable shelf onto the new holes. */
+  setHolePitch: (mm: number) => void
   setUnitDepth: (mm: number) => void
   /** Changes the room; a wall switched off takes its parts with it. */
   setRoom: (patch: Partial<Room>) => void
@@ -150,8 +156,8 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, boardNames, grainedBoards, room } = get()
-      return { pieces, boxes, thickness, boardNames, grainedBoards, room }
+      const { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, room } = get()
+      return { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, room }
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
@@ -160,6 +166,7 @@ export const useDesignStore = create<DesignState>()(
       state.thickness = snapshot.thickness
       state.boardNames = snapshot.boardNames
       state.grainedBoards = snapshot.grainedBoards
+      state.holePitch = snapshot.holePitch
       state.room = snapshot.room
       const ids = new Set(snapshot.pieces.map((piece) => piece.id))
       state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
@@ -187,6 +194,13 @@ export const useDesignStore = create<DesignState>()(
     /** How a part or box is stored on the wall being edited: no value for the back wall. */
     const onActiveWall = (state: DesignState) =>
       state.activeWall === 'back' ? {} : { wall: state.activeWall }
+
+    /**
+     * An adjustable shelf moved onto the nearest shelf-pin hole, since it can
+     * only sit where holes are drilled; any other part as it is.
+     */
+    const onHoles = (state: DesignState, piece: Piece, pieces = state.pieces): Piece =>
+      isAdjustable(piece) ? { ...piece, y: snapToHoles(piece, pieces, state.holePitch) } : piece
 
     /** Applies a change to a box and rebuilds its panels, if anything changed. */
     const changeBox = (state: DesignState, id: string, patch: Partial<Omit<Box, 'id'>>) => {
@@ -244,6 +258,7 @@ export const useDesignStore = create<DesignState>()(
       thickness: DEFAULT_THICKNESS,
       boardNames: {},
       grainedBoards: [],
+      holePitch: DEFAULT_HOLE_PITCH,
       defaultColor: null,
       unitDepth: DEFAULT_UNIT_DEPTH,
       room: DEFAULT_ROOM,
@@ -265,7 +280,7 @@ export const useDesignStore = create<DesignState>()(
           const bounds = wallBounds(state)
           if (bounds) piece.x = bounds.maxX + PLACEMENT_GAP
           if (state.defaultColor) piece.color = state.defaultColor
-          state.pieces.push(normalizePiece(piece, state.thickness))
+          state.pieces.push(onHoles(state, normalizePiece(piece, state.thickness)))
           state.selectedId = piece.id
           state.selectedIds = [piece.id]
         }),
@@ -325,7 +340,10 @@ export const useDesignStore = create<DesignState>()(
             followSelection(state)
             return
           }
-          const next = normalizePiece({ ...state.pieces[index], ...patch }, state.thickness)
+          const next = onHoles(
+            state,
+            normalizePiece({ ...state.pieces[index], ...patch }, state.thickness),
+          )
           // A click with no real movement shouldn't leave an empty undo step.
           if (samePiece(state.pieces[index], next)) return
           record(state)
@@ -348,19 +366,29 @@ export const useDesignStore = create<DesignState>()(
           const dropY = Math.max(Math.round(dy), -lowest)
           const moveX = Math.round(dx)
           if (moveX === 0 && dropY === 0) return
-          record(state)
           const moved = new Set(loose.map((piece) => piece.id))
-          state.pieces = state.pieces.map((piece) =>
+          let pieces = state.pieces.map((piece) =>
             moved.has(piece.id)
               ? normalizePiece({ ...piece, x: piece.x + moveX, y: piece.y + dropY }, state.thickness)
               : piece,
           )
           // Not through `changeBox`, which would record a second undo step.
+          let nextBoxes = state.boxes
           for (const box of boxes) {
             const next = normalizeBox({ ...box, x: box.x + moveX, y: box.y + dropY }, state.thickness)
-            state.boxes = state.boxes.map((candidate) => (candidate.id === box.id ? next : candidate))
-            state.pieces = rebuildBox(state.pieces, next, state.thickness)
+            nextBoxes = nextBoxes.map((candidate) => (candidate.id === box.id ? next : candidate))
+            pieces = rebuildBox(pieces, next, state.thickness)
           }
+          // Shelves go onto the holes where everything has ended up. A small
+          // nudge can leave them where they were; then nothing has moved.
+          const placed = pieces
+          pieces = placed.map((piece) => (moved.has(piece.id) ? onHoles(state, piece, placed) : piece))
+          if (boxes.length === 0 && pieces.every((piece, i) => samePiece(piece, state.pieces[i]))) {
+            return
+          }
+          record(state)
+          state.pieces = pieces
+          state.boxes = nextBoxes
         }),
 
       duplicatePiece: (id) =>
@@ -373,9 +401,12 @@ export const useDesignStore = create<DesignState>()(
             return
           }
           record(state)
-          const copy = normalizePiece(
-            { ...source, id: nextId(), x: source.x + source.width + PLACEMENT_GAP },
-            state.thickness,
+          const copy = onHoles(
+            state,
+            normalizePiece(
+              { ...source, id: nextId(), x: source.x + source.width + PLACEMENT_GAP },
+              state.thickness,
+            ),
           )
           state.pieces.push(copy)
           state.selectedId = copy.id
@@ -557,6 +588,16 @@ export const useDesignStore = create<DesignState>()(
           state.grainedBoards = BOARDS.map(({ key }) => key).filter((key) => next.has(key))
         }),
 
+      setHolePitch: (mm) =>
+        set((state) => {
+          const pitch = clampHolePitch(mm)
+          if (pitch === state.holePitch) return
+          record(state)
+          state.holePitch = pitch
+          const before = state.pieces
+          state.pieces = before.map((piece) => onHoles(state, piece, before))
+        }),
+
       setUnitDepth: (mm) =>
         set((state) => {
           state.unitDepth = clampUnitDepth(mm)
@@ -617,6 +658,7 @@ export const useDesignStore = create<DesignState>()(
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
           state.grainedBoards = project.grainedBoards ?? []
+          state.holePitch = project.holePitch ?? DEFAULT_HOLE_PITCH
           state.defaultColor = project.defaultColor ?? null
           state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.room = project.room ?? DEFAULT_ROOM
@@ -636,6 +678,7 @@ export const useDesignStore = create<DesignState>()(
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
           state.grainedBoards = project.grainedBoards ?? []
+          state.holePitch = project.holePitch
           state.unitDepth = project.unitDepth
           state.defaultColor = project.defaultColor ?? null
           state.room = project.room

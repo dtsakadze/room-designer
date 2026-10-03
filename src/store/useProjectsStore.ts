@@ -144,6 +144,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         state.thickness === previous.thickness &&
         state.boardNames === previous.boardNames &&
         state.grainedBoards === previous.grainedBoards &&
+        state.holePitch === previous.holePitch &&
         state.unitDepth === previous.unitDepth &&
         state.room === previous.room
       if (unchanged) return

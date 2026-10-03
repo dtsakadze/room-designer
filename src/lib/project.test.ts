@@ -36,9 +36,10 @@ describe('readProject', () => {
     if (result.ok) expect(result.project.formatVersion).toBe(FORMAT_VERSION)
   })
 
-  // Captured before v3 added the room and v5 the fronts and drawer-box
-  // boards: they must open into the same design, standing on the back wall
-  // alone, with fronts and drawer boxes cut from the body board as before.
+  // Captured before v3 added the room, v5 the fronts and drawer-box boards
+  // and v6 shelf-pin holes: they must open into the same design, standing on
+  // the back wall alone, with fronts and drawer boxes cut from the body board
+  // as before, and shelves where they were.
   it.each(['v1-minimal', 'v1-full', 'v2-full'])(
     'opens %s into the same design as when it was saved',
     (name) => {
@@ -49,6 +50,7 @@ describe('readProject', () => {
       expect(withoutVersion(result.project)).toEqual({
         ...expected,
         thickness: { ...expected.thickness, front: body, drawer: body },
+        holePitch: 32,
         room: DEFAULT_ROOM,
       })
     },
@@ -140,6 +142,20 @@ describe('readProject', () => {
       bands: ['front', 'back', 'left', 'right'],
       grain: 'depth',
     })
+  })
+
+  it('keeps the hole spacing, gives older saves the usual one, and fixes a damaged one', () => {
+    const v6 = readProject(fixture('v6-finish'))
+    if (!v6.ok) throw new Error("v6-finish didn't open")
+    expect(v6.project.holePitch).toBe(37)
+    const v5 = readProject(fixture('v5-boards'))
+    if (!v5.ok) throw new Error("v5-boards didn't open")
+    expect(v5.project.holePitch).toBe(32)
+    const save = fixture('v6-finish') as { holePitch: unknown }
+    save.holePitch = 'wide'
+    const damaged = readProject(save)
+    if (!damaged.ok) throw new Error("the save didn't open")
+    expect(damaged.project.holePitch).toBe(32)
   })
 
   it('drops unknown boards with grain, and banding or grain a part can’t have', () => {
