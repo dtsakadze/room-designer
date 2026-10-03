@@ -17,6 +17,8 @@ type PrintDrawingProps = {
   area: { width: number; height: number }
   /** Outlines only, with nothing shaded. */
   linesOnly?: boolean
+  /** A line of text under the drawing, e.g. what it shows and in which units. */
+  caption?: string
 }
 
 /**
@@ -26,7 +28,7 @@ type PrintDrawingProps = {
  * overall width and height, and from the front the clear openings between
  * the sides and the clear heights inside each.
  */
-export function PrintDrawing({ pieces, view, scale, area, linesOnly = false }: PrintDrawingProps) {
+export function PrintDrawing({ pieces, view, scale, area, linesOnly = false, caption }: PrintDrawingProps) {
   const { num } = useUnits()
   const bounds = contentBounds(pieces)
   if (!bounds) return null
@@ -43,6 +45,9 @@ export function PrintDrawing({ pieces, view, scale, area, linesOnly = false }: P
 
   return (
     <svg
+      // Set here as well as by CSS, so the drawing also stands alone as a file.
+      xmlns="http://www.w3.org/2000/svg"
+      fontFamily="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
       className="print-drawing"
       width={`${area.width}mm`}
       height={`${area.height}mm`}
@@ -97,6 +102,11 @@ export function PrintDrawing({ pieces, view, scale, area, linesOnly = false }: P
             label={num(gap.to - gap.from)}
           />
         )),
+      )}
+      {caption && (
+        <text x={middleX - width / 2 + 4 * mm} y={middleY + height / 2 - 4 * mm} fontSize={3 * mm} fill={INK}>
+          {caption}
+        </text>
       )}
     </svg>
   )

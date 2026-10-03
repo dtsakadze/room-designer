@@ -110,6 +110,16 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: most parts need the same banding and grain, so making people set every part would be busywork and easy to get wrong, but real builds have exceptions (a visible top end, open shelving, horizontal-grain doors). Plain boards (white melamine) have no grain, and forcing length along an arbitrary direction there would stop the shop turning parts to save board.
 *Instead of*: setting everything by hand per part, a fixed rule with no overrides, grain on every board, and taking banding thickness off the cut sizes (shops differ on whether they want finished or pre-banding sizes; finished is the safer default to state).
 
+**Released changelog sections are frozen, and tested** (2026-10-04)
+*Decision*: a release's section of CHANGELOG.md never changes after it's tagged; later changes to its features get new lines under Unreleased. `changelog.test.ts` checks it: for every `v*.*.*` tag, the section at that tag must equal the one in the file now (skipped without git or tags; tags from before the changelog are ignored). The Release Action checks out the full history so it has the tags.
+*Why*: a released section is what that version shipped and showed in "What's new" and on its GitHub release; one was edited by mistake (the Esc line of 1.5.0, after the release happened between two changes), and a rule alone didn't stop it.
+*Instead of*: only a rule in AGENTS.md (relies on remembering), and storing a checksum per release (needs updating by the release script, and says less than a diff).
+
+**Exporting the current view as SVG or PNG** (2026-10-04)
+*Decision*: an Export view menu next to Fit view (not in 3D) saves the view on screen as the clean drawing printing uses (`PrintDrawing`: outlines, dimensions, no colours, grid or handles), with a caption naming the project, the view (and wall) and the units. It's drawn at 1:10, rendered off-screen and read back as markup (`canvas/exportView.tsx`); SVG is saved as is, PNG is that SVG drawn on white at three times screen size. Files are named after the project and view, e.g. "Main project front.svg".
+*Why*: a drawing to drop into a message, a document or a drawing program; the print drawing was already the clean version of each view.
+*Instead of*: exporting the screen as it looks (UI marks, colours and zoom in the picture), and the 3D view (needs the renderer to keep its image; left for later).
+
 **CSV export of the cut list and hardware** (2026-10-04)
 *Decision*: the Cut list panel has Download CSV buttons for the cut list and the hardware list, two separate files named after the project. The cut list has a row per row of the panel: section (or drawer group), part, quantity, length, width and thickness in the chosen units (named in the headings), board name, whether the grain runs along the length, and how many edges along the length and along the width are banded. Hardware has item, quantity and unit (pairs for runners, pcs otherwise), worded as in the panel (`describeHardware`). Comma-separated, CRLF, with a UTF-8 byte order mark so Excel shows ⌀ and ° (`lib/csv.ts`).
 *Why*: board shops and cutting optimisers take parts lists as CSV, and a spreadsheet is the usual place to price and order hardware.

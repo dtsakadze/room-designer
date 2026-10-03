@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Every tag, so the tests can check released changelog sections are unchanged.
+          fetch-depth: 0
 
       # Uses the pnpm version from package.json's "packageManager".
       - uses: pnpm/action-setup@v4

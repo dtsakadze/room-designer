@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
@@ -79,10 +81,34 @@ function restartOnVersionChange(): Plugin {
   }
 }
 
+// CHANGELOG.md as each release tag (v1.2.3) has it, for the test that keeps
+// released sections unchanged. Empty without git or tags (a release zip, a
+// shallow clone); tags from before the changelog are left out.
+function releasedChangelogs(): Record<string, string> {
+  const git = (...args: string[]) =>
+    execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+  try {
+    const tags = git('tag', '--list', 'v*.*.*').split('\n').filter(Boolean)
+    return Object.fromEntries(
+      tags.flatMap((tag) => {
+        try {
+          return [[tag, git('show', `${tag}:CHANGELOG.md`)]]
+        } catch {
+          return []
+        }
+      }),
+    )
+  } catch {
+    return {}
+  }
+}
+
 export default defineConfig(({ mode }) => ({
   plugins: [react(), restartOnVersionChange(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
   define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative asset paths, so the build works from any folder on any host
   base: './',
   build: { chunkSizeWarningLimit: 700 },
+  // Only read for tests, so builds and the dev server don't run git.
+  test: { provide: { releasedChangelogs: mode === 'test' ? releasedChangelogs() : {} } },
 }))

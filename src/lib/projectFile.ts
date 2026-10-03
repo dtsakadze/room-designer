@@ -13,9 +13,9 @@ export function downloadProject(project: ProjectData) {
 /** A project name made safe for a file name: without the characters file systems reject. */
 export const fileBase = (name: string | undefined) => name?.replace(/[\\/:*?"<>|]+/g, ' ').trim() ?? ''
 
-/** Downloads text as a file. */
-export function downloadFile(content: string, fileName: string, type: string) {
-  const url = URL.createObjectURL(new Blob([content], { type }))
+/** Downloads text (or a blob, such as an image) as a file. */
+export function downloadFile(content: string | Blob, fileName: string, type: string) {
+  const url = URL.createObjectURL(content instanceof Blob ? content : new Blob([content], { type }))
   const link = document.createElement('a')
   link.href = url
   link.download = fileName

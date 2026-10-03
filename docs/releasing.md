@@ -38,6 +38,8 @@ Not after every feature: a release bundles whatever is under "Unreleased". Relea
 3. Push: **`git push --follow-tags`**.
 4. The **Release** GitHub Action (`.github/workflows/release.yml`) runs on the tag: it checks the tag matches `package.json`, runs the tests, lint and build, and creates the GitHub release with that version's changelog lines as notes and a zip of the built app (for self-hosting) attached. People watching the repository get notified.
 
+Released sections of `CHANGELOG.md` are frozen: `changelog.test.ts` compares each one with the same section at its tag and fails if it changed (it skips where git or the tags aren't available). Changes to a released feature get a new line under Unreleased.
+
 The Action never edits `CHANGELOG.md`: the tag must point at a commit that already has the finished changelog and version, which is why `pnpm release` does that before tagging.
 
 ## Deploying

@@ -1198,6 +1198,37 @@ button kbd {
   break-inside: avoid;
 }
 
+.export-view {
+  position: relative;
+}
+
+.export-view-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(29, 36, 48, 0.12);
+}
+
+.canvas-tools .export-view-menu .ghost-button {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  white-space: nowrap;
+  background: none;
+  border-color: transparent;
+}
+
+.canvas-tools .export-view-menu .ghost-button:hover {
+  background: var(--bg);
+}
+
 .csv-buttons {
   display: flex;
   align-items: center;

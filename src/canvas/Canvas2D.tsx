@@ -14,6 +14,10 @@ import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
+import { ExportViewMenu } from './ExportViewMenu'
+import { useProjectsStore } from '../store/useProjectsStore'
+import { fileBase } from '../lib/projectFile'
+import { UNITS } from '../lib/units'
 import { isAdjustable } from '../lib/shelfPins'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
@@ -136,7 +140,10 @@ export function Canvas2D() {
   const activeWall = useDesignStore((s) => s.activeWall)
   const setActiveWall = useDesignStore((s) => s.setActiveWall)
   const clashes = useClashes()
-  const { len } = useUnits()
+  const { len, unit: lengthUnit } = useUnits()
+  const projectName = useProjectsStore(
+    (s) => s.projects.find((project) => project.id === s.currentId)?.name ?? 'Boardcut',
+  )
   const multiWall = hasSideWalls(room)
   // Each wall's unit is edited on its own; the top view shows the whole room.
   const wallPieces = useMemo(
@@ -184,6 +191,10 @@ export function Canvas2D() {
   const drawn = useMemo(() => drawOrder(shown, viewName), [shown, viewName])
 
   const unit = view.w / 1400
+  // What the view shows, in words: "Front", or "Left wall, front" in a room.
+  const viewLabel = VIEWS.find((candidate) => candidate.name === viewName)?.label ?? ''
+  const viewTitle =
+    multiWall && viewName !== 'top' ? `${WALL_LABELS[activeWall]}, ${viewLabel.toLowerCase()}` : viewLabel
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
   const updateBox = useDesignStore((s) => s.updateBox)
   const selectedBox =
@@ -480,8 +491,8 @@ export function Canvas2D() {
       if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
 
       if (event.key === 'Escape') {
-        // An open dialog takes Escape for itself, to close.
-        if (document.querySelector('[role="dialog"]')) return
+        // An open dialog or menu takes Escape for itself, to close.
+        if (document.querySelector('[role="dialog"], [role="menu"]')) return
         event.preventDefault()
         select(null)
         return
@@ -734,6 +745,14 @@ export function Canvas2D() {
           >
             {showDoors ? 'Hide doors' : 'Show doors'}
           </button>
+        )}
+        {viewName !== '3d' && (
+          <ExportViewMenu
+            pieces={shown}
+            view={viewName}
+            caption={`${projectName} · ${viewTitle} · sizes in ${UNITS[lengthUnit].label}`}
+            fileName={`${fileBase(projectName) || 'boardcut'} ${viewTitle.toLowerCase()}`}
+          />
         )}
         {viewName !== '3d' && (
           <button
