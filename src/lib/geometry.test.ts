@@ -242,6 +242,15 @@ describe('isHexColor', () => {
   })
 })
 
+describe('drawer runner options', () => {
+  it('keeps soft-close and push-to-open on drawers only, storing ordinary runners as nothing', () => {
+    expect(piece('w', 'drawer', { close: 'soft' }).close).toBe('soft')
+    expect(piece('w', 'drawer', { close: 'push' }).close).toBe('push')
+    expect(piece('w', 'drawer', { close: 'magic' as 'soft' })).not.toHaveProperty('close')
+    expect(piece('s', 'shelf', { close: 'soft' })).not.toHaveProperty('close')
+  })
+})
+
 describe('door hinge options', () => {
   it('keeps wide angles and soft-close on doors only, storing standard hinges as nothing', () => {
     expect(piece('d', 'door', { openAngle: 155, softClose: true })).toMatchObject({ openAngle: 155, softClose: true })

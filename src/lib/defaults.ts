@@ -61,6 +61,8 @@ export const RUNNER_GAP = 13
 /** Runner lengths sold, shortest first; a drawer box is as long as its runners. */
 export const RUNNER_LENGTHS = [250, 300, 350, 400, 450, 500, 550, 600, 650, 700]
 export const EXTENSION_LABELS = { standard: 'Standard', full: 'Full extension' } as const
+/** How drawer runners close, ordinary ones first. */
+export const CLOSE_LABELS = { ordinary: 'Ordinary', soft: 'Soft-close', push: 'Push-to-open' } as const
 
 /**
  * How much smaller a drawer front is than its space on each edge, so it

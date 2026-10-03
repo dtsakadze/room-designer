@@ -1,7 +1,7 @@
 {
   "formatVersion": 7,
   "savedAt": "2026-10-04T12:00:00.000Z",
-  "name": "Shelf pins and hinges",
+  "name": "Shelf pins, hinges and runners",
   "thickness": {
     "body": 18,
     "back": 3,
@@ -86,7 +86,8 @@
       "depth": 550,
       "extension": "full",
       "overlay": true,
-      "grain": "height"
+      "grain": "height",
+      "close": "push"
     },
     {
       "id": "99418ffe-66b5-4660-8786-9f79f9b6926c",

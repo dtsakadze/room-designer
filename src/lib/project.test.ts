@@ -173,6 +173,15 @@ describe('readProject', () => {
     expect(door).not.toHaveProperty('softClose')
   })
 
+  it('keeps a drawer’s runner closing, and gives older drawers ordinary runners', () => {
+    const v7 = readProject(fixture('v7-hinges'))
+    if (!v7.ok) throw new Error("v7-hinges didn't open")
+    expect(v7.project.pieces.find((piece) => piece.kind === 'drawer')!.close).toBe('push')
+    const v6 = readProject(fixture('v6-finish'))
+    if (!v6.ok) throw new Error("v6-finish didn't open")
+    expect(v6.project.pieces.find((piece) => piece.kind === 'drawer')).not.toHaveProperty('close')
+  })
+
   it('drops an opening angle hinges don’t come in, and hinge options on other parts', () => {
     const save = fixture('v7-hinges') as { pieces: Record<string, unknown>[] }
     const door = save.pieces.find((piece) => piece.kind === 'door')!

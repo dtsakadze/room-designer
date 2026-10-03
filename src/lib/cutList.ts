@@ -1,5 +1,5 @@
 import type { BoardKey, Dimension, Edge, Piece, PieceKind, Thickness } from '../types'
-import { BOARD, BOARDS, pieceLabel } from './defaults'
+import { BOARD, BOARDS, CLOSE_LABELS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves } from './geometry'
@@ -229,7 +229,13 @@ export function bandingTotals(groups: CutListGroup[]): { board: BoardKey; length
  * soft-close. Sizes in mm.
  */
 export type HardwareRow =
-  | { item: 'runners'; extension: 'standard' | 'full'; length: number; quantity: number }
+  | {
+      item: 'runners'
+      extension: 'standard' | 'full'
+      close: keyof typeof CLOSE_LABELS
+      length: number
+      quantity: number
+    }
   | { item: 'hinges'; fit: HingeFit; angle: number; softClose: boolean; quantity: number }
   | { item: 'rod'; diameter: number; length: number; quantity: number }
   | { item: 'rod-supports'; diameter: number; quantity: number }
@@ -241,6 +247,9 @@ export type HardwareRow =
  * edges, so it holds the sides straight.
  */
 const SCREWS_PER_FIXED_SHELF = 4
+
+/** The order runner kinds are listed in, ordinary ones first. */
+const CLOSES = Object.keys(CLOSE_LABELS) as (keyof typeof CLOSE_LABELS)[]
 
 /** Supports a hanging rod needs: one at each end. */
 const SUPPORTS_PER_ROD = 2
@@ -271,7 +280,13 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     if (piece.kind === 'drawer') {
       const length = runnerLength(piece, thickness)
       if (length === null) continue
-      add({ item: 'runners', extension: piece.extension ?? 'standard', length, quantity: 1 })
+      add({
+        item: 'runners',
+        extension: piece.extension ?? 'standard',
+        close: piece.close ?? 'ordinary',
+        length,
+        quantity: 1,
+      })
     } else if (piece.kind === 'rod') {
       // A rod's height is its diameter and its width its length.
       add({ item: 'rod', diameter: piece.height, length: piece.width, quantity: 1 })
@@ -287,7 +302,10 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
   return [...rows.values()].sort(
     (a, b) =>
       order[a.item] - order[b.item] ||
-      ('extension' in a && 'extension' in b ? a.extension.localeCompare(b.extension) : 0) ||
+      ('extension' in a && 'extension' in b
+        ? a.extension.localeCompare(b.extension) ||
+          CLOSES.indexOf(a.close) - CLOSES.indexOf(b.close)
+        : 0) ||
       ('fit' in a && 'fit' in b
         ? HINGE_FITS.indexOf(a.fit) - HINGE_FITS.indexOf(b.fit) ||
           a.angle - b.angle ||

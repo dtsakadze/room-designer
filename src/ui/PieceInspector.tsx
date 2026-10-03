@@ -1,5 +1,6 @@
 import {
   BOARD,
+  CLOSE_LABELS,
   DOOR_ANGLES,
   DOOR_OPEN_ANGLE,
   EXTENSION_LABELS,
@@ -354,6 +355,16 @@ function DrawerOptions({ piece }: { piece: Piece }) {
         patch: { extension: value },
       })),
     },
+    {
+      label: 'Closing',
+      value: piece.close ?? 'ordinary',
+      options: (['ordinary', 'soft', 'push'] as const).map((value) => ({
+        value,
+        text: CLOSE_LABELS[value],
+        // Ordinary is stored as no value.
+        patch: { close: value === 'ordinary' ? undefined : value },
+      })),
+    },
   ]
 
   return (
@@ -397,6 +408,8 @@ function DrawerOptions({ piece }: { piece: Piece }) {
       ) : (
         <p className="hint">
           A pair of {len(runner)} runners; the box is as long.
+          {piece.close === 'soft' && ' Soft-close: the drawer pulls itself shut gently.'}
+          {piece.close === 'push' && ' Push-to-open: push the front to open it, so it needs no handle.'}
         </p>
       )}
     </>

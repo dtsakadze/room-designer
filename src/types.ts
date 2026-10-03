@@ -84,6 +84,12 @@ export type Piece = {
    */
   extension?: 'standard' | 'full'
   /**
+   * Drawers only: runners that close the drawer gently (soft) or open it with
+   * a push on the front, for fronts without handles (push). Absent means
+   * ordinary runners.
+   */
+  close?: 'soft' | 'push'
+  /**
    * Drawers only: the front covers the edges of the unit around the opening,
    * rather than sitting inside it (inset). Absent means inset.
    */

@@ -7,7 +7,7 @@ import {
   cutList,
   hardwareList,
 } from '../lib/cutList'
-import { EXTENSION_LABELS, boardName } from '../lib/defaults'
+import { CLOSE_LABELS, EXTENSION_LABELS, boardName } from '../lib/defaults'
 import { HINGE_FIT_LABELS } from '../lib/hinges'
 import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
@@ -211,7 +211,7 @@ function hardwareText(row: HardwareRow, len: (mm: number) => string) {
   switch (row.item) {
     case 'runners':
       return {
-        name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}, ${len(row.length)}`,
+        name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}${row.close === 'ordinary' ? '' : `, ${CLOSE_LABELS[row.close].toLowerCase()}`}, ${len(row.length)}`,
         count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`,
       }
     case 'hinges':

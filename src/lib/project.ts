@@ -75,8 +75,9 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   5: (data) => ({ ...data, formatVersion: 6 }),
   // v7 adds the spacing of shelf-pin holes (`holePitch`), the usual 32 mm for
   // older saves; their shelves stay where they were until moved. Doors may
-  // have wide-angle (`openAngle`) and soft-close (`softClose`) hinges; absent,
-  // standard ones, which is what older doors had.
+  // have wide-angle (`openAngle`) and soft-close (`softClose`) hinges, and
+  // drawers soft-close or push-to-open runners (`close`); absent, ordinary
+  // ones, which is what older doors and drawers had.
   6: (data) => ({ ...data, formatVersion: 7, holePitch: 32 }),
 }
 
@@ -226,6 +227,7 @@ function validate(data: Raw): ProjectData | null {
     const drawer = {
       extension: raw.extension === 'full' ? ('full' as const) : undefined,
       overlay: raw.overlay === true,
+      close: raw.close === 'soft' || raw.close === 'push' ? (raw.close as 'soft' | 'push') : undefined,
     }
     // Checked against the part's own board in `normalizePiece`.
     const finish = {

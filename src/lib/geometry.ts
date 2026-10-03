@@ -41,6 +41,9 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   // Standard runners are the default, stored as no value.
   if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
   if (piece.kind !== 'drawer' || !piece.overlay) delete normalized.overlay
+  if (piece.kind !== 'drawer' || (piece.close !== 'soft' && piece.close !== 'push')) {
+    delete normalized.close
+  }
   if (!piece.boxId) delete normalized.boxId
   // The back wall (the default) is stored as no value.
   if (!isSideWall(piece.wall)) delete normalized.wall
