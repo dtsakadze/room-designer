@@ -25,7 +25,7 @@ const SHORTCUTS: [string, string][] = [
   [REDO_SHORTCUT, 'Redo'],
   ['Drag empty space', 'Pan (right-drag works too)'],
   ['Scroll', 'Zoom'],
-  ['Esc', 'Close a dialog'],
+  ['Esc', 'Deselect, or close a dialog'],
 ]
 
 export function ShortcutsPanel({ onClose }: { onClose: () => void }) {

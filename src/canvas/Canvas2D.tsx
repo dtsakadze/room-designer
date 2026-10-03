@@ -469,13 +469,21 @@ export function Canvas2D() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [selectMany, viewName, showDoors])
 
-  // Arrow keys nudge the selection; Delete removes it.
+  // Arrow keys nudge the selection; Delete removes it; Escape lets go of it.
   useEffect(() => {
     if (!selectedId) return
 
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
+
+      if (event.key === 'Escape') {
+        // An open dialog takes Escape for itself, to close.
+        if (document.querySelector('[role="dialog"]')) return
+        event.preventDefault()
+        select(null)
+        return
+      }
 
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault()
@@ -522,7 +530,7 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces])
+  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces, select])
 
   /** Hiding doors lets go of any that are selected, so nothing unseen can be deleted or moved. */
   const toggleDoors = () => {
