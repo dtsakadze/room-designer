@@ -1117,3 +1117,87 @@ button kbd {
   font-size: 11px;
   white-space: pre-wrap;
 }
+
+/* Printing: only the print pages, drawn at their real size on white. */
+.print-document {
+  display: none;
+}
+
+@media print {
+  html,
+  body {
+    height: auto;
+    background: #fff;
+  }
+
+  body > #root {
+    display: none !important;
+  }
+
+  .print-document {
+    display: block;
+  }
+}
+
+.print-page {
+  display: flex;
+  flex-direction: column;
+  padding: 10mm;
+  overflow: hidden;
+  color: #111;
+  background: #fff;
+  break-after: page;
+}
+
+.print-page:last-child {
+  break-after: auto;
+}
+
+.print-flow {
+  height: auto;
+  overflow: visible;
+}
+
+.print-drawing {
+  display: block;
+  font-family: inherit;
+}
+
+.print-title {
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+  height: 14mm;
+  border-top: 0.3mm solid #111;
+  font-size: 3.2mm;
+}
+
+.print-title-details {
+  margin-left: auto;
+  color: #444;
+}
+
+.print-flow .print-title {
+  border-top: 0;
+  border-bottom: 0.3mm solid #111;
+  margin-bottom: 4mm;
+}
+
+.print-cut-list {
+  position: static;
+  width: auto;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.print-cut-list tr {
+  break-inside: avoid;
+}
+
+.print-dialog .button-row {
+  justify-content: flex-end;
+}

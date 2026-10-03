@@ -17,7 +17,7 @@ Run `pnpm build`, `pnpm lint` and `pnpm test` after every change.
 - `src/lib/`: pure logic. `defaults.ts` (piece sizes, `BOARD` map), `geometry.ts` (`normalizePiece`, `neighbourGaps`, `depthStart`, `findClashes`), `cutList.ts`, `project.ts` (saved format), `projectFile.ts` (JSON import/export), `storage.ts` (IndexedDB), `box.ts` (a box's panels), `room.ts` (walls, the room, `roomBox`)
 - `src/store/`: `useDesignStore` (the open design, undo/redo) and `useProjectsStore` (project list, switching, autosave)
 - `src/canvas/`: the SVG drawing. `view.ts` owns every conversion between design and SVG coordinates. `views.ts` projects pieces for the left, right, top and back views, which are read-only; only the front view edits. `Preview3D.tsx` is the three.js preview, lazy-loaded so three.js stays out of the main bundle. `RoomWalls.tsx` draws the room around a wall (end walls, the neighbouring walls' parts).
-- `src/ui/`: `Sidebar.tsx` (project header and foldable sections: Add, Room, Parts, Settings, File; add a new one with `CollapsibleSection`), `Inspector.tsx` (the Selected panel right of the canvas), dialogs and panels, `shortcuts.ts`
+- `src/ui/`: `Sidebar.tsx` (project header and foldable sections: Add, Room, Parts, Settings, File; add a new one with `CollapsibleSection`), `Inspector.tsx` (the Selected panel right of the canvas), dialogs and panels, `shortcuts.ts`. Printing: `PrintDialog.tsx` renders `PrintDocument.tsx` (print-only pages, outside `#root`) and calls `window.print()`; drawings are `canvas/PrintDrawing.tsx`, their scale and dimension chains `lib/drawing.ts`
 
 ## Rules
 

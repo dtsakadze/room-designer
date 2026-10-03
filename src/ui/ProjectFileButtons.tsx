@@ -4,9 +4,10 @@ import { downloadProject, readProjectFile } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { OpenFileDialog } from './OpenFileDialog'
+import { PRINT_SHORTCUT } from './shortcuts'
 
-/** Save the open project to a JSON file, or open a file as a new project. */
-export function ProjectFileButtons() {
+/** Save the open project to a JSON file, open a file as a new project, or print. */
+export function ProjectFileButtons({ onPrint }: { onPrint: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const isEmpty = useDesignStore((s) => s.pieces.length === 0)
@@ -61,6 +62,15 @@ export function ProjectFileButtons() {
           Save to file
         </button>
       </div>
+      <button
+        type="button"
+        className="add-button"
+        onClick={onPrint}
+        disabled={isEmpty}
+        title={`Print drawings and the cut list (${PRINT_SHORTCUT})`}
+      >
+        Print… <kbd>{PRINT_SHORTCUT}</kbd>
+      </button>
       <input
         ref={inputRef}
         type="file"

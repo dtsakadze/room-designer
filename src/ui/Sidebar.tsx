@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
 import { CollapsibleSection } from './CollapsibleSection'
@@ -12,7 +12,8 @@ import { RoomSettings } from './RoomSettings'
 import { LAYOUT_LABELS, layoutOf } from '../lib/room'
 import { useClashes } from './useClashes'
 import { VersionInfo } from './WhatsNew'
-
+import { PrintDialog } from './PrintDialog'
+import { hasModifier } from './shortcuts'
 
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
@@ -27,6 +28,20 @@ export function Sidebar() {
   const current = useProjectsStore((s) => s.projects.find((project) => project.id === s.currentId))
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [showProjects, setShowProjects] = useState(false)
+  const [showPrint, setShowPrint] = useState(false)
+
+  // ⌘P prints the drawings and cut list, rather than the browser printing the
+  // screen. Unlike other shortcuts it works in text fields too, since there
+  // it would otherwise print the screen.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!hasModifier(event) || event.shiftKey || event.altKey || event.key.toLowerCase() !== 'p') return
+      event.preventDefault()
+      setShowPrint(true)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
   const hasClashes = useClashes().size > 0
   const count = useDesignStore((s) => s.pieces.length)
   const clear = useDesignStore((s) => s.clear)
@@ -96,11 +111,12 @@ export function Sidebar() {
           <BoardSettings />
         </CollapsibleSection>
         <CollapsibleSection id="file" title="File">
-          <ProjectFileButtons />
+          <ProjectFileButtons onPrint={() => setShowPrint(true)} />
         </CollapsibleSection>
       </div>
 
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
+      {showPrint && <PrintDialog onClose={() => setShowPrint(false)} />}
     </aside>
   )
 }
