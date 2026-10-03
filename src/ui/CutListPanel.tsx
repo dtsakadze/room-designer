@@ -7,6 +7,7 @@ import {
   hardwareList,
 } from '../lib/cutList'
 import { EXTENSION_LABELS, boardName } from '../lib/defaults'
+import { HINGE_FIT_LABELS } from '../lib/hinges'
 import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
@@ -199,6 +200,11 @@ function hardwareText(row: HardwareRow, len: (mm: number) => string) {
       return {
         name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}, ${len(row.length)}`,
         count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`,
+      }
+    case 'hinges':
+      return {
+        name: `Cup hinges, ${HINGE_FIT_LABELS[row.fit]}, ${row.angle}°${row.softClose ? ', soft-close' : ''}`,
+        count: `${row.quantity}`,
       }
     case 'rod':
       return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}` }

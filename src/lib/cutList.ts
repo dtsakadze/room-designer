@@ -3,6 +3,7 @@ import { BOARD, BOARDS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves } from './geometry'
+import { HINGE_FITS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 
 export type CutListRow = {
@@ -223,10 +224,13 @@ export function bandingTotals(groups: CutListGroup[]): { board: BoardKey; length
  * Something to buy rather than cut from board: pairs of drawer runners of one
  * type and length, hanging rods of one diameter and length, the supports
  * that hold rods of one diameter at each end, or the pins adjustable shelves
- * rest on, or the screws fixed shelves are held by. Sizes in mm.
+ * rest on, or the screws fixed shelves are held by. Hinges are counted by
+ * kind: how they fit, how far they open (degrees) and whether they're
+ * soft-close. Sizes in mm.
  */
 export type HardwareRow =
   | { item: 'runners'; extension: 'standard' | 'full'; length: number; quantity: number }
+  | { item: 'hinges'; fit: HingeFit; angle: number; softClose: boolean; quantity: number }
   | { item: 'rod'; diameter: number; length: number; quantity: number }
   | { item: 'rod-supports'; diameter: number; quantity: number }
   | { item: 'shelf-pins'; quantity: number }
@@ -243,11 +247,12 @@ const SUPPORTS_PER_ROD = 2
 
 /**
  * What to buy besides boards, identical items counted together: a pair of
- * runners per drawer (by type and length), each hanging rod (by diameter and
- * the length to cut it to), its end supports, four pins per adjustable
- * shelf and four screws per fixed one. Drawers too shallow for any runner are
- * left out; the drawer's panel says so. Runners come first, then rods and
- * their supports, then shelf pins and screws.
+ * runners per drawer (by type and length), each door leaf's hinges (by kind,
+ * see `doorHinges`), each hanging rod (by diameter and the length to cut it
+ * to), its end supports, four pins per adjustable shelf and four screws per
+ * fixed one. Drawers too shallow for any runner are left out; the drawer's
+ * panel says so. Runners come first, then hinges, rods and their supports,
+ * then shelf pins and screws.
  */
 export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow[] {
   const rows = new Map<string, HardwareRow>()
@@ -259,6 +264,9 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     else rows.set(key, { ...row })
   }
 
+  for (const { fit, angle, softClose, count } of doorHinges(pieces, thickness)) {
+    add({ item: 'hinges', fit, angle, softClose, quantity: count })
+  }
   for (const piece of pieces) {
     if (piece.kind === 'drawer') {
       const length = runnerLength(piece, thickness)
@@ -275,11 +283,16 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     }
   }
 
-  const order = { runners: 0, rod: 1, 'rod-supports': 2, 'shelf-pins': 3, 'shelf-screws': 4 }
+  const order = { runners: 0, hinges: 1, rod: 2, 'rod-supports': 3, 'shelf-pins': 4, 'shelf-screws': 5 }
   return [...rows.values()].sort(
     (a, b) =>
       order[a.item] - order[b.item] ||
       ('extension' in a && 'extension' in b ? a.extension.localeCompare(b.extension) : 0) ||
+      ('fit' in a && 'fit' in b
+        ? HINGE_FITS.indexOf(a.fit) - HINGE_FITS.indexOf(b.fit) ||
+          a.angle - b.angle ||
+          Number(a.softClose) - Number(b.softClose)
+        : 0) ||
       ('diameter' in a && 'diameter' in b ? a.diameter - b.diameter : 0) ||
       ('length' in a && 'length' in b ? b.length - a.length : 0),
   )

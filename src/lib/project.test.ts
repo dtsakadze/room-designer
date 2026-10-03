@@ -145,17 +145,47 @@ describe('readProject', () => {
   })
 
   it('keeps the hole spacing, gives older saves the usual one, and fixes a damaged one', () => {
+    const v7 = readProject(fixture('v7-hinges'))
+    if (!v7.ok) throw new Error("v7-hinges didn't open")
+    expect(v7.project.holePitch).toBe(37)
     const v6 = readProject(fixture('v6-finish'))
     if (!v6.ok) throw new Error("v6-finish didn't open")
-    expect(v6.project.holePitch).toBe(37)
-    const v5 = readProject(fixture('v5-boards'))
-    if (!v5.ok) throw new Error("v5-boards didn't open")
-    expect(v5.project.holePitch).toBe(32)
-    const save = fixture('v6-finish') as { holePitch: unknown }
+    expect(v6.project.holePitch).toBe(32)
+    const save = fixture('v7-hinges') as { holePitch: unknown }
     save.holePitch = 'wide'
     const damaged = readProject(save)
     if (!damaged.ok) throw new Error("the save didn't open")
     expect(damaged.project.holePitch).toBe(32)
+  })
+
+  it('keeps doors’ hinges, and gives older doors standard ones', () => {
+    const v7 = readProject(fixture('v7-hinges'))
+    if (!v7.ok) throw new Error("v7-hinges didn't open")
+    const doors = v7.project.pieces.filter((piece) => piece.kind === 'door')
+    expect(doors.map((door) => [door.openAngle, door.softClose])).toEqual([
+      [155, true],
+      [undefined, undefined],
+    ])
+    const v6 = readProject(fixture('v6-finish'))
+    if (!v6.ok) throw new Error("v6-finish didn't open")
+    const door = v6.project.pieces.find((piece) => piece.kind === 'door')!
+    expect(door).not.toHaveProperty('openAngle')
+    expect(door).not.toHaveProperty('softClose')
+  })
+
+  it('drops an opening angle hinges don’t come in, and hinge options on other parts', () => {
+    const save = fixture('v7-hinges') as { pieces: Record<string, unknown>[] }
+    const door = save.pieces.find((piece) => piece.kind === 'door')!
+    door.openAngle = 133
+    const shelf = save.pieces.find((piece) => piece.id === 'open-shelf')!
+    Object.assign(shelf, { openAngle: 155, softClose: true })
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    const read = (id: unknown) => result.project.pieces.find((piece) => piece.id === id)!
+    expect(read(door.id)).not.toHaveProperty('openAngle')
+    expect(read(door.id).softClose).toBe(true)
+    expect(read('open-shelf')).not.toHaveProperty('openAngle')
+    expect(read('open-shelf')).not.toHaveProperty('softClose')
   })
 
   it('drops unknown boards with grain, and banding or grain a part can’t have', () => {
@@ -234,7 +264,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

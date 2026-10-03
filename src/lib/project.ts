@@ -24,7 +24,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 6
+export const FORMAT_VERSION = 7
 
 type Raw = Record<string, unknown>
 
@@ -69,10 +69,15 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   },
   // v6 adds edge banding and grain: boards with a grain (`grainedBoards`) and
   // a part's own banded edges (`bands`) and grain (`grain`). Absent, each
-  // means the usual ones, which is what older saves get. It also adds the
-  // spacing of shelf-pin holes (`holePitch`), the usual 32 mm for older saves;
-  // their shelves stay where they were until moved.
-  5: (data) => ({ ...data, formatVersion: 6, holePitch: 32 }),
+  // means the usual ones, which is what older saves get, so only the version
+  // changes; the bump makes an older app refuse such a save rather than drop
+  // them.
+  5: (data) => ({ ...data, formatVersion: 6 }),
+  // v7 adds the spacing of shelf-pin holes (`holePitch`), the usual 32 mm for
+  // older saves; their shelves stay where they were until moved. Doors may
+  // have wide-angle (`openAngle`) and soft-close (`softClose`) hinges; absent,
+  // standard ones, which is what older doors had.
+  6: (data) => ({ ...data, formatVersion: 7, holePitch: 32 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -210,7 +215,14 @@ function validate(data: Raw): ProjectData | null {
     const color = isHexColor(raw.color) ? raw.color : undefined
     const wall = isSideWall(raw.wall) ? raw.wall : undefined
     const hinge = raw.hinge === 'right' ? ('right' as const) : undefined
-    const door = { double: raw.double === true, hinge, inset: raw.inset === true }
+    const door = {
+      double: raw.double === true,
+      hinge,
+      inset: raw.inset === true,
+      // Checked against the angles hinges come in by `normalizePiece`.
+      openAngle: typeof raw.openAngle === 'number' ? raw.openAngle : undefined,
+      softClose: raw.softClose === true,
+    }
     const drawer = {
       extension: raw.extension === 'full' ? ('full' as const) : undefined,
       overlay: raw.overlay === true,

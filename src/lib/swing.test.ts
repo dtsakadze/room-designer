@@ -32,6 +32,15 @@ describe('door swings', () => {
     expect(right.pivot).toEqual({ x: 300, y: -618 })
   })
 
+  it('open as far as wide-angle hinges go', () => {
+    const [standard] = swingsOf(door('d'))
+    expect(standard.angle).toBe(110)
+    const [wide] = swingsOf(door('d', { openAngle: 170 }))
+    expect(wide.angle).toBe(170)
+    // Nearly flat back along the unit: 600 × cos 170° behind the hinge.
+    expect(swingBounds(wide).x).toBeCloseTo(-300 - 591, 0)
+  })
+
   it('open to 110°, past square and back behind the hinge side', () => {
     const [swing] = swingsOf(door('d'))
     const open = swingPoint(swing, DOOR_OPEN_ANGLE)

@@ -1,5 +1,5 @@
 import type { Piece, PieceKind, Room, Thickness, Wall } from '../types'
-import { BOARD, DOOR_LEAF_GAP, PLINTH_RECESS } from './defaults'
+import { BOARD, DOOR_ANGLES, DOOR_LEAF_GAP, DOOR_OPEN_ANGLE, PLINTH_RECESS } from './defaults'
 import { drawerParts } from './drawer'
 import { autoBands, autoGrain, boardEdges, faceDimensions } from './edges'
 import { DEFAULT_ROOM, type RoomBox, isSideWall, roomBox, wallOf } from './room'
@@ -30,6 +30,14 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'door' || !piece.double) delete normalized.double
   if (piece.kind !== 'door' || piece.double || piece.hinge !== 'right') delete normalized.hinge
   if (piece.kind !== 'door' || !piece.inset) delete normalized.inset
+  if (
+    piece.kind !== 'door' ||
+    piece.openAngle === DOOR_OPEN_ANGLE ||
+    !DOOR_ANGLES.includes(piece.openAngle!)
+  ) {
+    delete normalized.openAngle
+  }
+  if (piece.kind !== 'door' || !piece.softClose) delete normalized.softClose
   // Standard runners are the default, stored as no value.
   if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
   if (piece.kind !== 'drawer' || !piece.overlay) delete normalized.overlay

@@ -15,7 +15,7 @@ export type PlanPoint = { x: number; y: number }
  * shut). `square` is where that end is at a right angle, straight out into the
  * room; the two set the directions every other angle is worked out from.
  * `bottom` and `top` are the door's height range, since it can only hit what
- * it passes.
+ * it passes. `angle` is how far its hinges let it open.
  */
 export type DoorSwing = {
   id: string
@@ -25,6 +25,8 @@ export type DoorSwing = {
   square: PlanPoint
   bottom: number
   top: number
+  /** How far it opens, in degrees. */
+  angle: number
 }
 
 /** Where a spot on a wall's unit is in the top view: `along` the wall in its front-view x, `out` from it. */
@@ -62,6 +64,7 @@ export function doorSwings(pieces: Piece[], thickness: Thickness, room: Room): D
           square: planPoint(wall, hinge, face + leaf.width, room),
           bottom: door.y,
           top: door.y + door.height,
+          angle: door.openAngle ?? DOOR_OPEN_ANGLE,
         }
       })
     })
@@ -83,7 +86,7 @@ const ARC_STEPS = 48
 /** The arc the leaf's free end sweeps, from shut to fully open. */
 export function swingArc(swing: DoorSwing): PlanPoint[] {
   return Array.from({ length: ARC_STEPS + 1 }, (_, step) =>
-    swingPoint(swing, (step / ARC_STEPS) * DOOR_OPEN_ANGLE),
+    swingPoint(swing, (step / ARC_STEPS) * swing.angle),
   )
 }
 
@@ -108,7 +111,7 @@ const BEYOND = 100000
 const TOLERANCE = 0.5
 
 /**
- * What each door would hit as it opens to `DOOR_OPEN_ANGLE`, by door id. Only
+ * What each door would hit as it opens as far as its hinges go, by door id. Only
  * in a room with side walls: a single wall's doors open into free space. A
  * door is checked against the room's walls (the front of the room is open)
  * and against parts and door swings on the other walls, where their heights

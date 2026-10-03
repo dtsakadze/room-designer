@@ -156,6 +156,24 @@ describe('hardware list', () => {
     expect(list.map((row) => row.item)).toEqual(['runners', 'rod', 'rod-supports'])
   })
 
+  it('counts hinges by kind, after runners', () => {
+    const list = hardwareList(
+      [
+        piece('door', { width: 600, height: 2000 }),
+        piece('door', { x: 1000, width: 600, height: 700, softClose: true }),
+        piece('door', { x: 2000, width: 600, height: 700, softClose: true, inset: true }),
+        piece('drawer', { x: 3000, width: 564, height: 200, depth: 550 }),
+      ],
+      thickness,
+    )
+    expect(list.map((row) => row.item)).toEqual(['runners', 'hinges', 'hinges', 'hinges'])
+    expect(list.slice(1)).toEqual([
+      { item: 'hinges', fit: 'full', angle: 110, softClose: false, quantity: 4 },
+      { item: 'hinges', fit: 'full', angle: 110, softClose: true, quantity: 2 },
+      { item: 'hinges', fit: 'inset', angle: 110, softClose: true, quantity: 2 },
+    ])
+  })
+
   it('counts four pins per adjustable shelf and four screws per fixed one', () => {
     const list = hardwareList(
       [piece('shelf'), piece('shelf'), piece('shelf', { fixed: true }), piece('rod', { width: 564 })],

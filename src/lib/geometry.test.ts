@@ -242,6 +242,17 @@ describe('isHexColor', () => {
   })
 })
 
+describe('door hinge options', () => {
+  it('keeps wide angles and soft-close on doors only, storing standard hinges as nothing', () => {
+    expect(piece('d', 'door', { openAngle: 155, softClose: true })).toMatchObject({ openAngle: 155, softClose: true })
+    expect(piece('d', 'door', { openAngle: 110 })).not.toHaveProperty('openAngle')
+    expect(piece('d', 'door', { openAngle: 120 })).not.toHaveProperty('openAngle')
+    expect(piece('d', 'door', { softClose: false })).not.toHaveProperty('softClose')
+    expect(piece('s', 'shelf', { openAngle: 155, softClose: true })).not.toHaveProperty('openAngle')
+    expect(piece('s', 'shelf', { softClose: true })).not.toHaveProperty('softClose')
+  })
+})
+
 describe('fitBetweenSides', () => {
   // The sides in the reported project: an odd gap of 1211 mm, from -1182 to 29.
   const left = piece('l', 'vertical', { x: -1200, height: 2000 })

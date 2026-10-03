@@ -72,6 +72,13 @@ export type Piece = {
    */
   inset?: boolean
   /**
+   * Doors only: how far its hinges open, in degrees, when they're wide-angle
+   * ones (155 or 170). Absent means standard hinges, 110°.
+   */
+  openAngle?: number
+  /** Doors only: hinges that close the door gently. Absent means ordinary ones. */
+  softClose?: boolean
+  /**
    * Drawers only: runners that pull the drawer out all the way, rather than
    * standard ones that leave about a quarter of it inside. Absent means standard.
    */

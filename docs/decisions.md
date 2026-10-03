@@ -110,6 +110,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: most parts need the same banding and grain, so making people set every part would be busywork and easy to get wrong, but real builds have exceptions (a visible top end, open shelving, horizontal-grain doors). Plain boards (white melamine) have no grain, and forcing length along an arbitrary direction there would stop the shop turning parts to save board.
 *Instead of*: setting everything by hand per part, a fixed rule with no overrides, grain on every board, and taking banding thickness off the cut sizes (shops differ on whether they want finished or pre-banding sizes; finished is the safer default to state).
 
+**Hinges** (2026-10-04)
+*Decision*: doors are hung on cup hinges, counted per leaf by height (2 up to 900 mm, 3 up to 1600, 4 up to 2000, 5 above) in the Hardware list, by kind: fit, opening angle and soft-close. The fit is worked out, not chosen: inset for an inset door, half overlay when another overlay leaf on the same wall and height is hinged on the same panel from the other side (hinged edges less than a body board apart), full overlay otherwise. Each door can have wide-angle hinges (155° or 170°; 110° is standard) and soft-close ones; the angle also sets how far its swing is drawn and checked in the top view.
+*Why*: hinges are bought by these, and how many a door needs follows from its height, so working them out saves a step and a mistake; the fit follows from where the door is, which the design already says. Wide-angle hinges are the usual fix for a door that hits a wall in a corner.
+*Instead of*: choosing the hinge fit per door (easy to get wrong when doors share a panel), and a project-wide angle or soft-close (doors in one wardrobe often differ, e.g. the corner one).
+
 **Fit between sides** (2026-10-04)
 *Decision*: loose shelves, tops/bottoms, plinths, rails, drawers and rods get a Fit between sides button that sets their X and width to the gap between the nearest side panel or divider on each side of their middle, on their wall, that reaches their height (`fitBetweenSides`). Face to face, except an overlay drawer, which runs across both panels (its front covers their edges). Disabled, with a reason, when there's no panel on one side or the part already fits.
 *Why*: sides often end up at odd positions (18 mm boards on a 10 mm grid), so getting a part to fit exactly meant working out and typing numbers like -1182 and 1211 by hand.
@@ -150,7 +155,11 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **Save format v6: grain and edge banding** (2026-10-03)
 *Decision*: `FORMAT_VERSION` 6 adds an optional `grainedBoards` (boards with a grain) and parts' optional `bands` and `grain`. Converter 5→6 only changes the version: absent, each means the usual banding and no grain, which is what older saves had. `validate` keeps only known boards and edge names, and `normalizePiece` drops edges and grain a part can't have, and any that match the usual.
 *Why*: an older app would drop the new fields silently, so a project opened there would lose its banding and grain; with the bump it refuses the save as "newer" instead.
-`holePitch` (the shelf-pin hole spacing, always present from v6 on; converter 5→6 sets 32) was added to v6 too (2026-10-03): v6 hadn't been released yet, so no save outside this machine knows v6 without it.
+`holePitch` (the shelf-pin hole spacing, always present from v6 on; converter 5→6 sets 32) was added to v6 too (2026-10-03): v6 hadn't been released yet, so no save outside this machine knows v6 without it. Reversed on 2026-10-04: v6 was already live, so `holePitch` moved to v7.
+
+**Save format v7: shelf-pin holes and hinges** (2026-10-04)
+*Decision*: `FORMAT_VERSION` 7 adds `holePitch` (converter 6→7 sets 32) and doors' optional `openAngle` and `softClose`. This replaces adding `holePitch` to v6 (see the v6 entry): v6 had already gone live on boardcut.app (it deploys on every push to `main`), so saves without `holePitch` exist in v6, and its converter and sample are back to exactly what was pushed.
+*Why*: a version that's live is frozen like a released one; an older app would drop the new fields, so they need a version of their own.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

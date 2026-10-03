@@ -49,6 +49,8 @@ export const RAIL_DEPTH = 100
  * which takes the door past square and back behind its hinge side.
  */
 export const DOOR_OPEN_ANGLE = 110
+/** Hinges sold by how far they open: standard, then wide-angle ones. */
+export const DOOR_ANGLES = [DOOR_OPEN_ANGLE, 155, 170]
 /** The gap between the two leaves of a double door, so they don't rub. */
 export const DOOR_LEAF_GAP = 3
 /**

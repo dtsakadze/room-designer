@@ -4,6 +4,7 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Hinges: the cut list's Hardware section counts the cup hinges each door needs (more on taller doors), by kind: full overlay, half overlay (two doors on one side panel) or inset. Select a door to choose how far it opens (110°, 155° or 170°) and soft-close hinges; the Top view's swing and the "hits the wall" warning follow the angle.
 - The cut list's Hardware section counts screws for fixed shelves too: four per shelf, two through each side.
 - Fit between sides: select a shelf, top or bottom, plinth, rail, drawer or hanging rod and click Fit between sides to make it fill the gap between the side panels (or dividers) next to it, exactly to the mm. An overlay drawer is sized to cover both sides.
 - Press Esc to deselect whatever is selected. With a dialog open, Esc still just closes the dialog.

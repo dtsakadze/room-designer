@@ -1,4 +1,12 @@
-import { BOARD, DOOR_OPEN_ANGLE, EXTENSION_LABELS, RUNNER_LENGTHS, pieceLabel } from '../lib/defaults'
+import {
+  BOARD,
+  DOOR_ANGLES,
+  DOOR_OPEN_ANGLE,
+  EXTENSION_LABELS,
+  RUNNER_LENGTHS,
+  pieceLabel,
+} from '../lib/defaults'
+import { HINGE_FIT_LABELS, doorHinges } from '../lib/hinges'
 import { swingConflicts } from '../lib/swing'
 import { drawerParts, runnerLength } from '../lib/drawer'
 import { useUnits } from '../store/useSettingsStore'
@@ -188,9 +196,15 @@ const DIMENSIONS = [
   { key: 'depth', label: 'Depth' },
 ] as const
 
-/** Single or double, which side a single door is hinged on, and overlay or inset. */
+/**
+ * Single or double, which side a single door is hinged on, overlay or inset,
+ * and its hinges: how far they open and whether they're soft-close.
+ */
 function DoorOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
+  const pieces = useDesignStore((s) => s.pieces)
+  const thickness = useDesignStore((s) => s.thickness)
+  const hinges = doorHinges(pieces, thickness).filter((leaf) => leaf.doorId === piece.id)
   const choices: { label: string; value: string; options: [string, string, DoorPatch][] }[] = [
     {
       label: 'Door',
@@ -221,6 +235,15 @@ function DoorOptions({ piece }: { piece: Piece }) {
         ['inset', 'Inset', { inset: true }],
       ],
     },
+    {
+      label: 'Opens',
+      value: String(piece.openAngle ?? DOOR_OPEN_ANGLE),
+      options: DOOR_ANGLES.map((angle): [string, string, DoorPatch] => [
+        String(angle),
+        `${angle}°`,
+        { openAngle: angle },
+      ]),
+    },
   ]
 
   return (
@@ -249,6 +272,20 @@ function DoorOptions({ piece }: { piece: Piece }) {
           : 'Overlay: sits in front of the unit, covering its edges. Size it to the front it covers.'}
         {piece.double && ' The width is both leaves together.'}
       </p>
+      <label className="checkbox">
+        <input
+          type="checkbox"
+          checked={!!piece.softClose}
+          onChange={(event) => updatePiece(piece.id, { softClose: event.target.checked })}
+        />
+        Soft-close hinges
+      </label>
+      {hinges.length > 0 && (
+        <p className="hint">
+          {hingeText(hinges)}. Wide-angle hinges (155°, 170°) let the door open further, clear of
+          what&apos;s next to it.
+        </p>
+      )}
       <SwingWarning door={piece} />
     </>
   )
@@ -270,7 +307,7 @@ function SwingWarning({ door }: { door: Piece }) {
   })
   return (
     <p className="hint hint-error">
-      Opening to {DOOR_OPEN_ANGLE}°, it hits {listed(names)}. See the Top view.
+      Opening to {door.openAngle ?? DOOR_OPEN_ANGLE}°, it hits {listed(names)}. See the Top view.
     </p>
   )
 }
@@ -279,7 +316,14 @@ function SwingWarning({ door }: { door: Piece }) {
 const listed = (items: string[]) =>
   items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
 
-type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset'>
+type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle'>
+
+/** "4 cup hinges, full overlay", or per leaf when a double door's leaves differ. */
+function hingeText(leaves: ReturnType<typeof doorHinges>) {
+  const each = leaves.map((leaf) => `${leaf.count} cup hinges, ${HINGE_FIT_LABELS[leaf.fit]}`)
+  if (leaves.length === 1) return each[0]
+  return each[0] === each[1] ? `${each[0]} on each leaf` : `Left leaf ${each[0]}; right leaf ${each[1]}`
+}
 
 /** The front's fit, the runner type, and what the drawer's size works out to. */
 function DrawerOptions({ piece }: { piece: Piece }) {

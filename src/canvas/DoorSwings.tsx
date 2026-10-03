@@ -1,4 +1,3 @@
-import { DOOR_OPEN_ANGLE } from '../lib/defaults'
 import { type DoorSwing, swingArc, swingPoint } from '../lib/swing'
 import { CLASH, SELECTED } from './colors'
 import { toSvgY } from './view'
@@ -24,7 +23,7 @@ export function DoorSwings({
     <g fill="none" strokeWidth={unit} style={{ pointerEvents: 'none' }}>
       {swings.map((swing, index) => {
         const { pivot } = swing
-        const open = swingPoint(swing, DOOR_OPEN_ANGLE)
+        const open = swingPoint(swing, swing.angle)
         const arc = swingArc(swing).map((point) => `${point.x},${toSvgY(point.y, 0)}`)
         const stroke = selected.has(swing.id)
           ? SELECTED
