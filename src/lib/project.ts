@@ -1,4 +1,4 @@
-import type { BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   BOARDS,
@@ -9,6 +9,7 @@ import {
   MIN_UNIT_DEPTH,
   PIECE_LABELS,
 } from './defaults'
+import { isDimension, isEdge } from './edges'
 import { isHexColor, normalizePiece } from './geometry'
 import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
 
@@ -22,7 +23,7 @@ import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 5
+export const FORMAT_VERSION = 6
 
 type Raw = Record<string, unknown>
 
@@ -65,6 +66,12 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
       thickness: { ...thickness, front: thickness.front ?? body, drawer: thickness.drawer ?? body },
     }
   },
+  // v6 adds edge banding and grain: boards with a grain (`grainedBoards`) and
+  // a part's own banded edges (`bands`) and grain (`grain`). Absent, each
+  // means the usual ones, which is what older saves get, so only the version
+  // changes; the bump makes an older app refuse such a save rather than drop
+  // them.
+  5: (data) => ({ ...data, formatVersion: 6 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -84,6 +91,8 @@ export type ProjectData = {
   thickness: Thickness
   /** What each board is, for the cut list; absent when none is named. */
   boardNames?: BoardNames
+  /** Boards with a grain, whose parts the cut list gives grain-first; absent when none has. */
+  grainedBoards?: BoardKey[]
   /** How deep new parts start. */
   unitDepth: number
   pieces: Piece[]
@@ -101,6 +110,7 @@ export function toProjectData(
     boxes?: Box[]
     thickness: Thickness
     boardNames?: BoardNames
+    grainedBoards?: BoardKey[]
     unitDepth?: number
     defaultColor?: string | null
     room?: Room
@@ -114,6 +124,7 @@ export function toProjectData(
     ...(name ? { name } : {}),
     thickness: design.thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
+    ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
     unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
     boxes: design.boxes ?? [],
@@ -172,6 +183,7 @@ function validate(data: Raw): ProjectData | null {
     drawer: positive(stored.drawer) ?? body,
   }
   const boardNames = readBoardNames(data.boardNames)
+  const grainedBoards = readGrainedBoards(data.grainedBoards)
 
   const pieces = data.pieces.flatMap((raw): Piece[] => {
     if (!isRecord(raw) || typeof raw.id !== 'string' || !isKind(raw.kind)) return []
@@ -198,7 +210,12 @@ function validate(data: Raw): ProjectData | null {
       extension: raw.extension === 'full' ? ('full' as const) : undefined,
       overlay: raw.overlay === true,
     }
-    const extras = { fixed: raw.fixed === true, railAt, boxId, color, wall, ...door, ...drawer }
+    // Checked against the part's own board in `normalizePiece`.
+    const finish = {
+      bands: Array.isArray(raw.bands) ? raw.bands.filter(isEdge) : undefined,
+      grain: isDimension(raw.grain) ? raw.grain : undefined,
+    }
+    const extras = { fixed: raw.fixed === true, railAt, boxId, color, wall, ...door, ...drawer, ...finish }
     return [normalizePiece({ ...piece, ...extras }, thickness)]
   })
 
@@ -238,6 +255,7 @@ function validate(data: Raw): ProjectData | null {
     ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
     thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
+    ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
     pieces: withBoxPanels(pieces, boxes, thickness),
     boxes,
@@ -255,6 +273,12 @@ export function readBoardNames(value: unknown): BoardNames {
     if (name) names[key] = name
   }
   return names
+}
+
+/** Boards with a grain: known boards, each once, in the order of `BOARDS`. */
+export function readGrainedBoards(value: unknown): BoardKey[] {
+  if (!Array.isArray(value)) return []
+  return BOARDS.map((board) => board.key).filter((key) => value.includes(key))
 }
 
 /** A board name as it's kept, or null for none. */

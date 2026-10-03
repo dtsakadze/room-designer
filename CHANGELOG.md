@@ -4,6 +4,9 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Edge banding in the cut list: an Edges column sketches which edges of each board to band, and a new Edge banding section adds up how much each board needs. Parts start with the edges that show (the front edge of panels and shelves, all round on doors and drawer fronts); select a part to tick other edges. For a box, select one of its panels.
+- Grain direction: tick Grain on a board under Settings → Boards (for wood-look boards), and the cut list gives each part's length along the grain, so the shop cuts it the right way round. Grain runs up and down on sides and doors and left to right on shelves and drawer fronts; select a part to turn it.
+
 ## 1.4.0 — 2026-09-29
 
 - A tidier Settings section: units as one switch, each board in its own card (what it's for, its thickness and its material), and the depth for new parts in its own group.

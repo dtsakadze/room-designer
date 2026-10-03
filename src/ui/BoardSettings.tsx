@@ -9,13 +9,16 @@ import { NumberField } from './NumberField'
 /**
  * Project-wide settings, in three groups: the units lengths are shown in (a
  * preference of this browser), the boards (a thickness every part of theirs
- * follows, and a material name for the cut list), and how deep new parts start.
+ * follows, a material name for the cut list, and whether it has a grain), and
+ * how deep new parts start.
  */
 export function BoardSettings() {
   const thickness = useDesignStore((s) => s.thickness)
   const setThickness = useDesignStore((s) => s.setThickness)
   const unitDepth = useDesignStore((s) => s.unitDepth)
   const setUnitDepth = useDesignStore((s) => s.setUnitDepth)
+  const grainedBoards = useDesignStore((s) => s.grainedBoards)
+  const setBoardGrain = useDesignStore((s) => s.setBoardGrain)
   const setUnit = useSettingsStore((s) => s.setUnit)
   const { unit, num } = useUnits()
 
@@ -41,7 +44,7 @@ export function BoardSettings() {
       <section className="section">
         <h2>Boards</h2>
         <p className="hint board-intro">
-          Every part follows its board&apos;s thickness. Names show in the cut list.
+          Every part follows its board&apos;s thickness. Names show in the cut list. Tick Grain for wood-look boards, so the cut list keeps the grain running the right way.
         </p>
         <div className="stack">
           {BOARDS.map((board) => (
@@ -57,6 +60,14 @@ export function BoardSettings() {
                 onChange={(mm) => setThickness({ [board.key]: mm })}
               />
               <BoardNameField board={board.key} example={board.example} />
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={grainedBoards.includes(board.key)}
+                  onChange={(event) => setBoardGrain(board.key, event.target.checked)}
+                />
+                Grain
+              </label>
             </div>
           ))}
         </div>

@@ -1,32 +1,41 @@
-import type { Piece, PieceKind, Thickness } from '../types'
-import { BOARD, pieceLabel } from './defaults'
+import type { BoardKey, Dimension, Edge, Piece, PieceKind, Thickness } from '../types'
+import { BOARD, BOARDS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
+import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves } from './geometry'
 
 export type CutListRow = {
   kind: PieceKind
   label: string
   quantity: number
-  /** The longer of the board's two face sizes, in mm. */
+  /**
+   * One of the board's two face sizes, in mm: the one the grain runs along on
+   * a board with grain, otherwise the longer one.
+   */
   length: number
-  /** The shorter of the board's two face sizes, in mm. */
+  /** The other face size, in mm. */
   width: number
   thickness: number
-  board: keyof Thickness
+  board: BoardKey
+  /** The board has a grain, which runs along `length`. */
+  grain: boolean
+  /** How many of the board's edges are edge-banded: of the two along its length, and of the two along its width. */
+  bands: { length: number; width: number }
 }
 
-type Dimension = 'width' | 'height' | 'depth'
-
 /**
- * One board to cut: its size, which dimension is its thickness, and its name.
- * `order` is where it goes in its section: by kind, or a drawer's part.
+ * One board to cut: its size, which dimension is its thickness, its banded
+ * edges, the way its grain runs, and its name. `order` is where it goes in
+ * its section: by kind, or a drawer's part.
  */
 type Board = {
   kind: PieceKind
   label: string
   size: Record<Dimension, number>
   axis: Dimension
-  board: keyof Thickness
+  board: BoardKey
+  bands: Edge[]
+  grain: Dimension
   order: number
 }
 
@@ -56,10 +65,13 @@ export type CutListGroup =
 
 /**
  * Every board in the design, as a board shop would want it: length × width ×
- * thickness, with identical parts of the same kind counted together.
+ * thickness and which edges to band, with identical parts of the same kind
+ * counted together.
  *
  * A board's thickness axis comes from `BOARD`; the other two dimensions are its
- * face, listed longest first. Rods aren't flat boards, so they aren't here. A
+ * face. On a board with grain (`grained`), length is the size along the grain,
+ * as shops read it, so a part can't be cut turned; on others it's the longer
+ * size, so the shop can turn parts to fit. Rods aren't flat boards, so they aren't here. A
  * double door is cut as two leaves, and a drawer as its front, sides, back and
  * bottom.
  *
@@ -69,7 +81,12 @@ export type CutListGroup =
  * their boards counted together). Within a group, parts of a kind stay
  * together, biggest first.
  */
-export function cutList(pieces: Piece[], thickness: Thickness): CutListGroup[] {
+export function cutList(
+  pieces: Piece[],
+  thickness: Thickness,
+  grained: readonly BoardKey[] = [],
+): CutListGroup[] {
+  const rowsOf = (boards: Board[]) => toRows(boards, grained)
   const groups: CutListGroup[] = []
   for (const section of CUT_LIST_SECTIONS) {
     const kinds: readonly PieceKind[] = section.kinds
@@ -103,18 +120,21 @@ export function cutList(pieces: Piece[], thickness: Thickness): CutListGroup[] {
   return groups
 }
 
-function rowsOf(boards: Board[]): CutListRow[] {
+function toRows(boards: Board[], grained: readonly BoardKey[]): CutListRow[] {
   const rows = new Map<string, CutListRow & { order: number }>()
 
   for (const board of boards) {
-    const [a, b] = (['width', 'height', 'depth'] as const)
-      .filter((dimension) => dimension !== board.axis)
-      .map((dimension) => board.size[dimension])
-    const length = Math.max(a, b)
-    const width = Math.min(a, b)
+    const grain = grained.includes(board.board)
+    const [a, b] = faceDimensions(board.axis)
+    // Which face dimension is the length: the grain's, or the longer.
+    const along = grain ? board.grain : board.size[a] >= board.size[b] ? a : b
+    const length = board.size[along]
+    const width = board.size[along === a ? b : a]
     const cut = board.size[board.axis]
+    const long = board.bands.filter((edge) => edgeRunsAlong(edge, board.axis) === along).length
+    const bands = { length: long, width: board.bands.length - long }
 
-    const key = `${board.label}|${length}|${width}|${cut}`
+    const key = `${board.label}|${length}|${width}|${cut}|${bands.length}|${bands.width}`
     const row = rows.get(key)
     if (row) {
       row.quantity += 1
@@ -127,6 +147,8 @@ function rowsOf(boards: Board[]): CutListRow[] {
         width,
         thickness: cut,
         board: board.board,
+        grain,
+        bands,
         order: board.order,
       })
     }
@@ -154,12 +176,21 @@ function boardsOf(piece: Piece, thickness: Thickness): Board[] {
       size: part,
       axis: part.axis,
       board: part.board,
+      bands: part.bands,
+      grain: part.grain,
       order: DRAWER_ROLES.indexOf(part.role),
     }))
   }
   const board = BOARD[piece.kind]
   if (!board) return []
-  const kind = { kind: piece.kind, axis: board.axis, board: board.board, order: kindOrder(piece.kind) }
+  const kind = {
+    kind: piece.kind,
+    axis: board.axis,
+    board: board.board,
+    bands: bandsOf(piece),
+    grain: grainOf(piece)!,
+    order: kindOrder(piece.kind),
+  }
   if (piece.kind === 'door' && piece.double) {
     // One row per leaf, so "2 × Double door" can't read as two pairs.
     return doorLeaves(piece, true).map((leaf) => ({ ...kind, label: 'Double door leaf', size: leaf }))
@@ -172,6 +203,20 @@ const kindOrder = (kind: PieceKind) =>
   CUT_LIST_SECTIONS.map((section): readonly PieceKind[] => section.kinds)
     .find((kinds) => kinds.includes(kind))
     ?.indexOf(kind) ?? 0
+
+/**
+ * How much edge banding each board's parts need, in mm: the length of every
+ * banded edge, without anything extra for trimming. Boards needing none are
+ * left out; the rest come in the order of `BOARDS`.
+ */
+export function bandingTotals(groups: CutListGroup[]): { board: BoardKey; length: number }[] {
+  const totals = new Map<BoardKey, number>()
+  for (const row of groups.flatMap((group) => group.rows)) {
+    const length = row.quantity * (row.bands.length * row.length + row.bands.width * row.width)
+    if (length > 0) totals.set(row.board, (totals.get(row.board) ?? 0) + length)
+  }
+  return BOARDS.filter(({ key }) => totals.has(key)).map(({ key }) => ({ board: key, length: totals.get(key)! }))
+}
 
 /**
  * Something to buy rather than cut from board: pairs of drawer runners of one

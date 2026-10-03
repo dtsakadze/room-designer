@@ -38,6 +38,12 @@ export type Thickness = Record<BoardKey, number>
  */
 export type BoardNames = Partial<Record<BoardKey, string>>
 
+/** A piece's three sizes; on a board, one of them is its thickness. */
+export type Dimension = 'width' | 'height' | 'depth'
+
+/** A board's edges, named by the way they face in the unit, seen from the front. */
+export type Edge = 'front' | 'back' | 'top' | 'bottom' | 'left' | 'right'
+
 export type Piece = {
   id: string
   kind: PieceKind
@@ -75,6 +81,17 @@ export type Piece = {
    * rather than sitting inside it (inset). Absent means inset.
    */
   overlay?: boolean
+  /**
+   * Boards only: the edges that get edge banding, when they aren't the ones
+   * its kind usually has (see `autoBands`). Absent means the usual ones.
+   */
+  bands?: Edge[]
+  /**
+   * Boards and drawers (their front) only: the dimension the grain runs
+   * along, when it isn't the usual one (see `autoGrain`). Only matters on a
+   * board with grain. Absent means the usual one.
+   */
+  grain?: Dimension
   /** Hex colour (`#rrggbb`). Absent means the project's default colour. */
   color?: string
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */

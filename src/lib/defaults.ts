@@ -1,4 +1,4 @@
-import type { BoardKey, Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, Dimension, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -113,8 +113,6 @@ export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
   { title: 'Fronts', kinds: ['door'] },
 ]
-
-type Dimension = 'width' | 'height' | 'depth'
 
 /**
  * Which dimension of a board is its thickness, and which project thickness it

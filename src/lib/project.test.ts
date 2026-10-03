@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FORMAT_VERSION, readProject, toProjectData } from './project'
 import { DEFAULT_ROOM } from './room'
+import type { Piece } from '../types'
 
 /**
  * Saved samples of every format version. `<name>.json` is a save as that
@@ -120,6 +121,42 @@ describe('readProject', () => {
     expect(result.project.boardNames).toEqual({ front: 'x'.repeat(60) })
   })
 
+  it('opens v5 saves with no grain and every part’s usual banding', () => {
+    const result = readProject(fixture('v5-boards'))
+    if (!result.ok) throw new Error("v5-boards didn't open")
+    expect(result.project).not.toHaveProperty('grainedBoards')
+    expect(result.project.pieces.some((piece) => 'bands' in piece || 'grain' in piece)).toBe(false)
+  })
+
+  it('keeps boards with grain, and each part’s own banding and grain', () => {
+    const result = readProject(fixture('v6-finish'))
+    if (!result.ok) throw new Error("v6-finish didn't open")
+    expect(result.project.grainedBoards).toEqual(['body', 'front'])
+    const of = (match: (piece: Piece) => boolean) => result.project.pieces.find(match)!
+    expect(of((piece) => piece.id.endsWith(':top')).bands).toEqual(['front', 'left', 'right'])
+    expect(of((piece) => piece.kind === 'door').grain).toBe('width')
+    expect(of((piece) => piece.kind === 'drawer').grain).toBe('height')
+    expect(of((piece) => piece.id === 'open-shelf')).toMatchObject({
+      bands: ['front', 'back', 'left', 'right'],
+      grain: 'depth',
+    })
+  })
+
+  it('drops unknown boards with grain, and banding or grain a part can’t have', () => {
+    const save = fixture('v6-finish') as { grainedBoards: unknown; pieces: Record<string, unknown>[] }
+    save.grainedBoards = ['front', 'oak', 'front', 7]
+    const shelf = save.pieces.find((piece) => piece.id === 'open-shelf')!
+    shelf.bands = ['front', 'top', 'sideways', 3]
+    shelf.grain = 'height'
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.grainedBoards).toEqual(['front'])
+    const read = result.project.pieces.find((piece) => piece.id === 'open-shelf')!
+    // Front alone is a shelf's usual banding, so it isn't stored.
+    expect(read).not.toHaveProperty('bands')
+    expect(read).not.toHaveProperty('grain')
+  })
+
   it('drops door options on other parts, and a double door’s hinge side', () => {
     const save = backWallOnly()
     save.pieces.push(
@@ -181,7 +218,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

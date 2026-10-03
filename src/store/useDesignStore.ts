@@ -4,7 +4,7 @@ import type { BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall
 import { contentBounds, normalizePiece } from '../lib/geometry'
 import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
-import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels } from '../lib/box'
+import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
 
@@ -14,6 +14,7 @@ type Snapshot = {
   boxes: Box[]
   thickness: Thickness
   boardNames: BoardNames
+  grainedBoards: BoardKey[]
   room: Room
 }
 
@@ -31,6 +32,8 @@ type DesignState = {
   thickness: Thickness
   /** What each board is, for the cut list. */
   boardNames: BoardNames
+  /** Boards with a grain, in the order of `BOARDS`. */
+  grainedBoards: BoardKey[]
   /**
    * Colour new parts start with; null means the standard look. Like `unitDepth`,
    * it only affects parts added later, so undo skips it.
@@ -58,8 +61,9 @@ type DesignState = {
   /** Turns a box's panels into ordinary pieces that can be edited one by one. */
   separateBox: (id: string) => void
   /**
-   * On a box's panel, only a move applies, and it moves the whole box; the
-   * same goes for `duplicatePiece` and `removePiece`.
+   * On a box's panel, only a move, edge banding and grain apply: a move moves
+   * the whole box (the same goes for `duplicatePiece` and `removePiece`), while
+   * banding and grain are the panel's own.
    */
   updatePiece: (id: string, patch: Partial<Omit<Piece, 'id' | 'kind'>>) => void
   /**
@@ -96,6 +100,8 @@ type DesignState = {
   setThickness: (patch: Partial<Thickness>) => void
   /** Names a board for the cut list; an empty name goes back to its role. */
   setBoardName: (board: BoardKey, name: string) => void
+  /** Says whether a board has a grain, which the cut list then follows. */
+  setBoardGrain: (board: BoardKey, grain: boolean) => void
   setUnitDepth: (mm: number) => void
   /** Changes the room; a wall switched off takes its parts with it. */
   setRoom: (patch: Partial<Room>) => void
@@ -144,8 +150,8 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, boardNames, room } = get()
-      return { pieces, boxes, thickness, boardNames, room }
+      const { pieces, boxes, thickness, boardNames, grainedBoards, room } = get()
+      return { pieces, boxes, thickness, boardNames, grainedBoards, room }
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
@@ -153,6 +159,7 @@ export const useDesignStore = create<DesignState>()(
       state.boxes = snapshot.boxes
       state.thickness = snapshot.thickness
       state.boardNames = snapshot.boardNames
+      state.grainedBoards = snapshot.grainedBoards
       state.room = snapshot.room
       const ids = new Set(snapshot.pieces.map((piece) => piece.id))
       state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
@@ -236,6 +243,7 @@ export const useDesignStore = create<DesignState>()(
       selectedIds: [],
       thickness: DEFAULT_THICKNESS,
       boardNames: {},
+      grainedBoards: [],
       defaultColor: null,
       unitDepth: DEFAULT_UNIT_DEPTH,
       room: DEFAULT_ROOM,
@@ -298,6 +306,14 @@ export const useDesignStore = create<DesignState>()(
           const index = state.pieces.findIndex((piece) => piece.id === id)
           if (index === -1) return
           const boxId = state.pieces[index].boxId
+          if (boxId && ('bands' in patch || 'grain' in patch)) {
+            const { bands, grain } = { ...state.pieces[index], ...patch }
+            const next = normalizePiece({ ...state.pieces[index], bands, grain }, state.thickness)
+            if (samePiece(state.pieces[index], next)) return
+            record(state)
+            state.pieces[index] = next
+            return
+          }
           if (boxId) {
             // A box's panel moves the whole box, by as far as it was moved.
             const box = state.boxes.find((candidate) => candidate.id === boxId)
@@ -452,14 +468,14 @@ export const useDesignStore = create<DesignState>()(
             )
             state.boxes.push(placed)
             state.pieces = rebuildBox(state.pieces, placed, state.thickness)
-            // A box's panels are rebuilt, so carry over their colours by role
-            // (panel ids are `<box id>:<role>`).
-            for (const piece of state.pieces) {
-              if (piece.boxId !== id) continue
-              const source = copied.pieces.find((p) => p.id === piece.id.replace(id, box.id))
-              if (source?.color) piece.color = source.color
+            // A box's panels are rebuilt, so carry over their colours, banding
+            // and grain by role (panel ids are `<box id>:<role>`).
+            state.pieces = state.pieces.map((piece) => {
+              if (piece.boxId !== id) return piece
               pasted.push(piece.id)
-            }
+              const source = copied.pieces.find((p) => p.id === piece.id.replace(id, box.id))
+              return source ? withPanelFinish(piece, source, state.thickness) : piece
+            })
           }
 
           state.selectedIds = pasted
@@ -532,6 +548,15 @@ export const useDesignStore = create<DesignState>()(
           else delete state.boardNames[board]
         }),
 
+      setBoardGrain: (board, grain) =>
+        set((state) => {
+          if (state.grainedBoards.includes(board) === grain) return
+          record(state)
+          const next = new Set([...state.grainedBoards, board])
+          if (!grain) next.delete(board)
+          state.grainedBoards = BOARDS.map(({ key }) => key).filter((key) => next.has(key))
+        }),
+
       setUnitDepth: (mm) =>
         set((state) => {
           state.unitDepth = clampUnitDepth(mm)
@@ -591,6 +616,7 @@ export const useDesignStore = create<DesignState>()(
           state.boxes = project.boxes ?? []
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
+          state.grainedBoards = project.grainedBoards ?? []
           state.defaultColor = project.defaultColor ?? null
           state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.room = project.room ?? DEFAULT_ROOM
@@ -609,6 +635,7 @@ export const useDesignStore = create<DesignState>()(
           state.boxes = project.boxes
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
+          state.grainedBoards = project.grainedBoards ?? []
           state.unitDepth = project.unitDepth
           state.defaultColor = project.defaultColor ?? null
           state.room = project.room

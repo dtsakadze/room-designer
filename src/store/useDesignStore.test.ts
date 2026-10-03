@@ -245,6 +245,59 @@ describe('boards', () => {
     expect(store().boardNames).toEqual({ front: '19 mm oak MDF' })
     expect(toProjectData(store()).boardNames).toEqual({ front: '19 mm oak MDF' })
   })
+  it('marks boards with a grain, as an undo step, and saves them', () => {
+    store().setBoardGrain('front', true)
+    store().setBoardGrain('body', true)
+    expect(store().grainedBoards).toEqual(['body', 'front'])
+    const steps = store().past.length
+    store().setBoardGrain('body', true)
+    expect(store().past.length).toBe(steps)
+    expect(toProjectData(store()).grainedBoards).toEqual(['body', 'front'])
+    store().setBoardGrain('body', false)
+    expect(store().grainedBoards).toEqual(['front'])
+    store().undo()
+    store().undo()
+    store().undo()
+    expect(store().grainedBoards).toEqual([])
+    expect(toProjectData(store())).not.toHaveProperty('grainedBoards')
+  })
+})
+
+describe('edge banding and grain', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('changes a part’s banding and grain, and goes back to the usual ones', () => {
+    store().addPiece('shelf')
+    const id = store().pieces[0].id
+    store().updatePiece(id, { bands: ['front', 'back'], grain: 'depth' })
+    expect(store().pieces[0]).toMatchObject({ bands: ['front', 'back'], grain: 'depth' })
+    store().updatePiece(id, { bands: ['front'], grain: 'width' })
+    expect(store().pieces[0]).not.toHaveProperty('bands')
+    expect(store().pieces[0]).not.toHaveProperty('grain')
+    store().undo()
+    expect(store().pieces[0].bands).toEqual(['front', 'back'])
+  })
+
+  it('gives a box’s panel its own banding, kept when the box changes and when it’s copied', () => {
+    store().addBox()
+    const box = store().boxes[0]
+    const top = `${box.id}:top`
+    store().updatePiece(top, { bands: ['front', 'left', 'right'] })
+    expect(byId(top).bands).toEqual(['front', 'left', 'right'])
+    // Only that panel, and the box stays where it was.
+    expect(store().pieces.filter((piece) => piece.bands)).toHaveLength(1)
+    expect(store().boxes[0]).toEqual(box)
+
+    store().updateBox(box.id, { width: 900 })
+    expect(byId(top).bands).toEqual(['front', 'left', 'right'])
+
+    store().select(top)
+    store().copySelection()
+    store().paste()
+    const pasted = store().boxes[1]
+    expect(byId(`${pasted.id}:top`).bands).toEqual(['front', 'left', 'right'])
+    expect(byId(`${pasted.id}:left`)).not.toHaveProperty('bands')
+  })
 })
 
 const byId = (id: string) => store().pieces.find((piece) => piece.id === id)!

@@ -1,6 +1,7 @@
 import type { Piece, Room, Thickness, Wall } from '../types'
 import { BOARD, DOOR_LEAF_GAP, PLINTH_RECESS } from './defaults'
 import { drawerParts } from './drawer'
+import { autoBands, autoGrain, boardEdges, faceDimensions } from './edges'
 import { DEFAULT_ROOM, type RoomBox, isSideWall, roomBox, wallOf } from './room'
 
 /**
@@ -36,6 +37,18 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   // The back wall (the default) is stored as no value.
   if (!isSideWall(piece.wall)) delete normalized.wall
   if (!isHexColor(piece.color)) delete normalized.color
+  // Banding and grain are stored only where they differ from the part's usual
+  // ones, so a part that's never been changed follows any better default later.
+  const bands = board && Array.isArray(piece.bands)
+    ? boardEdges(board.axis).filter((edge) => piece.bands!.includes(edge))
+    : null
+  if (bands && bands.join() !== autoBands(normalized).join()) normalized.bands = bands
+  else delete normalized.bands
+  // A drawer's grain is its front's, which faces forward.
+  const faces = board ? faceDimensions(board.axis) : piece.kind === 'drawer' ? faceDimensions('depth') : []
+  if (!piece.grain || !faces.includes(piece.grain) || piece.grain === autoGrain(piece.kind)) {
+    delete normalized.grain
+  }
   return normalized
 }
 

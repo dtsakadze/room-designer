@@ -105,6 +105,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: fronts are often a different material and thickness from the carcass (lacquered or veneered MDF), and drawer boxes thinner (12–16 mm), so a single body board made the cut list wrong or vague for common builds, and drawer boxes the wrong size when their sides are thinner.
 *Instead of*: a board per part kind (too many settings for what people actually vary), a material library shared across projects (worth it later, with prices or sheet sizes), and a per-part material choice (fights "thickness belongs to the project").
 
+**Grain direction and edge banding** (2026-10-03)
+*Decision*: both are worked out from the part's kind, and can be changed per part. Banding (`autoBands`, `src/lib/edges.ts`): the front edge of sides, tops, shelves, dividers and front rails; every edge of a door and a drawer front; the top edge of drawer sides and backs; nothing on backs, plinths, back rails and drawer bottoms. Grain (`autoGrain`) runs along the part as it stands: up and down on sides, dividers, backs and doors, left to right on tops, shelves, plinths, rails and drawer fronts. A part's own choice is stored as `bands` (its banded edges, named by the way they face: front, back, top, bottom, left, right) and `grain` (the dimension the grain runs along), and only when it differs from the usual, so untouched parts follow better defaults later. Whether a board has a grain at all is a project setting per board (`grainedBoards`). On a board with grain the cut list's Length is the size along the grain, as shops read it; on others it stays the longer size. The cut list counts banded edges along the length and along the width, shows them as a small sketch, and adds up the banding per board. A box's panels can have their own banding and grain, kept through rebuilds and copies like their colour; a drawer's banding is fixed, but its front's grain can turn. Sizes stay finished sizes (banding thickness isn't taken off).
+*Why*: most parts need the same banding and grain, so making people set every part would be busywork and easy to get wrong, but real builds have exceptions (a visible top end, open shelving, horizontal-grain doors). Plain boards (white melamine) have no grain, and forcing length along an arbitrary direction there would stop the shop turning parts to save board.
+*Instead of*: setting everything by hand per part, a fixed rule with no overrides, grain on every board, and taking banding thickness off the cut sizes (shops differ on whether they want finished or pre-banding sizes; finished is the safer default to state).
+
 ## Data and storage
 
 **Projects in IndexedDB** (2026-09-24)
@@ -131,6 +136,10 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **Save format v5: fronts and drawer-box boards, board names** (2026-09-29)
 *Decision*: `FORMAT_VERSION` 5 adds `front` and `drawer` to `thickness`, and an optional `boardNames`. Converter 4→5 sets both new thicknesses to the save's body thickness; `validate` falls back to the body thickness too, and keeps only known boards' names, trimmed to 60 characters.
 *Why*: fronts and drawer boxes were cut from the body board, so starting them at its thickness opens every older project into exactly the same design. A version bump because an older app would drop the new thicknesses and names.
+
+**Save format v6: grain and edge banding** (2026-10-03)
+*Decision*: `FORMAT_VERSION` 6 adds an optional `grainedBoards` (boards with a grain) and parts' optional `bands` and `grain`. Converter 5→6 only changes the version: absent, each means the usual banding and no grain, which is what older saves had. `validate` keeps only known boards and edge names, and `normalizePiece` drops edges and grain a part can't have, and any that match the usual.
+*Why*: an older app would drop the new fields silently, so a project opened there would lose its banding and grain; with the bump it refuses the save as "newer" instead.
 
 **Versioned save format with converters** (2026-09-25)
 *Decision*: every save has a `formatVersion`; older saves are upgraded one step at a time by converters, newer ones are refused, and a project that can't be read is never opened (so autosave can't overwrite it). Details in [save-format.md](save-format.md).

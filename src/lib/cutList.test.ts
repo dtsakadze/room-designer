@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
-import { CUT_LIST_SECTIONS, cutList, hardwareList } from './cutList'
+import { CUT_LIST_SECTIONS, bandingTotals, cutList, hardwareList } from './cutList'
 import { BOARD, DEFAULT_THICKNESS } from './defaults'
 import { normalizePiece } from './geometry'
 
@@ -59,6 +59,75 @@ describe('cut list', () => {
   it('lists a drawer’s boards in the order it’s put together', () => {
     const [group] = cutList([piece('drawer', { width: 564, height: 200, depth: 550 })], thickness)
     expect(group.rows.map((row) => row.label)).toEqual(['Front', 'Side', 'Back', 'Bottom'])
+  })
+})
+
+describe('grain and edge banding', () => {
+  const sizes = (rows: { length: number; width: number; grain: boolean }[]) =>
+    rows.map((row) => [row.length, row.width, row.grain])
+
+  it('gives the longer size as the length on a board without grain', () => {
+    const [group] = cutList([piece('shelf', { width: 300, depth: 500 })], thickness)
+    expect(sizes(group.rows)).toEqual([[500, 300, false]])
+  })
+
+  it('gives the size along the grain as the length on a board with grain', () => {
+    // A shelf's grain runs left to right, even when it's deeper than it's wide.
+    const shelf = piece('shelf', { width: 300, depth: 500 })
+    expect(sizes(cutList([shelf], thickness, ['body'])[0].rows)).toEqual([[300, 500, true]])
+    const turned = piece('shelf', { width: 300, depth: 500, grain: 'depth' })
+    expect(sizes(cutList([turned], thickness, ['body'])[0].rows)).toEqual([[500, 300, true]])
+    // Only the board with grain changes.
+    expect(sizes(cutList([shelf], thickness, ['front'])[0].rows)).toEqual([[500, 300, false]])
+  })
+
+  it('turns a drawer front’s grain, and leaves its box alone', () => {
+    const drawer = { width: 600, height: 200, depth: 550 }
+    const rows = (patch = {}) =>
+      cutList([piece('drawer', { ...drawer, ...patch })], thickness, ['front'])[0].rows
+    expect(sizes(rows().slice(0, 1))).toEqual([[597, 197, true]])
+    expect(sizes(rows({ grain: 'height' }).slice(0, 1))).toEqual([[197, 597, true]])
+  })
+
+  it('counts banded edges along the length and along the width', () => {
+    const bands = (p: Piece, grained: ('body' | 'front')[] = []) =>
+      cutList([p], thickness, grained)[0].rows[0].bands
+    // A side panel's front edge runs up its height, its length.
+    expect(bands(piece('vertical', { height: 2000, depth: 580 }))).toEqual({ length: 1, width: 0 })
+    expect(bands(piece('back'))).toEqual({ length: 0, width: 0 })
+    expect(bands(piece('door', { width: 600, height: 2000 }))).toEqual({ length: 2, width: 2 })
+    // A deep shelf: its front edge is along the width once length means depth.
+    const deep = piece('shelf', { width: 300, depth: 500 })
+    expect(bands(deep)).toEqual({ length: 0, width: 1 })
+    expect(bands(deep, ['body'])).toEqual({ length: 1, width: 0 })
+  })
+
+  it('lists parts banded differently on rows of their own', () => {
+    const rows = cutList(
+      [piece('shelf', { width: 800 }), piece('shelf', { width: 800 }), piece('shelf', { width: 800, bands: ['front', 'back'] })],
+      thickness,
+    )[0].rows
+    expect(rows.map((row) => [row.quantity, row.bands])).toEqual([
+      [2, { length: 1, width: 0 }],
+      [1, { length: 2, width: 0 }],
+    ])
+  })
+
+  it('adds up the banding each board needs', () => {
+    const groups = cutList(
+      [
+        piece('shelf', { width: 800 }),
+        piece('shelf', { width: 800 }),
+        piece('back'),
+        piece('door', { width: 600, height: 2000 }),
+      ],
+      thickness,
+    )
+    expect(bandingTotals(groups)).toEqual([
+      { board: 'body', length: 1600 },
+      { board: 'front', length: 2 * 2000 + 2 * 600 },
+    ])
+    expect(bandingTotals(cutList([piece('back')], thickness))).toEqual([])
   })
 })
 

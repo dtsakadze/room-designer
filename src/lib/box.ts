@@ -101,10 +101,18 @@ export function rebuildBox(pieces: Piece[], box: Box, thickness: Thickness) {
     if (piece.boxId !== box.id) return [piece]
     const panel = panels.get(piece.id)
     panels.delete(piece.id)
-    // A panel's colour is its own, not the box's, so it survives a rebuild.
-    return panel ? [piece.color ? { ...panel, color: piece.color } : panel] : []
+    // A panel's colour, edge banding and grain are its own, not the box's, so
+    // they survive a rebuild.
+    return panel ? [withPanelFinish(panel, piece, thickness)] : []
   })
   return [...rebuilt, ...panels.values()]
+}
+
+/** A rebuilt panel, keeping what was set on the panel itself (colour, banding, grain). */
+export function withPanelFinish(panel: Piece, from: Piece, thickness: Thickness): Piece {
+  const { color, bands, grain } = from
+  if (!color && !bands && !grain) return panel
+  return normalizePiece({ ...panel, color, bands, grain }, thickness)
 }
 
 /** Every box's panels rebuilt, and panels of boxes that no longer exist dropped. */

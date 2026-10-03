@@ -2,10 +2,12 @@ import { useDesignStore } from '../store/useDesignStore'
 import type { Box } from '../types'
 import { FILLS } from '../canvas/colors'
 import { ColorField } from './ColorField'
+import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
 import { wallOf } from '../lib/room'
+import { pieceLabel } from '../lib/defaults'
 
 /**
  * Settings for a box: its outside size, position and how the top and bottom
@@ -23,6 +25,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
   const panels = pieces.filter((piece) => piece.boxId === box.id)
   const colors = new Set(panels.map((piece) => piece.color ?? null))
   const shared = colors.size === 1 ? [...colors][0] : null
+  const panel = panels.find((piece) => piece.id === panelId)
 
   return (
     <div className="stack">
@@ -73,6 +76,14 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
         ))}
       </div>
 
+      {panel && (
+        <>
+          <hr className="rule" />
+          <p className="muted">This panel: {PANEL_NAMES[panel.id.slice(box.id.length + 1)] ?? pieceLabel(panel)}</p>
+          <FinishFields piece={panel} />
+        </>
+      )}
+
       <hr className="rule" />
 
       <WallField wall={wallOf(box)} onChange={(wall) => updateBox(box.id, { wall })} />
@@ -111,4 +122,13 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
       <p className="hint">Separating turns the box into loose panels you can edit one by one.</p>
     </div>
   )
+}
+
+/** A box's panels by role (panel ids are `<box id>:<role>`). */
+const PANEL_NAMES: Record<string, string> = {
+  left: 'Left side',
+  right: 'Right side',
+  top: 'Top',
+  bottom: 'Bottom',
+  back: 'Back panel',
 }

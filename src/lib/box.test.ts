@@ -109,3 +109,17 @@ describe('withBoxPanels', () => {
     expect(result.find((p) => p.id === 'b:left')!.height).toBe(2000)
   })
 })
+
+describe('rebuilding a box', () => {
+  it('keeps what was set on a panel itself: colour, banding and grain', () => {
+    const before = box()
+    const panels = boxPanels(before, thickness).map((panel) =>
+      panel.id === 'b:top'
+        ? { ...panel, color: '#123456', bands: ['front' as const, 'left' as const], grain: 'depth' as const }
+        : panel,
+    )
+    const rebuilt = byRole(rebuildBox(panels, box({ width: 900 }), thickness))
+    expect(rebuilt.top).toMatchObject({ width: 864, color: '#123456', bands: ['front', 'left'], grain: 'depth' })
+    expect(rebuilt.left).not.toHaveProperty('bands')
+  })
+})

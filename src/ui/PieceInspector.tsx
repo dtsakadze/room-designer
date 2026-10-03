@@ -7,6 +7,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { FILLS } from '../canvas/colors'
 import { BoxInspector } from './BoxInspector'
 import { ColorField } from './ColorField'
+import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
@@ -76,6 +77,7 @@ export function PieceInspector() {
 
       {piece.kind === 'door' && <DoorOptions piece={piece} />}
       {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
+      <FinishFields piece={piece} />
 
       {isRod ? (
         <>

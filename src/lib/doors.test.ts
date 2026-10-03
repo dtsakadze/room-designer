@@ -60,6 +60,9 @@ describe('doors', () => {
         width: (603 - DOOR_LEAF_GAP) / 2,
         thickness: thickness.front,
         board: 'front',
+        grain: false,
+        // Each leaf is banded all round.
+        bands: { length: 2, width: 2 },
       },
     ])
   })
