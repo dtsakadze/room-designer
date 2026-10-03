@@ -4,6 +4,7 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Download the cut list and the hardware list as CSV files, for a spreadsheet, a board shop or a cutting optimiser: open the Cut list and click Cut list or Hardware next to Download CSV. Sizes are in the units you've chosen.
 ## 1.5.0 — 2026-10-04
 
 - Print drawings and the cut list: Sidebar → File → Print… (or ⌘P / Ctrl+P). You get a page each for the front, side and top, drawn to scale with the overall sizes, the openings between the sides and the heights inside them, and a title block, then the cut list and hardware. Choose A4 or A3, which pages, and Lines only for drawings without any shading (to save ink); pick Save as PDF in the print dialog for a PDF.

@@ -1198,6 +1198,13 @@ button kbd {
   break-inside: avoid;
 }
 
+.csv-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
 .print-suboption {
   padding-left: 22px;
 }

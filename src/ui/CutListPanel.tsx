@@ -2,15 +2,17 @@ import { useEffect } from 'react'
 import {
   CUT_LIST_SECTIONS,
   type CutListRow,
-  type HardwareRow,
   bandingTotals,
+  describeHardware,
   cutList,
   hardwareList,
 } from '../lib/cutList'
-import { CLOSE_LABELS, EXTENSION_LABELS, boardName } from '../lib/defaults'
-import { HINGE_FIT_LABELS } from '../lib/hinges'
+import { boardName } from '../lib/defaults'
 import { UNITS } from '../lib/units'
+import { cutListCsv, hardwareCsv } from '../lib/csv'
+import { downloadFile, fileBase } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
+import { useProjectsStore } from '../store/useProjectsStore'
 import { useUnits } from '../store/useSettingsStore'
 
 /** The boards to cut, grouped and counted, floating over the canvas. */
@@ -48,6 +50,51 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
       </header>
 
       <CutListTables />
+      {groups.length > 0 && <CsvButtons />}
+    </div>
+  )
+}
+
+/**
+ * Downloads the cut list or the hardware list as CSV, in the project's units,
+ * for a spreadsheet, a board shop or a cutting optimiser.
+ */
+function CsvButtons() {
+  const pieces = useDesignStore((s) => s.pieces)
+  const thickness = useDesignStore((s) => s.thickness)
+  const boardNames = useDesignStore((s) => s.boardNames)
+  const grainedBoards = useDesignStore((s) => s.grainedBoards)
+  const project = useProjectsStore(
+    (s) => s.projects.find((candidate) => candidate.id === s.currentId)?.name,
+  )
+  const { num, len, unit } = useUnits()
+  const base = fileBase(project) || 'boardcut'
+  const hardware = hardwareList(pieces, thickness)
+
+  const downloadCutList = () => {
+    const groups = cutList(pieces, thickness, grainedBoards)
+    const csv = cutListCsv(groups, {
+      num,
+      unit: UNITS[unit].label,
+      boardName: (board) => boardName(board, boardNames),
+    })
+    downloadFile(csv, `${base} cut list.csv`, 'text/csv')
+  }
+
+  return (
+    <div className="csv-buttons">
+      <span className="muted">Download CSV:</span>
+      <button type="button" className="ghost-button" onClick={downloadCutList}>
+        Cut list
+      </button>
+      <button
+        type="button"
+        className="ghost-button"
+        disabled={hardware.length === 0}
+        onClick={() => downloadFile(hardwareCsv(hardware, len), `${base} hardware.csv`, 'text/csv')}
+      >
+        Hardware
+      </button>
     </div>
   )
 }
@@ -156,7 +203,7 @@ export function CutListTables() {
           </thead>
           <tbody>
             {hardware.map((row) => {
-              const { name, count } = hardwareText(row, len)
+              const { name, count } = describeHardware(row, len)
               return (
                 <tr key={JSON.stringify(row)}>
                   <td>{name}</td>
@@ -223,33 +270,3 @@ function EdgeMark({ row }: { row: CutListRow }) {
 /** "1 edge along the length", "2 edges along the width", or nothing for none. */
 const count = (n: number, along: string) =>
   n === 0 ? '' : `${n} edge${n === 1 ? '' : 's'} ${along}`
-
-/** A hardware row's name and how many, in words: runners come in pairs. */
-function hardwareText(row: HardwareRow, len: (mm: number) => string) {
-  switch (row.item) {
-    case 'runners':
-      return {
-        name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}${row.close === 'ordinary' ? '' : `, ${CLOSE_LABELS[row.close].toLowerCase()}`}, ${len(row.length)}`,
-        count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`,
-      }
-    case 'hinges':
-      return {
-        name: `Cup hinges, ${HINGE_FIT_LABELS[row.fit]}, ${row.angle}°${row.softClose ? ', soft-close' : ''}`,
-        count: `${row.quantity}`,
-      }
-    case 'rod':
-      return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}` }
-    case 'rod-supports':
-      return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}` }
-    case 'shelf-pins':
-      return { name: 'Shelf pins', count: `${row.quantity}` }
-    case 'shelf-screws':
-      return { name: 'Screws for fixed shelves', count: `${row.quantity}` }
-    case 'carcass-screws':
-      return { name: 'Carcass screws (tops, bottoms, rails to sides)', count: `${row.quantity}` }
-    case 'back-fixings':
-      return { name: 'Nails or screws for back panels', count: `${row.quantity}` }
-    case 'handles':
-      return { name: 'Handles or knobs', count: `${row.quantity}` }
-  }
-}

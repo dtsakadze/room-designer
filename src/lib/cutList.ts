@@ -1,10 +1,10 @@
 import type { BoardKey, Dimension, Edge, Piece, PieceKind, Thickness } from '../types'
-import { BOARD, BOARDS, CLOSE_LABELS, pieceLabel } from './defaults'
+import { BOARD, BOARDS, CLOSE_LABELS, EXTENSION_LABELS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves } from './geometry'
 import { backFixings, carcassScrews, handleCount } from './fixings'
-import { HINGE_FITS, type HingeFit, doorHinges } from './hinges'
+import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 
 export type CutListRow = {
@@ -337,4 +337,41 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
       ('diameter' in a && 'diameter' in b ? a.diameter - b.diameter : 0) ||
       ('length' in a && 'length' in b ? b.length - a.length : 0),
   )
+}
+
+/**
+ * A hardware row in words: what it is, and how many, as a number and in a
+ * unit to buy it in (runners come in pairs). `len` shows a length in the
+ * project's units.
+ */
+export function describeHardware(row: HardwareRow, len: (mm: number) => string) {
+  const each = { unit: 'pcs' }
+  switch (row.item) {
+    case 'runners':
+      return {
+        name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}${row.close === 'ordinary' ? '' : `, ${CLOSE_LABELS[row.close].toLowerCase()}`}, ${len(row.length)}`,
+        count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`,
+        unit: 'pairs',
+      }
+    case 'hinges':
+      return {
+        name: `Cup hinges, ${HINGE_FIT_LABELS[row.fit]}, ${row.angle}°${row.softClose ? ', soft-close' : ''}`,
+        count: `${row.quantity}`,
+        ...each,
+      }
+    case 'rod':
+      return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
+    case 'rod-supports':
+      return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
+    case 'shelf-pins':
+      return { name: 'Shelf pins', count: `${row.quantity}`, ...each }
+    case 'shelf-screws':
+      return { name: 'Screws for fixed shelves', count: `${row.quantity}`, ...each }
+    case 'carcass-screws':
+      return { name: 'Carcass screws (tops, bottoms, rails to sides)', count: `${row.quantity}`, ...each }
+    case 'back-fixings':
+      return { name: 'Nails or screws for back panels', count: `${row.quantity}`, ...each }
+    case 'handles':
+      return { name: 'Handles or knobs', count: `${row.quantity}`, ...each }
+  }
 }

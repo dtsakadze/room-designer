@@ -9,6 +9,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - Wardrobes along one, two or three walls of a room (L- and U-shaped): design each wall in its own front view, and see the whole room from the top or in 3D.
 - Dimension lines for the overall size and the gaps around the selected part.
 - A cut list: every board as length × width × thickness, with its edge banding (and its grain, on boards that have one), identical parts counted together, how much edge banding each board needs, and the hardware to buy: drawer runners, hanging rods cut to length and their end supports, and shelf pins.
+- The cut list and hardware list download as CSV, for spreadsheets, board shops and cutting optimisers.
 - Printable drawings: front, side and top views to scale with dimensions, plus the cut list, on A4 or A3 (or as a PDF).
 - Adjustable shelves sit on shelf-pin holes (32 mm apart by default, set per project), so they always land where a hole can be drilled; fixed shelves go anywhere.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.

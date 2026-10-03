@@ -2,13 +2,23 @@ import { type ProjectData, readProject } from './project'
 
 /** Downloads the project as a readable JSON file. */
 export function downloadProject(project: ProjectData) {
-  const json = JSON.stringify(project, null, 2)
-  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
+  const base = fileBase(project.name)
+  downloadFile(
+    JSON.stringify(project, null, 2),
+    `${base || `boardcut-${localDate(new Date(project.savedAt))}`}.json`,
+    'application/json',
+  )
+}
+
+/** A project name made safe for a file name: without the characters file systems reject. */
+export const fileBase = (name: string | undefined) => name?.replace(/[\\/:*?"<>|]+/g, ' ').trim() ?? ''
+
+/** Downloads text as a file. */
+export function downloadFile(content: string, fileName: string, type: string) {
+  const url = URL.createObjectURL(new Blob([content], { type }))
   const link = document.createElement('a')
   link.href = url
-  // Named after the project, minus characters file systems reject.
-  const base = project.name?.replace(/[\\/:*?"<>|]+/g, ' ').trim()
-  link.download = `${base || `boardcut-${localDate(new Date(project.savedAt))}`}.json`
+  link.download = fileName
   link.click()
   // Revoking straight away can cancel the download in some browsers.
   setTimeout(() => URL.revokeObjectURL(url), 1000)
