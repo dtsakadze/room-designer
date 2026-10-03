@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { SNAP } from '../lib/defaults'
 import { useUnits } from '../store/useSettingsStore'
 import {
@@ -27,11 +28,23 @@ const SHORTCUTS: [string, string][] = [
   [REDO_SHORTCUT, 'Redo'],
   ['Drag empty space', 'Pan (right-drag works too)'],
   ['Scroll', 'Zoom'],
-  ['Esc', 'Deselect, or close a dialog or the cut list'],
+  ['Esc', 'Deselect, or close a dialog, the cut list or this list'],
 ]
 
 export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
   const { len } = useUnits()
+
+  // Escape closes it, unless a dialog over it (Projects, …) takes the key.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (document.querySelector('[role="dialog"]:not(.cut-list)')) return
+      onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
   const rows: [string, string][] = [
     ...SHORTCUTS.slice(0, -3),
     ['← → ↑ ↓', `Nudge the selected parts ${len(SNAP)} (Front view); an adjustable shelf moves one hole up or down`],
@@ -39,7 +52,8 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
     ...SHORTCUTS.slice(-3),
   ]
   return (
-    <div className="cut-list shortcuts-panel">
+    // A dialog, so Escape closes it rather than deselecting (see the canvas's keys).
+    <div className="cut-list shortcuts-panel" role="dialog" aria-label="Keyboard shortcuts">
       <header className="cut-list-header">
         <h2>Keyboard shortcuts</h2>
         <button

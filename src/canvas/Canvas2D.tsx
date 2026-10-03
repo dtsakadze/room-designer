@@ -96,8 +96,10 @@ export function Canvas2D() {
   const svgRef = useRef<SVGSVGElement>(null)
   const gesture = useRef<Gesture | null>(null)
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
-  const [showCutList, setShowCutList] = useState(false)
-  const [showShortcuts, setShowShortcuts] = useState(false)
+  // The cut list and the shortcuts float in the same corner, so one at a time.
+  const [panel, setPanel] = useState<'cut-list' | 'shortcuts' | null>(null)
+  const togglePanel = (which: 'cut-list' | 'shortcuts') =>
+    setPanel((open) => (open === which ? null : which))
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [viewName, setViewName] = useState<ViewName>('front')
   /** The selection rectangle being dragged, in SVG coordinates. */
@@ -745,23 +747,23 @@ export function Canvas2D() {
         <button
           type="button"
           className="ghost-button"
-          aria-pressed={showCutList}
-          onClick={() => setShowCutList((open) => !open)}
+          aria-pressed={panel === 'cut-list'}
+          onClick={() => togglePanel('cut-list')}
         >
           Cut list
         </button>
         <button
           type="button"
           className="ghost-button"
-          aria-pressed={showShortcuts}
-          onClick={() => setShowShortcuts((open) => !open)}
+          aria-pressed={panel === 'shortcuts'}
+          onClick={() => togglePanel('shortcuts')}
         >
           Shortcuts
         </button>
       </div>
 
-      {showCutList && <CutListPanel onClose={() => setShowCutList(false)} />}
-      {showShortcuts && <ShortcutsPanel onClose={() => setShowShortcuts(false)} />}
+      {panel === 'cut-list' && <CutListPanel onClose={() => setPanel(null)} />}
+      {panel === 'shortcuts' && <ShortcutsPanel onClose={() => setPanel(null)} />}
 
       {/* Only there when the room has more than one wall, so a single unit looks as before. */}
       {multiWall && viewName !== 'top' && viewName !== '3d' && (
