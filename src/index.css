@@ -1198,6 +1198,10 @@ button kbd {
   break-inside: avoid;
 }
 
+.print-suboption {
+  padding-left: 22px;
+}
+
 .print-dialog .button-row {
   justify-content: flex-end;
 }

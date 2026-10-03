@@ -6,6 +6,15 @@ import { useProjectsStore } from '../store/useProjectsStore'
 import { type PrintOptions, PrintDocument } from './PrintDocument'
 
 const PAPER_KEY = 'room-designer:print-paper'
+const LINES_KEY = 'room-designer:print-lines-only'
+
+const storedLinesOnly = () => {
+  try {
+    return localStorage.getItem(LINES_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
 
 const storedPaper = (): PaperSize => {
   try {
@@ -30,6 +39,7 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
     drawings: true,
     cutList: true,
     paper: storedPaper(),
+    linesOnly: storedLinesOnly(),
   }))
   const [printing, setPrinting] = useState(false)
 
@@ -70,6 +80,22 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
           <label className="checkbox">
             <input type="checkbox" checked={options.drawings} onChange={(event) => choose({ drawings: event.target.checked })} />
             Drawings: front, side and top, to scale with dimensions
+          </label>
+          <label className="checkbox print-suboption">
+            <input
+              type="checkbox"
+              checked={options.linesOnly}
+              disabled={!options.drawings}
+              onChange={(event) => {
+                choose({ linesOnly: event.target.checked })
+                try {
+                  localStorage.setItem(LINES_KEY, String(event.target.checked))
+                } catch {
+                  // Still used for this print.
+                }
+              }}
+            />
+            Lines only, no shading (saves ink)
           </label>
           <label className="checkbox">
             <input type="checkbox" checked={options.cutList} onChange={(event) => choose({ cutList: event.target.checked })} />

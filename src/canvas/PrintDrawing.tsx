@@ -15,15 +15,18 @@ type PrintDrawingProps = {
   scale: number
   /** The paper it's drawn on, in mm. */
   area: { width: number; height: number }
+  /** Outlines only, with nothing shaded. */
+  linesOnly?: boolean
 }
 
 /**
  * One view drawn to scale for printing, in black on white: boards outlined
- * (cut edges shaded, see-through panels and doors left open), with the
+ * (cut edges and faces lightly shaded unless `linesOnly`, see-through panels
+ * and doors left open), with the
  * overall width and height, and from the front the clear openings between
  * the sides and the clear heights inside each.
  */
-export function PrintDrawing({ pieces, view, scale, area }: PrintDrawingProps) {
+export function PrintDrawing({ pieces, view, scale, area, linesOnly = false }: PrintDrawingProps) {
   const { num } = useUnits()
   const bounds = contentBounds(pieces)
   if (!bounds) return null
@@ -54,7 +57,13 @@ export function PrintDrawing({ pieces, view, scale, area }: PrintDrawingProps) {
             y={toSvgY(piece.y, piece.height)}
             width={piece.width}
             height={piece.height}
-            fill={door || isHollow(piece, view) ? 'none' : showsEdge(piece, view) ? '#d4d4d4' : '#f2f2f2'}
+            fill={
+              linesOnly || door || isHollow(piece, view)
+                ? 'none'
+                : showsEdge(piece, view)
+                  ? '#d4d4d4'
+                  : '#f2f2f2'
+            }
             stroke={INK}
             strokeWidth={0.2 * mm}
             strokeDasharray={door ? `${2 * mm} ${1.2 * mm}` : undefined}

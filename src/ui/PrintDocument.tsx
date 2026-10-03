@@ -9,7 +9,13 @@ import { useUnits } from '../store/useSettingsStore'
 import type { Piece } from '../types'
 import { CutListTables } from './CutListPanel'
 
-export type PrintOptions = { drawings: boolean; cutList: boolean; paper: PaperSize }
+export type PrintOptions = {
+  drawings: boolean
+  cutList: boolean
+  paper: PaperSize
+  /** Drawings in outlines only, without shading cut edges and faces. */
+  linesOnly: boolean
+}
 
 /** Paper left round the page's edge, and taken by the title block under a drawing, in mm. */
 const PAGE_MARGIN = 10
@@ -67,7 +73,7 @@ export function PrintDocument({ options, projectName }: { options: PrintOptions;
         )
         return (
           <section key={index} className="print-page" style={{ width: `${paper.width}mm`, height: `${paper.height}mm` }}>
-            <PrintDrawing pieces={sheet.pieces} view={sheet.view} scale={scale} area={area} />
+            <PrintDrawing pieces={sheet.pieces} view={sheet.view} scale={scale} area={area} linesOnly={options.linesOnly} />
             <TitleBlock project={projectName} title={sheet.title} details={[`Scale 1:${scale}`, `Sizes in ${UNITS[unit].label}`, date]} />
           </section>
         )
