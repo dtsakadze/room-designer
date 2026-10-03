@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+## 1.6.0 — 2026-10-04
+
 - Export view: a button next to Fit view saves the view you're on (Front, Left side, Right side, Top or Back) as a clean drawing with its dimensions, the same as its printed page, as an SVG (for drawing programs) or a PNG image.
 - Esc also closes the shortcuts list.
 - The cut list and the shortcuts list no longer open on top of each other: opening one closes the other.
