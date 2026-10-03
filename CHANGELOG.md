@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+## 1.5.0 — 2026-10-04
+
 - Print drawings and the cut list: Sidebar → File → Print… (or ⌘P / Ctrl+P). You get a page each for the front, side and top, drawn to scale with the overall sizes, the openings between the sides and the heights inside them, and a title block, then the cut list and hardware. Choose A4 or A3, which pages, and Lines only for drawings without any shading (to save ink); pick Save as PDF in the print dialog for a PDF.
 - The cut list's Hardware section now counts carcass screws (where tops, bottoms and rails meet the sides), nails or screws for the back panels, and handles or knobs: one per door leaf and drawer. Push-to-open drawers need none, and you can take the handle off any door or drawer: select it and untick Handle or knob.
 - Drawers can have soft-close or push-to-open runners: select a drawer and choose under Closing. The cut list's Hardware section lists them apart from ordinary runners.
