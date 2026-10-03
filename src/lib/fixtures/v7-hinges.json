@@ -127,7 +127,8 @@
       "height": 700,
       "depth": 19,
       "inset": true,
-      "hinge": "right"
+      "hinge": "right",
+      "noHandle": true
     }
   ],
   "boxes": [

@@ -4,6 +4,7 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- The cut list's Hardware section now counts carcass screws (where tops, bottoms and rails meet the sides), nails or screws for the back panels, and handles or knobs: one per door leaf and drawer. Push-to-open drawers need none, and you can take the handle off any door or drawer: select it and untick Handle or knob.
 - Drawers can have soft-close or push-to-open runners: select a drawer and choose under Closing. The cut list's Hardware section lists them apart from ordinary runners.
 - Hinges: the cut list's Hardware section counts the cup hinges each door needs (more on taller doors), by kind: full overlay, half overlay (two doors on one side panel) or inset. Select a door to choose how far it opens (110°, 155° or 170°) and soft-close hinges; the Top view's swing and the "hits the wall" warning follow the angle.
 - The cut list's Hardware section counts screws for fixed shelves too: four per shelf, two through each side.

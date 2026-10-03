@@ -77,7 +77,8 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // older saves; their shelves stay where they were until moved. Doors may
   // have wide-angle (`openAngle`) and soft-close (`softClose`) hinges, and
   // drawers soft-close or push-to-open runners (`close`); absent, ordinary
-  // ones, which is what older doors and drawers had.
+  // ones, which is what older doors and drawers had. Doors and drawers may
+  // have no handle (`noHandle`); absent, they have one.
   6: (data) => ({ ...data, formatVersion: 7, holePitch: 32 }),
 }
 
@@ -234,7 +235,8 @@ function validate(data: Raw): ProjectData | null {
       bands: Array.isArray(raw.bands) ? raw.bands.filter(isEdge) : undefined,
       grain: isDimension(raw.grain) ? raw.grain : undefined,
     }
-    const extras = { fixed: raw.fixed === true, railAt, boxId, color, wall, ...door, ...drawer, ...finish }
+    const handle = { noHandle: raw.noHandle === true }
+    const extras = { ...handle, fixed: raw.fixed === true, railAt, boxId, color, wall, ...door, ...drawer, ...finish }
     return [normalizePiece({ ...piece, ...extras }, thickness)]
   })
 

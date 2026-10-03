@@ -38,6 +38,7 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
     delete normalized.openAngle
   }
   if (piece.kind !== 'door' || !piece.softClose) delete normalized.softClose
+  if ((piece.kind !== 'door' && piece.kind !== 'drawer') || !piece.noHandle) delete normalized.noHandle
   // Standard runners are the default, stored as no value.
   if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
   if (piece.kind !== 'drawer' || !piece.overlay) delete normalized.overlay

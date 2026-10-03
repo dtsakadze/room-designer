@@ -78,6 +78,8 @@ export type Piece = {
   openAngle?: number
   /** Doors only: hinges that close the door gently. Absent means ordinary ones. */
   softClose?: boolean
+  /** Doors and drawers only: has no handle or knob. Absent means it has one. */
+  noHandle?: boolean
   /**
    * Drawers only: runners that pull the drawer out all the way, rather than
    * standard ones that leave about a quarter of it inside. Absent means standard.

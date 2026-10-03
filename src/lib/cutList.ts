@@ -3,6 +3,7 @@ import { BOARD, BOARDS, CLOSE_LABELS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves } from './geometry'
+import { backFixings, carcassScrews, handleCount } from './fixings'
 import { HINGE_FITS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 
@@ -241,6 +242,9 @@ export type HardwareRow =
   | { item: 'rod-supports'; diameter: number; quantity: number }
   | { item: 'shelf-pins'; quantity: number }
   | { item: 'shelf-screws'; quantity: number }
+  | { item: 'carcass-screws'; quantity: number }
+  | { item: 'back-fixings'; quantity: number }
+  | { item: 'handles'; quantity: number }
 
 /**
  * Screws a fixed shelf needs: two through each side, near its front and back
@@ -259,9 +263,11 @@ const SUPPORTS_PER_ROD = 2
  * runners per drawer (by type and length), each door leaf's hinges (by kind,
  * see `doorHinges`), each hanging rod (by diameter and the length to cut it
  * to), its end supports, four pins per adjustable shelf and four screws per
- * fixed one. Drawers too shallow for any runner are left out; the drawer's
- * panel says so. Runners come first, then hinges, rods and their supports,
- * then shelf pins and screws.
+ * fixed one, the screws joining the carcass and fixing its backs (see
+ * `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
+ * too shallow for any runner are left out; the drawer's panel says so.
+ * Runners come first, then hinges, rods and their supports, shelf pins and
+ * screws, carcass fixings, then handles.
  */
 export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow[] {
   const rows = new Map<string, HardwareRow>()
@@ -298,7 +304,24 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     }
   }
 
-  const order = { runners: 0, hinges: 1, rod: 2, 'rod-supports': 3, 'shelf-pins': 4, 'shelf-screws': 5 }
+  const fixings = [
+    { item: 'carcass-screws', quantity: carcassScrews(pieces) },
+    { item: 'back-fixings', quantity: backFixings(pieces) },
+    { item: 'handles', quantity: handleCount(pieces) },
+  ] as const
+  for (const row of fixings) if (row.quantity > 0) add(row)
+
+  const order = {
+    runners: 0,
+    hinges: 1,
+    rod: 2,
+    'rod-supports': 3,
+    'shelf-pins': 4,
+    'shelf-screws': 5,
+    'carcass-screws': 6,
+    'back-fixings': 7,
+    handles: 8,
+  }
   return [...rows.values()].sort(
     (a, b) =>
       order[a.item] - order[b.item] ||

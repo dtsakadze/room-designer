@@ -59,7 +59,9 @@ describe('drawers', () => {
       Back: 2,
       Bottom: 2,
     })
-    expect(hardwareList([drawer(), drawer({ id: 'e', extension: 'full' }), drawer({ id: 'f' })], thickness)).toEqual([
+    const runners = (pieces: Piece[]) =>
+      hardwareList(pieces, thickness).filter((row) => row.item === 'runners')
+    expect(runners([drawer(), drawer({ id: 'e', extension: 'full' }), drawer({ id: 'f' })])).toEqual([
       { item: 'runners', extension: 'full', close: 'ordinary', length: 500, quantity: 1 },
       { item: 'runners', extension: 'standard', close: 'ordinary', length: 500, quantity: 2 },
     ])
@@ -69,8 +71,8 @@ describe('drawers', () => {
     const list = hardwareList(
       [drawer({ id: 'a', close: 'push' }), drawer({ id: 'b' }), drawer({ id: 'c', close: 'soft' }), drawer({ id: 'd', close: 'soft' })],
       thickness,
-    )
-    expect(list.map((row) => ('close' in row ? [row.close, row.quantity] : null))).toEqual([
+    ).filter((row) => row.item === 'runners')
+    expect(list.map((row) => [row.close, row.quantity])).toEqual([
       ['ordinary', 1],
       ['soft', 2],
       ['push', 1],
@@ -95,7 +97,7 @@ describe('drawers', () => {
   })
 
   it('leave a drawer too shallow for runners out of the hardware', () => {
-    expect(hardwareList([drawer({ depth: 200 })], thickness)).toEqual([])
+    expect(hardwareList([drawer({ depth: 200 })], thickness).map((row) => row.item)).toEqual(['handles'])
   })
 
   it('sit with their front flush with the front of the unit', () => {

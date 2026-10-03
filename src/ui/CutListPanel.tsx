@@ -227,5 +227,11 @@ function hardwareText(row: HardwareRow, len: (mm: number) => string) {
       return { name: 'Shelf pins', count: `${row.quantity}` }
     case 'shelf-screws':
       return { name: 'Screws for fixed shelves', count: `${row.quantity}` }
+    case 'carcass-screws':
+      return { name: 'Carcass screws (tops, bottoms, rails to sides)', count: `${row.quantity}` }
+    case 'back-fixings':
+      return { name: 'Nails or screws for back panels', count: `${row.quantity}` }
+    case 'handles':
+      return { name: 'Handles or knobs', count: `${row.quantity}` }
   }
 }

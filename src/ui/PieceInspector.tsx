@@ -281,6 +281,7 @@ function DoorOptions({ piece }: { piece: Piece }) {
         />
         Soft-close hinges
       </label>
+      <HandleField piece={piece} />
       {hinges.length > 0 && (
         <p className="hint">
           {hingeText(hinges)}. Wide-angle hinges (155°, 170°) let the door open further, clear of
@@ -316,6 +317,21 @@ function SwingWarning({ door }: { door: Piece }) {
 /** "a", "a and b", "a, b and c". */
 const listed = (items: string[]) =>
   items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
+
+/** Whether a door or drawer gets a handle or knob, for the hardware list. */
+function HandleField({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  return (
+    <label className="checkbox">
+      <input
+        type="checkbox"
+        checked={!piece.noHandle}
+        onChange={(event) => updatePiece(piece.id, { noHandle: !event.target.checked })}
+      />
+      {piece.kind === 'door' && piece.double ? 'Handles (one per leaf)' : 'Handle or knob'}
+    </label>
+  )
+}
 
 type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle'>
 
@@ -400,6 +416,11 @@ function DrawerOptions({ piece }: { piece: Piece }) {
         The box is {len(bottom.width)} wide, leaving room for the runners each side, and{' '}
         {len(side.height + bottom.height)} high.
       </p>
+      {piece.close === 'push' ? (
+        <p className="hint">No handle: a push-to-open drawer doesn&apos;t need one.</p>
+      ) : (
+        <HandleField piece={piece} />
+      )}
       {runner === null ? (
         <p className="hint hint-error">
           Too shallow for runners: the shortest is {len(RUNNER_LENGTHS[0])}, plus{' '}

@@ -153,7 +153,7 @@ describe('hardware list', () => {
       [piece('rod', { width: 1164, height: 25 }), piece('drawer', { width: 564, height: 200, depth: 550 })],
       thickness,
     )
-    expect(list.map((row) => row.item)).toEqual(['runners', 'rod', 'rod-supports'])
+    expect(list.map((row) => row.item)).toEqual(['runners', 'rod', 'rod-supports', 'handles'])
   })
 
   it('counts hinges by kind, after runners', () => {
@@ -166,8 +166,8 @@ describe('hardware list', () => {
       ],
       thickness,
     )
-    expect(list.map((row) => row.item)).toEqual(['runners', 'hinges', 'hinges', 'hinges'])
-    expect(list.slice(1)).toEqual([
+    expect(list.map((row) => row.item)).toEqual(['runners', 'hinges', 'hinges', 'hinges', 'handles'])
+    expect(list.slice(1, 4)).toEqual([
       { item: 'hinges', fit: 'full', angle: 110, softClose: false, quantity: 4 },
       { item: 'hinges', fit: 'full', angle: 110, softClose: true, quantity: 2 },
       { item: 'hinges', fit: 'inset', angle: 110, softClose: true, quantity: 2 },

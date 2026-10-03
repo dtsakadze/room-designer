@@ -110,6 +110,11 @@ Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when
 *Why*: most parts need the same banding and grain, so making people set every part would be busywork and easy to get wrong, but real builds have exceptions (a visible top end, open shelving, horizontal-grain doors). Plain boards (white melamine) have no grain, and forcing length along an arbitrary direction there would stop the shop turning parts to save board.
 *Instead of*: setting everything by hand per part, a fixed rule with no overrides, grain on every board, and taking banding thickness off the cut sizes (shops differ on whether they want finished or pre-banding sizes; finished is the safer default to state).
 
+**Carcass fixings and handles in the hardware list** (2026-10-04)
+*Decision*: the Hardware list also counts carcass screws, back panel fixings and handles (`fixings.ts`). Carcass screws: wherever a top, bottom or rail meets a side or divider on the same wall (end against face, or face against end, within 1 mm), 3 screws, or 2 when the shallower board is under 300 mm deep (rails). Back fixings: one nail or screw per 150 mm of each back panel's edge, rounded up. Handles: one per door leaf and per drawer, except push-to-open drawers and doors or drawers whose handle was taken off (`noHandle`, a checkbox in the Selected panel).
+*Why*: these are on every shopping list for a build, and they follow from the design, so working them out saves counting by hand. Handle-less fronts are common (push-to-open, routed grips), hence the opt-out.
+*Instead of*: listing screw sizes (depend on the board and the brand), counting joints for loose parts placed by eye with gaps (a part that doesn't touch isn't fixed), and a handle type choice (left for later).
+
 **Soft-close and push-to-open drawer runners** (2026-10-04)
 *Decision*: each drawer chooses how its runners close: ordinary (the default, stored as nothing), soft-close or push-to-open (`close`). It doesn't change the drawer's boards; the Hardware list counts runner pairs of each kind apart, after the extension type.
 *Why*: runners are bought by this, and push-to-open is how handle-less fronts work, so it belongs on the shopping list.
@@ -163,7 +168,7 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 `holePitch` (the shelf-pin hole spacing, always present from v6 on; converter 5→6 sets 32) was added to v6 too (2026-10-03): v6 hadn't been released yet, so no save outside this machine knows v6 without it. Reversed on 2026-10-04: v6 was already live, so `holePitch` moved to v7.
 
 **Save format v7: shelf-pin holes and hinges** (2026-10-04)
-*Decision*: `FORMAT_VERSION` 7 adds `holePitch` (converter 6→7 sets 32), doors' optional `openAngle` and `softClose`, and drawers' optional `close` (soft-close or push-to-open runners, added 2026-10-04 before v7 was pushed). This replaces adding `holePitch` to v6 (see the v6 entry): v6 had already gone live on boardcut.app (it deploys on every push to `main`), so saves without `holePitch` exist in v6, and its converter and sample are back to exactly what was pushed.
+*Decision*: `FORMAT_VERSION` 7 adds `holePitch` (converter 6→7 sets 32), doors' optional `openAngle` and `softClose`, drawers' optional `close` (soft-close or push-to-open runners) and doors' and drawers' optional `noHandle` (both added 2026-10-04 before v7 was pushed). This replaces adding `holePitch` to v6 (see the v6 entry): v6 had already gone live on boardcut.app (it deploys on every push to `main`), so saves without `holePitch` exist in v6, and its converter and sample are back to exactly what was pushed.
 *Why*: a version that's live is frozen like a released one; an older app would drop the new fields, so they need a version of their own.
 
 **Versioned save format with converters** (2026-09-25)

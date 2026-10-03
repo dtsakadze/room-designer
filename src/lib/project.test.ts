@@ -182,6 +182,18 @@ describe('readProject', () => {
     expect(v6.project.pieces.find((piece) => piece.kind === 'drawer')).not.toHaveProperty('close')
   })
 
+  it('keeps a door or drawer without a handle', () => {
+    const save = fixture('v7-hinges') as { pieces: Record<string, unknown>[] }
+    const drawer = save.pieces.find((piece) => piece.kind === 'drawer')!
+    drawer.noHandle = true
+    const shelf = save.pieces.find((piece) => piece.id === 'open-shelf')!
+    shelf.noHandle = true
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.pieces.find((piece) => piece.id === drawer.id)!.noHandle).toBe(true)
+    expect(result.project.pieces.find((piece) => piece.id === 'open-shelf')).not.toHaveProperty('noHandle')
+  })
+
   it('drops an opening angle hinges don’t come in, and hinge options on other parts', () => {
     const save = fixture('v7-hinges') as { pieces: Record<string, unknown>[] }
     const door = save.pieces.find((piece) => piece.kind === 'door')!
