@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   CUT_LIST_SECTIONS,
   type CutListRow,
@@ -22,12 +23,24 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
   const banding = bandingTotals(groups)
   const hardware = hardwareList(pieces, thickness)
   const { num, len, unit } = useUnits()
+
+  // Escape closes it, unless a dialog over it (Projects, …) takes the key.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (document.querySelector('[role="dialog"]:not(.cut-list)')) return
+      onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
   const total = groups
     .flatMap((group) => group.rows)
     .reduce((sum, row) => sum + row.quantity, 0)
 
   return (
-    <div className="cut-list">
+    // A dialog, so Escape closes it rather than deselecting (see the canvas's keys).
+    <div className="cut-list" role="dialog" aria-label="Cut list">
       <header className="cut-list-header">
         <h2>Cut list</h2>
         <span className="muted">
