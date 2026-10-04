@@ -19,7 +19,9 @@ type NumberFieldProps = {
  * it. Range is not enforced here — the store normalises every piece.
  *
  * Lengths are in mm, shown and typed in the unit from the settings; a comma
- * works as the decimal separator too.
+ * works as the decimal separator too. Up and down arrows step the value by
+ * the unit's smallest shown amount (1 mm in mm, cm and m), ten times that
+ * with Shift, as a number input would.
  */
 export function NumberField({
   label,
@@ -30,12 +32,28 @@ export function NumberField({
   const unit = useSettingsStore((s) => s.unit)
   const [text, setText] = useState(() => formatNumber(value, unit))
   const editing = useRef(false)
+  // Set by an arrow step, so the field shows what the store made of it (it
+  // may round, clamp or snap the value) even while it has focus.
+  const stepped = useRef(false)
 
   useEffect(() => {
-    if (!editing.current) setText(formatNumber(value, unit))
+    if (!editing.current || stepped.current) setText(formatNumber(value, unit))
+    stepped.current = false
   }, [value, unit])
 
+  const step = (direction: 1 | -1, large: boolean) => {
+    const size = 10 ** -UNITS[unit].decimals * (large ? 10 : 1)
+    const parsed = Number(text.replace(',', '.'))
+    // From what's typed, if it's a number, so a half-typed edit carries on.
+    const shown = text.trim() !== '' && Number.isFinite(parsed) ? parsed : Number(formatNumber(value, unit))
+    const next = Number((shown + direction * size).toFixed(UNITS[unit].decimals))
+    stepped.current = true
+    onChange(fromUnit(next, unit))
+  }
+
   const handleChange = (raw: string) => {
+    // Typing takes over from a step the store didn't change anything for.
+    stepped.current = false
     setText(raw)
     const parsed = Number(raw.replace(',', '.'))
     if (raw.trim() !== '' && Number.isFinite(parsed)) onChange(fromUnit(parsed, unit))
@@ -64,6 +82,10 @@ export function NumberField({
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur()
+            if (readOnly || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return
+            // Keeps the caret where it is, as a number input does.
+            event.preventDefault()
+            step(event.key === 'ArrowUp' ? 1 : -1, event.shiftKey)
           }}
         />
         <span className="field-unit">{UNITS[unit].label}</span>
