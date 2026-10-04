@@ -10,6 +10,7 @@ import {
 import { type StoredProject, browserStorage, requestPersistentStorage } from '../lib/storage'
 import type { Piece, Room } from '../types'
 import { DEFAULT_ROOM } from '../lib/room'
+import type { DesignColors } from '../canvas/colors'
 import { useDesignStore } from './useDesignStore'
 
 export type SaveStatus = 'loading' | 'blocked' | 'saving' | 'saved' | 'unavailable'
@@ -24,6 +25,8 @@ export type ProjectSummary = {
   pieces: Piece[]
   /** The design's room, so the thumbnail can show every wall. */
   room: Room
+  /** The design's board and edge colours, for the thumbnail. */
+  colors: DesignColors
   /**
    * Why it can't be opened (saved by a newer version of the app, or damaged),
    * or null if it can. Such a project is never opened, so nothing overwrites it.
@@ -103,6 +106,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
                 pieceCount: design.pieces.length,
                 pieces: design.pieces,
                 room: design.room,
+                colors: { boardColors: design.boardColors ?? {}, edgeColors: design.edgeColors ?? {} },
               }
             : project,
         ),
@@ -145,6 +149,8 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         state.boardNames === previous.boardNames &&
         state.grainedBoards === previous.grainedBoards &&
         state.holePitch === previous.holePitch &&
+        state.boardColors === previous.boardColors &&
+        state.edgeColors === previous.edgeColors &&
         state.unitDepth === previous.unitDepth &&
         state.room === previous.room
       if (unchanged) return
@@ -325,6 +331,10 @@ function summarize(record: StoredProject): ProjectSummary {
     pieceCount: pieces.length,
     pieces,
     room: result.ok ? result.project.room : DEFAULT_ROOM,
+    colors: {
+      boardColors: (result.ok && result.project.boardColors) || {},
+      edgeColors: (result.ok && result.project.edgeColors) || {},
+    },
     problem: result.ok ? null : result.problem,
   }
 }

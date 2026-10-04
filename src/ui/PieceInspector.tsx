@@ -13,7 +13,7 @@ import { drawerParts, runnerLength } from '../lib/drawer'
 import { useUnits } from '../store/useSettingsStore'
 import type { Piece } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
-import { FILLS } from '../canvas/colors'
+import { boardOf, faceColor } from '../canvas/colors'
 import { BoxInspector } from './BoxInspector'
 import { ColorField } from './ColorField'
 import { FinishFields } from './FinishFields'
@@ -31,10 +31,12 @@ export function PieceInspector() {
   const removePiece = useDesignStore((s) => s.removePiece)
   const boxes = useDesignStore((s) => s.boxes)
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
+  const boardColors = useDesignStore((s) => s.boardColors)
   const fitPiece = useDesignStore((s) => s.fitBetweenSides)
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
+  const boardOfPiece = boardOf(piece.kind)
 
   // A box's panel is edited through its box.
   const box = piece.boxId && boxes.find((candidate) => candidate.id === piece.boxId)
@@ -54,7 +56,9 @@ export function PieceInspector() {
         key={piece.id}
         label="Part colour"
         value={piece.color ?? null}
-        fallback={FILLS[piece.kind]}
+        // Without a colour of its own, a part shows its board's.
+        fallback={faceColor({ ...piece, color: undefined }, { boardColors })}
+        emptyLabel={boardOfPiece && boardColors[boardOfPiece] ? 'Board colour' : 'Standard'}
         onChange={(color) => setPieceColors([piece.id], color)}
         onReset={() => setPieceColors([piece.id], null)}
       />

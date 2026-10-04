@@ -38,6 +38,9 @@ export type Thickness = Record<BoardKey, number>
  */
 export type BoardNames = Partial<Record<BoardKey, string>>
 
+/** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
+export type BoardColors = Partial<Record<BoardKey, string>>
+
 /** A piece's three sizes; on a board, one of them is its thickness. */
 export type Dimension = 'width' | 'height' | 'depth'
 

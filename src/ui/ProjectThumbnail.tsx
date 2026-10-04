@@ -1,4 +1,4 @@
-import { EDGE_FILLS, FILLS } from '../canvas/colors'
+import { type DesignColors, edgeOnColor, faceColor } from '../canvas/colors'
 import { drawOrder, isHollow, showsEdge } from '../canvas/views'
 import { contentBounds } from '../lib/geometry'
 import { unfold } from '../lib/room'
@@ -11,7 +11,15 @@ const SIZE = 60
  * list. Same look as the canvas, minus the grid, labels and measurements. A
  * design on several walls is shown unfolded, the walls side by side.
  */
-export function ProjectThumbnail({ pieces: all, room }: { pieces: Piece[]; room: Room }) {
+export function ProjectThumbnail({
+  pieces: all,
+  room,
+  colors,
+}: {
+  pieces: Piece[]
+  room: Room
+  colors: DesignColors
+}) {
   const pieces = unfold(all, room)
   const bounds = contentBounds(pieces)
   if (!bounds) return <div className="project-thumbnail project-thumbnail-empty" />
@@ -40,7 +48,7 @@ export function ProjectThumbnail({ pieces: all, room }: { pieces: Piece[]; room:
           y={-(piece.y + piece.height)}
           width={piece.width}
           height={piece.height}
-          fill={piece.color ?? (showsEdge(piece, 'front') ? EDGE_FILLS : FILLS)[piece.kind]}
+          fill={showsEdge(piece, 'front') ? edgeOnColor(piece, 'front', colors) : faceColor(piece, colors)}
           fillOpacity={isHollow(piece, 'front') ? 0.35 : 1}
           stroke="#9c8f6d"
           strokeWidth={0.6}

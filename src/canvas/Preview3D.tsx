@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { drawerParts } from '../lib/drawer'
+import { bandsOf } from '../lib/edges'
 import { pieceSolids, wallDepthStart } from '../lib/geometry'
 import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
-import type { Piece, Room, Thickness } from '../types'
-import { CLASH, FILLS, SELECTED } from './colors'
+import type { BoardKey, Edge, Piece, Room, Thickness } from '../types'
+import { CLASH, type DesignColors, SELECTED, boardOf, faceColor } from './colors'
 
 const BACKGROUND = '#f4f6f9'
 const EDGE = '#6f6450'
@@ -33,6 +35,8 @@ export default function Preview3D() {
   const thickness = useDesignStore((s) => s.thickness)
   const room = useDesignStore((s) => s.room)
   const selectedId = useDesignStore((s) => s.selectedId)
+  const boardColors = useDesignStore((s) => s.boardColors)
+  const edgeColors = useDesignStore((s) => s.edgeColors)
   const clashes = useClashes()
 
   // Scene, camera, renderer and controls: set up once.
@@ -130,12 +134,19 @@ export default function Preview3D() {
     for (const piece of pieces) {
       if (!showDoors && piece.kind === 'door') continue
       const tint = piece.id === selectedId ? SELECTED : clashes.has(piece.id) ? CLASH : null
-      // A drawer as its boards, so you can see into it past a see-through door.
-      for (const box of pieceSolids(piece, zStart(piece), thickness, room)) {
-        current.parts.add(buildPiece(piece, box, tint))
-      }
+      const colors = { boardColors, edgeColors }
+      // A drawer as its boards, so you can see into it past a see-through door;
+      // each is cut from its own board, with its own banding.
+      const boards: { board: BoardKey | null; bands: Edge[] }[] =
+        piece.kind === 'drawer'
+          ? drawerParts(piece, thickness)
+          : [{ board: boardOf(piece.kind), bands: piece.kind === 'rod' ? [] : bandsOf(piece) }]
+      pieceSolids(piece, zStart(piece), thickness, room).forEach((box, index) => {
+        const { board, bands } = boards[index] ?? boards[0]
+        current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, room)))
+      })
     }
-  }, [pieces, thickness, room, selectedId, clashes, showDoors])
+  }, [pieces, thickness, room, selectedId, clashes, showDoors, boardColors, edgeColors])
 
   // The room's outline on the floor, once there's more than one wall.
   useEffect(() => {
@@ -157,22 +168,59 @@ export default function Preview3D() {
 }
 
 /**
+ * How a solid is coloured: its face colour, and the faces of its box that are
+ * banded edges with their banding colour (only when the board has one).
+ */
+type Finish = { face: string; edge: string | null; bandedFaces: number[] }
+
+function finishOf(piece: Piece, board: BoardKey | null, bands: Edge[], colors: DesignColors, room: Room): Finish {
+  const face = faceColor(piece, colors, board)
+  const edge = (board && colors.edgeColors[board]) || null
+  if (!edge || bands.length === 0) return { face, edge: null, bandedFaces: [] }
+  const faces = boxFaces(piece, room)
+  return { face, edge, bandedFaces: bands.map((band) => faces[band]) }
+}
+
+/**
+ * Which face of a `BoxGeometry` (its material groups: +x, -x, +y, -y, +z, -z)
+ * each edge of a part faces in the room, worked out from how `roomBox` turns
+ * a part on its wall: a step right along the wall, and a step out from it.
+ */
+function boxFaces(piece: Piece, room: Room): Record<Edge, number> {
+  const probe = { ...piece, x: 0, y: 0, width: 1, height: 1, depth: 1 }
+  const base = roomBox(probe, 0, room)
+  const face = (moved: RoomBox) => {
+    const axis = [0, 1, 2].find((a) => moved.min[a] !== base.min[a])!
+    return axis * 2 + (moved.min[axis] > base.min[axis] ? 0 : 1)
+  }
+  const opposite = (index: number) => index ^ 1
+  const right = face(roomBox({ ...probe, x: 1 }, 0, room))
+  const front = face(roomBox(probe, 1, room))
+  return { right, left: opposite(right), top: 2, bottom: 3, front, back: opposite(front) }
+}
+
+/**
  * One piece as a solid with outlined edges; a rod as a cylinder along x.
  * `tint` (selection blue or clash red) is mixed in rather than painted over,
  * so the part still reads as wood.
  */
-function buildPiece(piece: Piece, box: RoomBox, tint: string | null) {
-  const material = new THREE.MeshStandardMaterial({
-    color: tint
-      ? new THREE.Color(piece.color ?? FILLS[piece.kind]).lerp(new THREE.Color(tint), 0.45)
-      : (piece.color ?? FILLS[piece.kind]),
-    roughness: 0.85,
-    // The back panel and doors would hide the inside from most angles, so they're faint.
-    transparent: piece.kind === 'back' || piece.kind === 'door',
-    opacity: piece.kind === 'back' ? 0.45 : piece.kind === 'door' ? 0.35 : 1,
-    // Keeps a faint door from hiding the parts behind it.
-    depthWrite: piece.kind !== 'door',
-  })
+function buildPiece(piece: Piece, box: RoomBox, tint: string | null, finish: Finish) {
+  const paint = (color: string) =>
+    new THREE.MeshStandardMaterial({
+      color: tint ? new THREE.Color(color).lerp(new THREE.Color(tint), 0.45) : color,
+      roughness: 0.85,
+      // The back panel and doors would hide the inside from most angles, so they're faint.
+      transparent: piece.kind === 'back' || piece.kind === 'door',
+      opacity: piece.kind === 'back' ? 0.45 : piece.kind === 'door' ? 0.35 : 1,
+      // Keeps a faint door from hiding the parts behind it.
+      depthWrite: piece.kind !== 'door',
+    })
+  const faceMaterial = paint(finish.face)
+  const edgeMaterial = finish.edge && paint(finish.edge)
+  const material =
+    edgeMaterial && piece.kind !== 'rod'
+      ? Array.from({ length: 6 }, (_, index) => (finish.bandedFaces.includes(index) ? edgeMaterial : faceMaterial))
+      : faceMaterial
 
   const [sx, sy, sz] = [0, 1, 2].map((axis) => box.max[axis] - box.min[axis])
   // A rod runs along its wall: across the room on the back wall, front to
@@ -234,7 +282,9 @@ function disposeChildren(group: THREE.Group) {
   group.traverse((object) => {
     if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
       object.geometry.dispose()
-      ;(object.material as THREE.Material).dispose()
+      // A banded part has a material per face, sharing two between them.
+      const materials = [object.material].flat() as THREE.Material[]
+      for (const material of new Set(materials)) material.dispose()
     }
   })
   group.clear()

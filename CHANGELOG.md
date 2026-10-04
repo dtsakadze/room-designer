@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Board colours: give each board a colour under Settings → Boards, and every part cut from it shows in that colour, on the canvas, in 3D and in the project list (for example white carcass, oak fronts). A part you've coloured yourself keeps its own colour; Reset brings it back to its board's.
+- Edge banding colours: set an Edge banding colour on a board, and its banded edges show in it wherever they face you (the front edges of the sides and shelves from the front, and in 3D).
 - Measure: click Measure (or press M), then click two points to see the distance between them, with its horizontal and vertical parts for a slanted line. Points catch on the corners, edge middles and edges of parts, so you measure board to board; hold Alt to place them freely. Esc clears the measurement, and again turns the tool off. Works in every flat view.
 - Snap to the middle: drag a part near the middle of its space (a divider between two sides, a shelf between the floor or a shelf below and one above) and it snaps there exactly, with a dashed line and "=" on the two equal gaps. Keep dragging to place it anywhere else.
 ## 1.6.0 — 2026-10-04

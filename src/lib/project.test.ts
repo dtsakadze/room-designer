@@ -182,6 +182,27 @@ describe('readProject', () => {
     expect(v6.project.pieces.find((piece) => piece.kind === 'drawer')).not.toHaveProperty('close')
   })
 
+  it('keeps board and edge colours, and gives older saves none', () => {
+    const v8 = readProject(fixture('v8-colors'))
+    if (!v8.ok) throw new Error("v8-colors didn't open")
+    expect(v8.project.boardColors).toEqual({ body: '#f4f4f0', front: '#b08a5a' })
+    expect(v8.project.edgeColors).toEqual({ body: '#b08a5a' })
+    const v7 = readProject(fixture('v7-hinges'))
+    if (!v7.ok) throw new Error("v7-hinges didn't open")
+    expect(v7.project).not.toHaveProperty('boardColors')
+    expect(v7.project).not.toHaveProperty('edgeColors')
+  })
+
+  it('drops colours of unknown boards and ones that aren’t #rrggbb', () => {
+    const save = fixture('v8-colors') as { boardColors: unknown; edgeColors: unknown }
+    save.boardColors = { body: 'red', front: '#123456', shelf: '#abcdef' }
+    save.edgeColors = 'oak'
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    expect(result.project.boardColors).toEqual({ front: '#123456' })
+    expect(result.project).not.toHaveProperty('edgeColors')
+  })
+
   it('keeps a door or drawer without a handle', () => {
     const save = fixture('v7-hinges') as { pieces: Record<string, unknown>[] }
     const drawer = save.pieces.find((piece) => piece.kind === 'drawer')!
@@ -285,7 +306,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

@@ -1,6 +1,6 @@
 import { useDesignStore } from '../store/useDesignStore'
 import type { Box } from '../types'
-import { FILLS } from '../canvas/colors'
+import { faceColor } from '../canvas/colors'
 import { ColorField } from './ColorField'
 import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
@@ -19,6 +19,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
+  const boardColors = useDesignStore((s) => s.boardColors)
   // Filtered here, not in the selector: a selector that returns a new array
   // every time makes React re-render forever.
   const pieces = useDesignStore((s) => s.pieces)
@@ -35,7 +36,8 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
         key={box.id}
         label="Part colour"
         value={shared}
-        fallback={FILLS.vertical}
+        fallback={faceColor({ kind: 'vertical' }, { boardColors })}
+        emptyLabel={boardColors.body ? 'Board colour' : 'Standard'}
         onChange={(color) => setPieceColors([panelId], color)}
         onReset={() => setPieceColors([panelId], null)}
       />

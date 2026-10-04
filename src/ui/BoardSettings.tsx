@@ -5,6 +5,8 @@ import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { NumberField } from './NumberField'
+import { ColorField } from './ColorField'
+import { BOARD_FILLS } from '../canvas/colors'
 import { DEFAULT_HOLE_PITCH } from '../lib/shelfPins'
 
 /**
@@ -20,6 +22,10 @@ export function BoardSettings() {
   const setUnitDepth = useDesignStore((s) => s.setUnitDepth)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const setBoardGrain = useDesignStore((s) => s.setBoardGrain)
+  const boardColors = useDesignStore((s) => s.boardColors)
+  const edgeColors = useDesignStore((s) => s.edgeColors)
+  const setBoardColor = useDesignStore((s) => s.setBoardColor)
+  const setEdgeColor = useDesignStore((s) => s.setEdgeColor)
   const holePitch = useDesignStore((s) => s.holePitch)
   const setHolePitch = useDesignStore((s) => s.setHolePitch)
   const setUnit = useSettingsStore((s) => s.setUnit)
@@ -47,7 +53,7 @@ export function BoardSettings() {
       <section className="section">
         <h2>Boards</h2>
         <p className="hint board-intro">
-          Every part follows its board&apos;s thickness. Names show in the cut list. Tick Grain for wood-look boards, so the cut list keeps the grain running the right way.
+          Every part follows its board&apos;s thickness and colour (unless you give a part its own). Names show in the cut list. Tick Grain for wood-look boards, so the cut list keeps the grain running the right way.
         </p>
         <div className="stack">
           {BOARDS.map((board) => (
@@ -63,6 +69,24 @@ export function BoardSettings() {
                 onChange={(mm) => setThickness({ [board.key]: mm })}
               />
               <BoardNameField board={board.key} example={board.example} />
+              <ColorField
+                label="Colour"
+                value={boardColors[board.key] ?? null}
+                fallback={BOARD_FILLS[board.key]}
+                onChange={(color) => setBoardColor(board.key, color)}
+                onReset={() => setBoardColor(board.key, null)}
+              />
+              {/* Back panels and drawer bottoms aren't banded. */}
+              {board.key !== 'back' && (
+                <ColorField
+                  label="Edge banding"
+                  value={edgeColors[board.key] ?? null}
+                  fallback={boardColors[board.key] ?? BOARD_FILLS[board.key]}
+                  onChange={(color) => setEdgeColor(board.key, color)}
+                  onReset={() => setEdgeColor(board.key, null)}
+                  emptyLabel="Like the board"
+                />
+              )}
               <label className="checkbox">
                 <input
                   type="checkbox"

@@ -264,6 +264,27 @@ describe('boards', () => {
   })
 })
 
+describe('board colours', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('colours a board and its edge banding, each as an undo step, and saves them', () => {
+    store().setBoardColor('front', '#b08a5a')
+    store().setEdgeColor('body', '#222222')
+    expect(store().boardColors).toEqual({ front: '#b08a5a' })
+    expect(store().edgeColors).toEqual({ body: '#222222' })
+    const steps = store().past.length
+    store().setBoardColor('front', '#b08a5a')
+    expect(store().past.length).toBe(steps)
+    expect(toProjectData(store())).toMatchObject({ boardColors: { front: '#b08a5a' }, edgeColors: { body: '#222222' } })
+    store().setBoardColor('front', null)
+    expect(store().boardColors).toEqual({})
+    store().undo()
+    store().undo()
+    expect(store().boardColors).toEqual({ front: '#b08a5a' })
+    expect(store().edgeColors).toEqual({})
+  })
+})
+
 describe('fit between sides', () => {
   beforeEach(() => store().loadProject(emptyProject()))
 

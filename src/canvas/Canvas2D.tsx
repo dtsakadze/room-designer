@@ -15,6 +15,7 @@ import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
 import { MiddleGuides } from './MiddleGuides'
+import { type EdgeView, edgeOnColor, faceColor } from './colors'
 import { MeasureLayer } from './MeasureLayer'
 import { type Point, type SnapKind, snapPoint } from '../lib/measure'
 import { ExportViewMenu } from './ExportViewMenu'
@@ -146,6 +147,9 @@ export function Canvas2D() {
 
   const thickness = useDesignStore((s) => s.thickness)
   const holePitch = useDesignStore((s) => s.holePitch)
+  const boardColors = useDesignStore((s) => s.boardColors)
+  const edgeColors = useDesignStore((s) => s.edgeColors)
+  const colors = { boardColors, edgeColors }
   const room = useDesignStore((s) => s.room)
   const activeWall = useDesignStore((s) => s.activeWall)
   const measureView = `${viewName}|${activeWall}`
@@ -716,7 +720,11 @@ export function Canvas2D() {
             label={sizeLabel(piece, viewName, len)}
             editable={isFront}
             hollow={isHollow(piece, viewName)}
-            edgeOn={showsEdge(piece, viewName)}
+            fill={
+              showsEdge(piece, viewName)
+                ? edgeOnColor(piece, viewName as EdgeView, colors)
+                : faceColor(piece, colors)
+            }
             // Screws show where the shelf meets the sides: from the front or back.
             clashing={clashes.has(piece.id)}
             screws={!!piece.fixed && (viewName === 'front' || viewName === 'back')}

@@ -9,6 +9,8 @@ type ColorFieldProps = {
   onChange: (color: string) => void
   onReset: () => void
   resetLabel?: string
+  /** Shown in place of Reset when nothing is set. */
+  emptyLabel?: string
 }
 
 /**
@@ -22,6 +24,7 @@ export function ColorField({
   onChange,
   onReset,
   resetLabel = 'Reset',
+  emptyLabel = 'Standard',
 }: ColorFieldProps) {
   return (
     <div className="field">
@@ -32,7 +35,7 @@ export function ColorField({
             {resetLabel}
           </button>
         ) : (
-          <span className="muted">Standard</span>
+          <span className="muted">{emptyLabel}</span>
         )}
         <input
           type="color"

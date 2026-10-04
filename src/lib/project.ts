@@ -1,4 +1,4 @@
-import type { BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   BOARDS,
@@ -24,7 +24,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 7
+export const FORMAT_VERSION = 8
 
 type Raw = Record<string, unknown>
 
@@ -80,6 +80,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // ones, which is what older doors and drawers had. Doors and drawers may
   // have no handle (`noHandle`); absent, they have one.
   6: (data) => ({ ...data, formatVersion: 7, holePitch: 32 }),
+  // v8 adds a colour per board (`boardColors`) and per board's edge banding
+  // (`edgeColors`). Absent, parts keep the standard look and edges their
+  // board's, as before, so only the version changes; the bump makes an older
+  // app refuse such a save rather than drop the colours.
+  7: (data) => ({ ...data, formatVersion: 8 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -103,6 +108,10 @@ export type ProjectData = {
   grainedBoards?: BoardKey[]
   /** Spacing of the shelf-pin holes adjustable shelves sit on, in mm. */
   holePitch: number
+  /** The colour of each board's parts; absent when none is set. A part's own colour wins. */
+  boardColors?: BoardColors
+  /** The colour of each board's edge banding; absent when none is set (the edges look like the board). */
+  edgeColors?: BoardColors
   /** How deep new parts start. */
   unitDepth: number
   pieces: Piece[]
@@ -122,6 +131,8 @@ export function toProjectData(
     boardNames?: BoardNames
     grainedBoards?: BoardKey[]
     holePitch?: number
+    boardColors?: BoardColors
+    edgeColors?: BoardColors
     unitDepth?: number
     defaultColor?: string | null
     room?: Room
@@ -137,6 +148,8 @@ export function toProjectData(
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
     holePitch: design.holePitch ?? DEFAULT_HOLE_PITCH,
+    ...(Object.keys(design.boardColors ?? {}).length > 0 ? { boardColors: design.boardColors } : {}),
+    ...(Object.keys(design.edgeColors ?? {}).length > 0 ? { edgeColors: design.edgeColors } : {}),
     unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
     pieces: design.pieces,
     boxes: design.boxes ?? [],
@@ -196,6 +209,8 @@ function validate(data: Raw): ProjectData | null {
   }
   const boardNames = readBoardNames(data.boardNames)
   const grainedBoards = readGrainedBoards(data.grainedBoards)
+  const boardColors = readBoardColors(data.boardColors)
+  const edgeColors = readBoardColors(data.edgeColors)
 
   const pieces = data.pieces.flatMap((raw): Piece[] => {
     if (!isRecord(raw) || typeof raw.id !== 'string' || !isKind(raw.kind)) return []
@@ -278,6 +293,8 @@ function validate(data: Raw): ProjectData | null {
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
     holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
+    ...(Object.keys(boardColors).length > 0 ? { boardColors } : {}),
+    ...(Object.keys(edgeColors).length > 0 ? { edgeColors } : {}),
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
     pieces: withBoxPanels(pieces, boxes, thickness),
     boxes,
@@ -295,6 +312,17 @@ export function readBoardNames(value: unknown): BoardNames {
     if (name) names[key] = name
   }
   return names
+}
+
+/** Board colours worth keeping: known boards, `#rrggbb` only. */
+export function readBoardColors(value: unknown): BoardColors {
+  if (!isRecord(value)) return {}
+  const colors: BoardColors = {}
+  for (const { key } of BOARDS) {
+    const color = value[key]
+    if (isHexColor(color)) colors[key] = color
+  }
+  return colors
 }
 
 /** Boards with a grain: known boards, each once, in the order of `BOARDS`. */

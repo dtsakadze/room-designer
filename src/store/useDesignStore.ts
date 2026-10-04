@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
+import type { BoardColors, BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { FITS_BETWEEN_SIDES, contentBounds, fitBetweenSides, normalizePiece } from '../lib/geometry'
 import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
@@ -17,6 +17,8 @@ type Snapshot = {
   boardNames: BoardNames
   grainedBoards: BoardKey[]
   holePitch: number
+  boardColors: BoardColors
+  edgeColors: BoardColors
   room: Room
 }
 
@@ -38,6 +40,10 @@ type DesignState = {
   grainedBoards: BoardKey[]
   /** Spacing of the shelf-pin holes in sides and dividers; adjustable shelves sit on them. */
   holePitch: number
+  /** The colour of each board's parts, unless a part has its own. */
+  boardColors: BoardColors
+  /** The colour of each board's edge banding, where it shows. */
+  edgeColors: BoardColors
   /**
    * Colour new parts start with; null means the standard look. Like `unitDepth`,
    * it only affects parts added later, so undo skips it.
@@ -112,6 +118,10 @@ type DesignState = {
   setBoardName: (board: BoardKey, name: string) => void
   /** Says whether a board has a grain, which the cut list then follows. */
   setBoardGrain: (board: BoardKey, grain: boolean) => void
+  /** Colours a board's parts (those without a colour of their own), or null for the standard look. */
+  setBoardColor: (board: BoardKey, color: string | null) => void
+  /** Colours a board's edge banding, or null to show it like the board. */
+  setEdgeColor: (board: BoardKey, color: string | null) => void
   /** Changes the hole spacing, and moves every adjustable shelf onto the new holes. */
   setHolePitch: (mm: number) => void
   setUnitDepth: (mm: number) => void
@@ -162,8 +172,8 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, room } = get()
-      return { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, room }
+      const { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, boardColors, edgeColors, room } = get()
+      return { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, boardColors, edgeColors, room }
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
@@ -173,6 +183,8 @@ export const useDesignStore = create<DesignState>()(
       state.boardNames = snapshot.boardNames
       state.grainedBoards = snapshot.grainedBoards
       state.holePitch = snapshot.holePitch
+      state.boardColors = snapshot.boardColors
+      state.edgeColors = snapshot.edgeColors
       state.room = snapshot.room
       const ids = new Set(snapshot.pieces.map((piece) => piece.id))
       state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
@@ -265,6 +277,8 @@ export const useDesignStore = create<DesignState>()(
       boardNames: {},
       grainedBoards: [],
       holePitch: DEFAULT_HOLE_PITCH,
+      boardColors: {},
+      edgeColors: {},
       defaultColor: null,
       unitDepth: DEFAULT_UNIT_DEPTH,
       room: DEFAULT_ROOM,
@@ -602,6 +616,22 @@ export const useDesignStore = create<DesignState>()(
           state.grainedBoards = BOARDS.map(({ key }) => key).filter((key) => next.has(key))
         }),
 
+      setBoardColor: (board, color) =>
+        set((state) => {
+          if ((state.boardColors[board] ?? null) === color) return
+          record(state)
+          if (color) state.boardColors[board] = color
+          else delete state.boardColors[board]
+        }),
+
+      setEdgeColor: (board, color) =>
+        set((state) => {
+          if ((state.edgeColors[board] ?? null) === color) return
+          record(state)
+          if (color) state.edgeColors[board] = color
+          else delete state.edgeColors[board]
+        }),
+
       setHolePitch: (mm) =>
         set((state) => {
           const pitch = clampHolePitch(mm)
@@ -673,6 +703,8 @@ export const useDesignStore = create<DesignState>()(
           state.boardNames = project.boardNames ?? {}
           state.grainedBoards = project.grainedBoards ?? []
           state.holePitch = project.holePitch ?? DEFAULT_HOLE_PITCH
+          state.boardColors = project.boardColors ?? {}
+          state.edgeColors = project.edgeColors ?? {}
           state.defaultColor = project.defaultColor ?? null
           state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.room = project.room ?? DEFAULT_ROOM
@@ -693,6 +725,8 @@ export const useDesignStore = create<DesignState>()(
           state.boardNames = project.boardNames ?? {}
           state.grainedBoards = project.grainedBoards ?? []
           state.holePitch = project.holePitch
+          state.boardColors = project.boardColors ?? {}
+          state.edgeColors = project.edgeColors ?? {}
           state.unitDepth = project.unitDepth
           state.defaultColor = project.defaultColor ?? null
           state.room = project.room

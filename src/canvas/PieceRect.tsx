@@ -2,7 +2,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { doorLeaves } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { CLASH, EDGE_FILLS, FILLS } from './colors'
+import { CLASH } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -17,8 +17,8 @@ type PieceRectProps = {
   editable: boolean
   /** Drawn see-through, for a panel that would otherwise hide everything else. */
   hollow: boolean
-  /** A board seen edge-on, drawn darker than a board's face. */
-  edgeOn: boolean
+  /** Its colour: its face, or for a board seen edge-on its edge (see `faceColor`, `edgeOnColor`). */
+  fill: string
   /** Marks a fixed shelf with a screw at each end. */
   screws: boolean
   /** Shows how a door opens: its leaves, and a V pointing at each leaf's hinges. */
@@ -41,7 +41,7 @@ export function PieceRect({
   label,
   editable,
   hollow,
-  edgeOn,
+  fill,
   screws,
   doorMarks,
   clashing,
@@ -70,8 +70,7 @@ export function PieceRect({
         width={piece.width}
         height={piece.height}
         rx={rx}
-        // A part with its own colour is drawn in just that colour.
-        fill={piece.color ?? (edgeOn ? EDGE_FILLS : FILLS)[piece.kind]}
+        fill={fill}
         fillOpacity={hollow ? 0.35 : 1}
         stroke={selected ? '#2563eb' : clashing ? CLASH : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}

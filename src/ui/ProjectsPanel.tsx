@@ -10,6 +10,8 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
   const currentId = useProjectsStore((s) => s.currentId)
   const livePieces = useDesignStore((s) => s.pieces)
   const liveRoom = useDesignStore((s) => s.room)
+  const liveBoardColors = useDesignStore((s) => s.boardColors)
+  const liveEdgeColors = useDesignStore((s) => s.edgeColors)
   const { createProject, openProject, renameProject, duplicateProject, deleteProject } =
     useProjectsStore.getState()
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -52,6 +54,7 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
                 <ProjectThumbnail
                   pieces={isOpen ? livePieces : project.pieces}
                   room={isOpen ? liveRoom : project.room}
+                  colors={isOpen ? { boardColors: liveBoardColors, edgeColors: liveEdgeColors } : project.colors}
                 />
                 <div className="project-info">
                   {renamingId === project.id ? (
