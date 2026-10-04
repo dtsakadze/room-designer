@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
-import { contentBounds } from '../lib/geometry'
+import { type Gap, contentBounds, snapToMiddle } from '../lib/geometry'
 import { WALL_LABELS, activeWalls, hasSideWalls, wallLength, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
@@ -14,6 +14,7 @@ import { hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
+import { MiddleGuides } from './MiddleGuides'
 import { ExportViewMenu } from './ExportViewMenu'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { fileBase } from '../lib/projectFile'
@@ -111,6 +112,8 @@ export function Canvas2D() {
     null,
   )
   const isFront = viewName === 'front'
+  /** The equal gaps either side of a part being dragged while it's snapped to the middle. */
+  const [centred, setCentred] = useState<Gap[] | null>(null)
 
   const allPieces = useDesignStore((s) => s.pieces)
   const showDoors = useSettingsStore((s) => s.showDoors)
@@ -385,10 +388,24 @@ export function Canvas2D() {
       )
       return
     }
-    updatePiece(active.id, {
-      x: snap(active.originX + dx),
-      y: snap(active.originY + dy),
-    })
+    const placed = { x: snap(active.originX + dx), y: snap(active.originY + dy) }
+    const target = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
+    // A loose part snaps to the middle of its space when dragged near it; a
+    // box's panel moves its whole box, so it doesn't.
+    if (!target || target.boxId) {
+      updatePiece(active.id, placed)
+      return
+    }
+    const middle = snapToMiddle({ ...target, ...placed }, shown, obstacles, unit * MIDDLE_SNAP)
+    updatePiece(active.id, { x: middle.x, y: middle.y })
+    // Shown only where the part really ended up centred: an adjustable shelf
+    // then goes to the nearest pin hole, which may not be the middle.
+    const moved = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
+    const centred = [
+      ...(moved && Math.abs(moved.x - middle.x) <= 0.5 ? (middle.centredX ?? []) : []),
+      ...(moved && Math.abs(moved.y - middle.y) <= 0.5 ? (middle.centredY ?? []) : []),
+    ]
+    setCentred(centred.length > 0 ? centred : null)
   }
 
   const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
@@ -415,6 +432,7 @@ export function Canvas2D() {
       setMarquee(null)
     }
     if (active.mode === 'resize' || (active.mode === 'piece' && active.editable)) endBatch()
+    setCentred(null)
     if (active.mode === 'piece' && active.group && !active.moved) {
       // A click (no drag) on part of a multi-selection selects just that part.
       select(active.id)
@@ -678,6 +696,8 @@ export function Canvas2D() {
           unit={unit}
         />
 
+        {centred && <MiddleGuides gaps={centred} unit={unit} />}
+
         {/* How far clothes hang below a selected rod, where you see its length. */}
         {single &&
           selectedShown?.kind === 'rod' &&
@@ -836,4 +856,6 @@ export function Canvas2D() {
 const WALL_FRAME_HEIGHT = 2400
 
 const snap = (mm: number) => Math.round(mm / SNAP) * SNAP
+/** How near the middle of its space a dragged part snaps to it, in screen pixels (times `unit`). */
+const MIDDLE_SNAP = 8
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)

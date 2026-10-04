@@ -117,6 +117,39 @@ export function neighbourGaps(piece: Piece, pieces: Piece[], obstacles: Rect[] =
   ]
 }
 
+/**
+ * Where a part goes when it's dragged near the middle of its space: on each
+ * axis, the space between the nearest neighbours either side (see
+ * `neighbourGaps`; below, the floor counts). When the part is within
+ * `threshold` mm of the middle, it moves there, and `centred` holds the two
+ * now-equal gaps either side, for drawing. Otherwise it stays where it was
+ * put, with nothing centred on that axis.
+ */
+export function snapToMiddle(piece: Piece, pieces: Piece[], obstacles: Rect[], threshold: number) {
+  const gaps = neighbourGaps(piece, pieces, obstacles)
+  const shortest = (list: Gap[]) =>
+    list.reduce<Gap | null>((best, gap) => (!best || gap.to - gap.from < best.to - best.from ? gap : best), null)
+
+  const axis = (name: 'x' | 'y', start: number, end: number) => {
+    const before = shortest(gaps.filter((gap) => gap.axis === name && gap.to === start))
+    const after = shortest(gaps.filter((gap) => gap.axis === name && gap.from === end))
+    if (!before || !after) return { offset: 0, centred: null }
+    const offset = (after.to - after.from - (before.to - before.from)) / 2
+    if (Math.abs(offset) > threshold) return { offset: 0, centred: null }
+    return {
+      offset,
+      centred: [
+        { ...before, to: before.to + offset },
+        { ...after, from: after.from + offset },
+      ],
+    }
+  }
+
+  const x = axis('x', piece.x, piece.x + piece.width)
+  const y = axis('y', piece.y, piece.y + piece.height)
+  return { x: piece.x + x.offset, y: piece.y + y.offset, centredX: x.centred, centredY: y.centred }
+}
+
 type Side = 'up' | 'down' | 'left' | 'right'
 
 function sideGaps(box: Edges, others: Edges[], side: Side): Gap[] {

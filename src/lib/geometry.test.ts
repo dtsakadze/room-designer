@@ -12,6 +12,7 @@ import {
   neighbourGaps,
   normalizePiece,
   pieceSolids,
+  snapToMiddle,
   wallDepthStart,
 } from './geometry'
 import { DEFAULT_ROOM } from './room'
@@ -289,5 +290,37 @@ describe('fitBetweenSides', () => {
     const low = piece('r2', 'vertical', { x: 29, height: 500 })
     expect(fitBetweenSides(shelf, [left, low, shelf])).toBeNull()
     expect(fitBetweenSides(shelf, [left, { ...right, wall: 'left' }, shelf])).toBeNull()
+  })
+})
+
+describe('snapToMiddle', () => {
+  // Sides with an opening from 0 to 1000, a bottom at 0–18 and a top at 1982–2000.
+  const left = piece('l', 'vertical', { x: -18, width: 18, height: 2000 })
+  const right = piece('r', 'vertical', { x: 1000, width: 18, height: 2000 })
+  const others = [left, right]
+
+  it('centres a part dragged near the middle of the space between its neighbours', () => {
+    const divider = piece('d', 'divider', { x: 485, width: 18, y: 100, height: 1000 })
+    const snap = snapToMiddle(divider, [...others, divider], [], 20)
+    // The opening is 1000 wide, so the divider's 18 leaves 491 each side.
+    expect(snap.x).toBe(491)
+    expect(snap.centredX!.map((gap) => gap.to - gap.from)).toEqual([491, 491])
+  })
+
+  it('leaves a part that isn’t near the middle where it was put', () => {
+    const divider = piece('d', 'divider', { x: 300, width: 18, y: 100, height: 1000 })
+    const snap = snapToMiddle(divider, [...others, divider], [], 20)
+    expect(snap).toMatchObject({ x: 300, centredX: null })
+  })
+
+  it('centres up and down between the floor or a shelf below and one above', () => {
+    const top = piece('t', 'shelf', { x: 0, width: 1000, y: 1000 })
+    const shelf = piece('s', 'shelf', { x: 0, width: 1000, y: 495 })
+    const snap = snapToMiddle(shelf, [...others, top, shelf], [], 20)
+    // 1000 between the floor and the upper shelf, less 18: 491 each side.
+    expect(snap.y).toBe(491)
+    expect(snap.centredY!.map((gap) => gap.to - gap.from)).toEqual([491, 491])
+    // Nothing above: no middle to find.
+    expect(snapToMiddle(shelf, [...others, shelf], [], 20).centredY).toBeNull()
   })
 })
