@@ -4,6 +4,7 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Measure: click Measure (or press M), then click two points to see the distance between them, with its horizontal and vertical parts for a slanted line. Points catch on the corners, edge middles and edges of parts, so you measure board to board; hold Alt to place them freely. Esc clears the measurement, and again turns the tool off. Works in every flat view.
 - Snap to the middle: drag a part near the middle of its space (a divider between two sides, a shelf between the floor or a shelf below and one above) and it snaps there exactly, with a dashed line and "=" on the two equal gaps. Keep dragging to place it anywhere else.
 ## 1.6.0 — 2026-10-04
 

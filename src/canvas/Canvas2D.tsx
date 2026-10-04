@@ -10,11 +10,13 @@ import { EditButtons } from '../ui/EditButtons'
 import { ShortcutsPanel } from '../ui/ShortcutsPanel'
 import { useClashes } from '../ui/useClashes'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
-import { hasModifier } from '../ui/shortcuts'
+import { MEASURE_SHORTCUT, hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
 import { MiddleGuides } from './MiddleGuides'
+import { MeasureLayer } from './MeasureLayer'
+import { type Point, type SnapKind, snapPoint } from '../lib/measure'
 import { ExportViewMenu } from './ExportViewMenu'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { fileBase } from '../lib/projectFile'
@@ -114,6 +116,11 @@ export function Canvas2D() {
   const isFront = viewName === 'front'
   /** The equal gaps either side of a part being dragged while it's snapped to the middle. */
   const [centred, setCentred] = useState<Gap[] | null>(null)
+  /** The Measure tool: while it's on, clicks pick points to measure between. */
+  const [measuring, setMeasuring] = useState(false)
+  // Kept with the view it was taken in: points measured in one view mean nothing in another.
+  const [measurement, setMeasurement] = useState<{ view: string; from: Point; to: Point | null } | null>(null)
+  const [measureHover, setMeasureHover] = useState<(Point & { snap: SnapKind }) | null>(null)
 
   const allPieces = useDesignStore((s) => s.pieces)
   const showDoors = useSettingsStore((s) => s.showDoors)
@@ -141,6 +148,8 @@ export function Canvas2D() {
   const holePitch = useDesignStore((s) => s.holePitch)
   const room = useDesignStore((s) => s.room)
   const activeWall = useDesignStore((s) => s.activeWall)
+  const measureView = `${viewName}|${activeWall}`
+  const measured = measurement?.view === measureView ? measurement : null
   const setActiveWall = useDesignStore((s) => s.setActiveWall)
   const clashes = useClashes()
   const { len, unit: lengthUnit } = useUnits()
@@ -194,6 +203,22 @@ export function Canvas2D() {
   const drawn = useMemo(() => drawOrder(shown, viewName), [shown, viewName])
 
   const unit = view.w / 1400
+
+  /** Where a pointer event lands for measuring: caught on a part's corner or edge, unless Alt is held. */
+  const measurePoint = (event: { clientX: number; clientY: number; altKey: boolean }) => {
+    const svg = svgRef.current
+    const inverse = svg && screenToSvgMatrix(svg)
+    if (!inverse) return null
+    const point = svgPoint(inverse, event.clientX, event.clientY)
+    const raw = { x: point.x, y: toDesignY(point.y) }
+    return event.altKey ? { ...raw, snap: null } : snapPoint(raw, shown, unit * MEASURE_SNAP)
+  }
+
+  const toggleMeasuring = () => {
+    setMeasuring((on) => !on)
+    setMeasurement(null)
+    setMeasureHover(null)
+  }
   // What the view shows, in words: "Front", or "Left wall, front" in a room.
   const viewLabel = VIEWS.find((candidate) => candidate.name === viewName)?.label ?? ''
   const viewTitle =
@@ -500,6 +525,26 @@ export function Canvas2D() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [selectMany, viewName, showDoors])
 
+  // M turns the Measure tool on and off; Escape clears a measurement, then turns it off.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      if (event.key.toLowerCase() === 'm' && viewName !== '3d') {
+        event.preventDefault()
+        toggleMeasuring()
+      } else if (event.key === 'Escape' && measuring) {
+        if (document.querySelector('[role="dialog"], [role="menu"]')) return
+        event.preventDefault()
+        if (measured) setMeasurement(null)
+        else toggleMeasuring()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
+
   // Arrow keys nudge the selection; Delete removes it; Escape lets go of it.
   useEffect(() => {
     if (!selectedId) return
@@ -509,6 +554,8 @@ export function Canvas2D() {
       if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
 
       if (event.key === 'Escape') {
+        // The Measure tool takes Escape while it's on.
+        if (measuring) return
         // An open dialog or menu takes Escape for itself, to close.
         if (document.querySelector('[role="dialog"], [role="menu"]')) return
         event.preventDefault()
@@ -561,7 +608,7 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces, select])
+  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces, select, measuring])
 
   /** Hiding doors lets go of any that are selected, so nothing unseen can be deleted or moved. */
   const toggleDoors = () => {
@@ -705,6 +752,40 @@ export function Canvas2D() {
           <HangingGuides rod={selectedShown} pieces={shown} unit={unit} />
         )}
 
+        {measuring && viewName !== '3d' && (
+          <>
+            <MeasureLayer
+              from={measured?.from ?? null}
+              to={measured?.to ?? (measured ? measureHover : null)}
+              hover={measureHover}
+              unit={unit}
+            />
+            {/* On top of everything, so clicks pick points rather than parts; right-drag still pans. */}
+            <rect
+              x={view.x}
+              y={view.y}
+              width={view.w}
+              height={view.h}
+              fill="transparent"
+              style={{ cursor: 'crosshair' }}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return
+                event.stopPropagation()
+                const point = measurePoint(event)
+                if (!point) return
+                const { snap: _snap, ...picked } = point
+                // From the latest state, so quick clicks each count.
+                setMeasurement((current) => {
+                  const open = current?.view === measureView && !current.to ? current : null
+                  return open ? { ...open, to: picked } : { view: measureView, from: picked, to: null }
+                })
+              }}
+              onPointerMove={(event) => setMeasureHover(measurePoint(event))}
+              onPointerLeave={() => setMeasureHover(null)}
+            />
+          </>
+        )}
+
         {marquee && (
           <rect
             x={Math.min(marquee.x1, marquee.x2)}
@@ -764,6 +845,17 @@ export function Canvas2D() {
             title="Doors stay in the cut list while hidden"
           >
             {showDoors ? 'Hide doors' : 'Show doors'}
+          </button>
+        )}
+        {viewName !== '3d' && (
+          <button
+            type="button"
+            className="ghost-button"
+            aria-pressed={measuring}
+            onClick={toggleMeasuring}
+            title={`Measure between two points (${MEASURE_SHORTCUT})`}
+          >
+            Measure <kbd>{MEASURE_SHORTCUT}</kbd>
           </button>
         )}
         {viewName !== '3d' && (
@@ -858,4 +950,6 @@ const WALL_FRAME_HEIGHT = 2400
 const snap = (mm: number) => Math.round(mm / SNAP) * SNAP
 /** How near the middle of its space a dragged part snaps to it, in screen pixels (times `unit`). */
 const MIDDLE_SNAP = 8
+/** How near a part's corner or edge a measured point catches on it, in screen pixels (times `unit`). */
+const MEASURE_SNAP = 10
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)

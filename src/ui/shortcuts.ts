@@ -14,5 +14,6 @@ export const SELECT_ALL_SHORTCUT = IS_MAC ? '⌘A' : 'Ctrl+A'
 export const COPY_SHORTCUT = IS_MAC ? '⌘C' : 'Ctrl+C'
 export const PASTE_SHORTCUT = IS_MAC ? '⌘V' : 'Ctrl+V'
 export const PRINT_SHORTCUT = IS_MAC ? '⌘P' : 'Ctrl+P'
+export const MEASURE_SHORTCUT = 'M'
 /** Held while clicking a part to add it to (or take it out of) the selection. */
 export const MULTI_SELECT_KEY = IS_MAC ? '⌘' : 'Ctrl'
