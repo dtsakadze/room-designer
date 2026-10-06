@@ -289,3 +289,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **Hosted on Cloudflare Workers** (2026-09-26)
 *Decision*: boardcut.app is served by Cloudflare Workers as static files only (`wrangler.jsonc` points at `dist/`, no Worker code), built and deployed by Cloudflare's Git integration with `SITE_URL=https://boardcut.app` set as a build variable. Chosen over GitHub Pages and Vercel.
 *Why*: free with unlimited bandwidth, a custom domain, preview links for branches, and room for a backend (Workers, D1) later on the same host, so the address, and with it people's stored projects, never has to move. Vercel's free plan doesn't allow commercial use.
+
+**Hanging guide heights are a browser setting** (2026-10-07)
+*Decision*: the lengths and names of the hanging guides, and whether they show, are preferences kept in localStorage with the units (`useSettingsStore`), starting from the old fixed 1000 and 1700 mm. Up to six guides.
+*Why*: how long a person's clothes are says more about them than about a design, and it needs no save format change.
+*Instead of*: saving them in each project (a `FORMAT_VERSION` bump; worth it only if designs should carry their own clothes lengths), and the fixed two guides.

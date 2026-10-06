@@ -1,8 +1,7 @@
-import { HANGING_GUIDES } from '../lib/defaults'
 import { clearanceBelow } from '../lib/geometry'
 import type { Piece } from '../types'
 import { CLASH } from './colors'
-import { useUnits } from '../store/useSettingsStore'
+import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { toSvgY } from './view'
 
 const FITS = '#4d7c5a'
@@ -23,15 +22,16 @@ type HangingGuidesProps = {
 export function HangingGuides({ rod, pieces, unit }: HangingGuidesProps) {
   const clearance = clearanceBelow(rod, pieces)
   const { len } = useUnits()
+  const guides = useSettingsStore((s) => s.hangingGuides)
 
   return (
     <g style={{ pointerEvents: 'none', userSelect: 'none' }}>
-      {HANGING_GUIDES.map(({ label, length }) => {
+      {guides.map(({ label, length }, index) => {
         const fits = clearance >= length
         const color = fits ? FITS : CLASH
         const y = toSvgY(rod.y - length, 0)
         return (
-          <g key={label}>
+          <g key={index}>
             <line
               x1={rod.x}
               y1={y}

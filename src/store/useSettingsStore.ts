@@ -1,8 +1,11 @@
 import { create } from 'zustand'
+import { HANGING_GUIDES, type HangingGuide, MAX_HANGING_GUIDES } from '../lib/defaults'
 import { type Unit, formatLength, formatNumber, isUnit } from '../lib/units'
 
 const UNIT_KEY = 'room-designer:unit'
 const SHOW_DOORS_KEY = 'room-designer:show-doors'
+const SHOW_GUIDES_KEY = 'room-designer:show-hanging-guides'
+const GUIDES_KEY = 'room-designer:hanging-guides'
 
 /**
  * Preferences of the person using the app, not of a project: kept in
@@ -14,6 +17,12 @@ type SettingsState = {
   /** Doors drawn in every view; off to get at the inside of the unit. */
   showDoors: boolean
   setShowDoors: (show: boolean) => void
+  /** Dashed lines under a selected hanging rod; off to keep the drawing clear. */
+  showHangingGuides: boolean
+  setShowHangingGuides: (show: boolean) => void
+  /** How far each kind of clothes hangs below the rod, in mm. */
+  hangingGuides: HangingGuide[]
+  setHangingGuides: (guides: HangingGuide[]) => void
 }
 
 function storedUnit(): Unit {
@@ -29,6 +38,29 @@ function storedUnit(): Unit {
 function storedShowDoors() {
   try {
     return localStorage.getItem(SHOW_DOORS_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
+/** Whatever isn't a usable list of guides is replaced by the standard two. */
+function storedGuides(): HangingGuide[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(GUIDES_KEY) ?? 'null')
+    if (!Array.isArray(parsed) || parsed.length > MAX_HANGING_GUIDES) return HANGING_GUIDES
+    const guides = parsed.filter(
+      (g): g is HangingGuide =>
+        typeof g?.label === 'string' && Number.isFinite(g.length) && g.length > 0,
+    )
+    return guides.length === parsed.length ? guides : HANGING_GUIDES
+  } catch {
+    return HANGING_GUIDES
+  }
+}
+
+function storedShowGuides() {
+  try {
+    return localStorage.getItem(SHOW_GUIDES_KEY) !== 'false'
   } catch {
     return true
   }
@@ -52,6 +84,24 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
       // Still applies for this visit.
     }
     set({ showDoors })
+  },
+  showHangingGuides: storedShowGuides(),
+  setShowHangingGuides: (showHangingGuides) => {
+    try {
+      localStorage.setItem(SHOW_GUIDES_KEY, String(showHangingGuides))
+    } catch {
+      // Still applies for this visit.
+    }
+    set({ showHangingGuides })
+  },
+  hangingGuides: storedGuides(),
+  setHangingGuides: (hangingGuides) => {
+    try {
+      localStorage.setItem(GUIDES_KEY, JSON.stringify(hangingGuides))
+    } catch {
+      // Still applies for this visit.
+    }
+    set({ hangingGuides })
   },
 }))
 

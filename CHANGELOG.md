@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Hanging guides are adjustable: under Settings → Hanging guides, change how far each line hangs below a rod, rename it, add or remove lines, or untick Show to hide them.
+
 ## 1.7.0 — 2026-10-04
 
 - The up and down arrow keys step the number in any size or position field: 1 mm at a time (0.01 in inches), or ten times that with Shift.

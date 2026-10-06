@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { BoardSettings } from './BoardSettings'
 import { CollapsibleSection } from './CollapsibleSection'
+import { HangingGuideSettings } from './HangingGuideSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PartsList } from './PartsList'
 import { ProjectFileButtons } from './ProjectFileButtons'
@@ -109,6 +110,7 @@ export function Sidebar() {
         </CollapsibleSection>
         <CollapsibleSection id="settings" title="Settings">
           <BoardSettings />
+          <HangingGuideSettings />
         </CollapsibleSection>
         <CollapsibleSection id="file" title="File">
           <ProjectFileButtons onPrint={() => setShowPrint(true)} />

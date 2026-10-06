@@ -125,6 +125,7 @@ export function Canvas2D() {
 
   const allPieces = useDesignStore((s) => s.pieces)
   const showDoors = useSettingsStore((s) => s.showDoors)
+  const showHangingGuides = useSettingsStore((s) => s.showHangingGuides)
   const setShowDoors = useSettingsStore((s) => s.setShowDoors)
   const hasDoors = allPieces.some((piece) => piece.kind === 'door')
   // With doors hidden they're gone from every view and can't be clicked, so
@@ -754,7 +755,8 @@ export function Canvas2D() {
         {centred && <MiddleGuides gaps={centred} unit={unit} />}
 
         {/* How far clothes hang below a selected rod, where you see its length. */}
-        {single &&
+        {showHangingGuides &&
+          single &&
           selectedShown?.kind === 'rod' &&
           (viewName === 'front' || viewName === 'back') && (
           <HangingGuides rod={selectedShown} pieces={shown} unit={unit} />

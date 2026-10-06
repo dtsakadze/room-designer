@@ -74,7 +74,13 @@ export const FRONT_GAP = 1.5
 export const DRAWER_BOX_CLEARANCE = 30
 
 /** Room clothes need below a hanging rod, measured down from the rod. */
-export const HANGING_GUIDES = [
+export type HangingGuide = { label: string; length: number }
+
+export const MAX_HANGING_GUIDES = 6
+export const MAX_GUIDE_LABEL = 30
+
+/** The guides a browser starts with; they can be changed in Settings. */
+export const HANGING_GUIDES: HangingGuide[] = [
   { label: 'Shirts, jackets', length: 1000 },
   { label: 'Coats, dresses', length: 1700 },
 ]
