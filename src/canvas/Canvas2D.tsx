@@ -23,6 +23,7 @@ import { useProjectsStore } from '../store/useProjectsStore'
 import { fileBase } from '../lib/projectFile'
 import { UNITS } from '../lib/units'
 import { isAdjustable } from '../lib/shelfPins'
+import { CeilingLine } from './CeilingLine'
 import { GridLayer } from './GridLayer'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
@@ -706,6 +707,14 @@ export function Canvas2D() {
         <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />
         {inRoom && (
           <RoomWallsFront room={room} wall={activeWall} view={view} unit={unit} />
+        )}
+        {room.height !== undefined && isFront && (
+          <CeilingLine
+            height={room.height}
+            top={wallPieces.length ? Math.max(...wallPieces.map((p) => p.y + p.height)) : null}
+            view={view}
+            unit={unit}
+          />
         )}
         {multiWall && viewName === 'top' && <RoomWallsPlan room={room} unit={unit} />}
         {drawn.map((piece) => (

@@ -762,3 +762,24 @@ describe('sliding doors', () => {
     expect(store().pieces[0]).not.toHaveProperty('sliding')
   })
 })
+
+describe('ceiling and trim', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('sets and clears the ceiling height, as undoable steps', () => {
+    store().setRoom({ height: 2400 })
+    expect(store().room.height).toBe(2400)
+    store().setRoom({ height: 2400 })
+    expect(store().past).toHaveLength(1)
+    store().setRoom({ height: undefined })
+    expect(store().room).not.toHaveProperty('height')
+  })
+
+  it('puts a new cornice on top of the unit, as wide as it', () => {
+    store().addBox()
+    const box = store().boxes[0]
+    store().addPiece('cornice')
+    const cornice = store().pieces.find((piece) => piece.kind === 'cornice')!
+    expect(cornice).toMatchObject({ x: box.x, y: box.y + box.height, width: box.width })
+  })
+})

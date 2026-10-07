@@ -304,6 +304,12 @@ export const useDesignStore = create<DesignState>()(
           // so a new piece never lands hidden behind one that is already there.
           const bounds = wallBounds(state)
           if (bounds) piece.x = bounds.maxX + PLACEMENT_GAP
+          // A cornice goes on top of what's there, as wide as it.
+          if (kind === 'cornice' && bounds && !options?.width) {
+            piece.x = bounds.minX
+            piece.y = bounds.maxY
+            piece.width = bounds.maxX - bounds.minX
+          }
           if (state.defaultColor) piece.color = state.defaultColor
           state.pieces.push(onHoles(state, normalizePiece(piece, state.thickness)))
           state.selectedId = piece.id
@@ -660,6 +666,8 @@ export const useDesignStore = create<DesignState>()(
             right: !!merged.right,
             width: clampRoomSize(merged.width),
             depth: clampRoomSize(merged.depth),
+            // Not set (no ceiling) is stored as no value.
+            ...(merged.height ? { height: clampRoomSize(merged.height) } : {}),
           }
           if (JSON.stringify(next) === JSON.stringify(state.room)) return
           record(state)

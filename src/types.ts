@@ -9,6 +9,8 @@ export type PieceKind =
   | 'plinth'
   | 'rail'
   | 'door'
+  | 'filler'
+  | 'cornice'
 
 /**
  * One board, seen head-on. Everything lives in a single 2D world measured in
@@ -162,4 +164,6 @@ export type Room = {
   width: number
   /** Along the side walls, from the back wall out. */
   depth: number
+  /** Floor to ceiling, inside, in mm. Absent means it isn't set. */
+  height?: number
 }

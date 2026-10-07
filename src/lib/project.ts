@@ -24,7 +24,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 9
+export const FORMAT_VERSION = 10
 
 type Raw = Record<string, unknown>
 
@@ -90,6 +90,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // changes; the bump makes an older app refuse such a save rather than show
   // the set as one hinged door and save it back that way.
   8: (data) => ({ ...data, formatVersion: 9 }),
+  // v10 adds trim: `filler` and `cornice` part kinds, and the room's optional
+  // ceiling `height`. Absent, there's no ceiling and no trim, as before, so
+  // only the version changes; the bump makes an older app refuse such a save
+  // rather than drop the trim and the ceiling.
+  9: (data) => ({ ...data, formatVersion: 10 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -291,6 +296,7 @@ function validate(data: Raw): ProjectData | null {
     right: storedRoom.right === true || used.has('right'),
     width: clampRoomSize(positive(storedRoom.width) ?? DEFAULT_ROOM.width),
     depth: clampRoomSize(positive(storedRoom.depth) ?? DEFAULT_ROOM.depth),
+    ...(positive(storedRoom.height) ? { height: clampRoomSize(positive(storedRoom.height)!) } : {}),
   }
 
   return {

@@ -98,6 +98,21 @@ describe('readProject', () => {
     })
   })
 
+  it('keeps the trim and the ceiling in the v10 sample', () => {
+    const result = readProject(fixture('v10-trim'))
+    if (!result.ok) throw new Error("v10-trim didn't open")
+    expect(result.project.room.height).toBe(2400)
+    const trim = result.project.pieces.filter((piece) => piece.kind === 'cornice' || piece.kind === 'filler')
+    expect(trim.map((piece) => piece.kind)).toEqual(['cornice', 'filler'])
+    expect(trim.every((piece) => piece.depth === result.project.thickness.front)).toBe(true)
+  })
+
+  it('opens a save with no ceiling height as one without a ceiling', () => {
+    const result = readProject(fixture('v8-colors'))
+    if (!result.ok) throw new Error("v8-colors didn't open")
+    expect(result.project.room).not.toHaveProperty('height')
+  })
+
   it('keeps each drawer’s runner type', () => {
     const result = readProject(fixture('v4-drawers'))
     if (!result.ok) throw new Error("v4-drawers didn't open")
@@ -327,7 +342,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

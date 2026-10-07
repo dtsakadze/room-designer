@@ -47,6 +47,7 @@ export const CUT_LIST_SECTIONS = [
   { id: 'panels', title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth', 'rail'] },
   { id: 'shelves', title: 'Shelves and dividers', kinds: ['shelf', 'divider'] },
   { id: 'doors', title: 'Doors', kinds: ['door'] },
+  { id: 'trim', title: 'Trim and fillers', kinds: ['cornice', 'filler'] },
 ] as const satisfies readonly { id: string; title: string; kinds: readonly PieceKind[] }[]
 
 /** A drawer's boards in the order it's put together. */

@@ -60,6 +60,10 @@ export function autoBands(piece: Pick<Piece, 'kind' | 'railAt'>): Edge[] {
       return piece.railAt === 'back' ? [] : ['front']
     case 'door':
       return ['top', 'bottom', 'left', 'right']
+    // The edges that show: a cornice's top is against the ceiling, and a
+    // filler is cut to the wall on site, so it gets none by default.
+    case 'cornice':
+      return ['bottom', 'left', 'right']
     default:
       return []
   }
@@ -78,7 +82,9 @@ export function autoGrain(kind: PieceKind): Dimension | null {
     case 'divider':
     case 'back':
     case 'door':
+    case 'filler':
       return 'height'
+    case 'cornice':
     case 'horizontal':
     case 'shelf':
     case 'plinth':

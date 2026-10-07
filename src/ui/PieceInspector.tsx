@@ -94,6 +94,7 @@ export function PieceInspector() {
       )}
 
       {piece.kind === 'door' && <DoorOptions piece={piece} />}
+      {(piece.kind === 'filler' || piece.kind === 'cornice') && <TrimOptions piece={piece} />}
       {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
       <FinishFields piece={piece} />
 
@@ -193,6 +194,47 @@ function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; on
             : piece.kind === 'drawer' && piece.overlay
               ? 'Sets the width and X so the front covers both sides.'
               : 'Sets the width and X to fill the gap between the sides.'}
+      </p>
+    </>
+  )
+}
+
+/**
+ * A filler strip or cornice and the ceiling: how far its top is below it, and
+ * a button to close the gap (a filler grows up to it, a cornice moves up
+ * until it touches).
+ */
+function TrimOptions({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const ceiling = useDesignStore((s) => s.room.height)
+  const { len } = useUnits()
+  const noun = piece.kind === 'filler' ? 'filler strip' : 'cornice'
+  if (ceiling === undefined) {
+    return (
+      <p className="hint">
+        {`Size the ${noun} to the gap it closes. Switch on the ceiling in Sidebar → Room to see how far it is from the ceiling.`}
+      </p>
+    )
+  }
+  const gap = ceiling - (piece.y + piece.height)
+  return (
+    <>
+      <button
+        type="button"
+        className="ghost-button"
+        disabled={gap === 0}
+        onClick={() =>
+          updatePiece(piece.id, piece.kind === 'filler' ? { height: ceiling - piece.y } : { y: ceiling - piece.height })
+        }
+      >
+        Up to the ceiling
+      </button>
+      <p className="hint">
+        {gap === 0
+          ? 'Its top touches the ceiling.'
+          : gap > 0
+            ? `Its top is ${len(gap)} below the ceiling. ${piece.kind === 'filler' ? 'Makes it taller to reach' : 'Moves it up to touch'} the ceiling.`
+            : `Its top is ${len(-gap)} above the ceiling. ${piece.kind === 'filler' ? 'Makes it shorter to fit' : 'Moves it down to touch'} below it.`}
       </p>
     </>
   )

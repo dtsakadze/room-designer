@@ -14,6 +14,8 @@ export const FILLS: Record<PieceKind, string> = {
   plinth: '#cdbb91',
   rail: '#d8c9a3',
   door: '#cdb68c',
+  filler: '#cdb68c',
+  cornice: '#cdb68c',
 }
 
 export const SELECTED = '#2563eb'

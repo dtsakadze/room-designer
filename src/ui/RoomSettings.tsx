@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LAYOUT_LABELS, type Layout, WALL_LABELS, layoutOf, wallOf } from '../lib/room'
+import { DEFAULT_CEILING_HEIGHT, LAYOUT_LABELS, type Layout, WALL_LABELS, layoutOf, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import type { Room, SideWall, Wall } from '../types'
 import { NumberField } from './NumberField'
@@ -104,6 +104,30 @@ export function RoomSettings() {
               </button>
             </div>
           </div>
+        )}
+
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={room.height !== undefined}
+            onChange={(event) =>
+              setRoom({ height: event.target.checked ? DEFAULT_CEILING_HEIGHT : undefined })
+            }
+          />
+          Show the ceiling
+        </label>
+        {room.height !== undefined && (
+          <>
+            <NumberField
+              label="Ceiling height"
+              value={room.height}
+              onChange={(height) => setRoom({ height })}
+            />
+            <p className="hint">
+              Floor to ceiling, inside. A dashed line marks it in the front view, with the gap above
+              the highest part. Select a filler strip or cornice to make it reach the ceiling.
+            </p>
+          </>
         )}
 
         {layout === 'one' ? (

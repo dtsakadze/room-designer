@@ -51,6 +51,10 @@ export const RAIL_DEPTH = 100
 export const DOOR_OPEN_ANGLE = 110
 /** Hinges sold by how far they open: standard, then wide-angle ones. */
 export const DOOR_ANGLES = [DOOR_OPEN_ANGLE, 155, 170]
+/** Starting sizes of the trim boards, in mm. */
+export const FILLER_WIDTH = 50
+export const CORNICE_HEIGHT = 80
+
 /** Panels in a set of sliding doors, fewest first; two is the default. */
 export const SLIDING_PANELS = [2, 3, 4]
 /** How far neighbouring sliding panels overlap, so there's no gap to see through. */
@@ -112,6 +116,8 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
   plinth: 'Plinth',
   rail: 'Rail',
   door: 'Door',
+  filler: 'Filler strip',
+  cornice: 'Cornice',
 }
 
 /**
@@ -129,6 +135,7 @@ export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth', 'rail'] },
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
   { title: 'Fronts', kinds: ['door'] },
+  { title: 'Trim', kinds: ['cornice', 'filler'] },
 ]
 
 /**
@@ -147,6 +154,9 @@ export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Th
   rail: { axis: 'height', board: 'body' },
   // Faces forward, in front of the unit (overlay) or inside its opening (inset).
   door: { axis: 'depth', board: 'front' },
+  // Trim boards face forward like a door, cut from the front board.
+  filler: { axis: 'depth', board: 'front' },
+  cornice: { axis: 'depth', board: 'front' },
 }
 
 /**
@@ -183,6 +193,11 @@ function dimensions(
     // Half the default unit: one of a pair of single doors, or resized to fit.
     case 'door':
       return { width: UNIT_WIDTH / 2, height: 2000, depth: 0 }
+    // A narrow strip beside the unit, cut to the gap to the wall on site.
+    case 'filler':
+      return { width: FILLER_WIDTH, height: 2000, depth: 0 }
+    case 'cornice':
+      return { width: UNIT_WIDTH, height: CORNICE_HEIGHT, depth: 0 }
   }
 }
 
