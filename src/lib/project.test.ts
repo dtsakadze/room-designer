@@ -107,6 +107,21 @@ describe('readProject', () => {
     expect(trim.every((piece) => piece.depth === result.project.thickness.front)).toBe(true)
   })
 
+  it('keeps the front-to-back positions in the v11 sample', () => {
+    const result = readProject(fixture('v11-depth'))
+    if (!result.ok) throw new Error("v11-depth didn't open")
+    const { pieces, boxes } = result.project
+    expect(boxes[0].z).toBe(40)
+    expect(pieces.find((piece) => piece.id === 'filler-1')?.z).toBe(100)
+    // The box's panels follow the box: its back panel at z, the rest in front of it.
+    expect(pieces.find((piece) => piece.id === `${boxes[0].id}:back`)?.z).toBe(40)
+    expect(pieces.find((piece) => piece.id === `${boxes[0].id}:left`)?.z).toBe(40 + result.project.thickness.back)
+    // Older saves have none.
+    const old = readProject(fixture('v10-trim'))
+    if (!old.ok) throw new Error("v10-trim didn't open")
+    expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
+  })
+
   it('opens a save with no ceiling height as one without a ceiling', () => {
     const result = readProject(fixture('v8-colors'))
     if (!result.ok) throw new Error("v8-colors didn't open")
@@ -342,7 +357,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

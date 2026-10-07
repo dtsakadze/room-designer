@@ -122,6 +122,12 @@ export type Piece = {
   grain?: Dimension
   /** Hex colour (`#rrggbb`). Absent means the project's default colour. */
   color?: string
+  /**
+   * Where the part starts front to back: mm from its wall to its back face.
+   * Absent means automatic (see `depthStart`): against the back panel, or in
+   * front of the unit for doors, drawer fronts, the plinth and trim.
+   */
+  z?: number
   /** Set on the panels a `Box` generates. They're rebuilt from the box, not edited alone. */
   boxId?: string
   /** The wall the part stands against. Absent means the back wall. */
@@ -145,6 +151,8 @@ export type Box = {
   joint: 'between' | 'on'
   /** The wall the box stands against; its panels share it. Absent means the back wall. */
   wall?: SideWall
+  /** Where its back panel starts front to back, in mm from the wall; its panels all move with it. Absent means automatic. */
+  z?: number
 }
 
 /** The walls of a room a unit can stand against, as seen from inside the room. */

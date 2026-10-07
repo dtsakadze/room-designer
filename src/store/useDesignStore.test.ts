@@ -783,3 +783,25 @@ describe('ceiling and trim', () => {
     expect(cornice).toMatchObject({ x: box.x, y: box.y + box.height, width: box.width })
   })
 })
+
+describe('front-to-back position', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('is set with updatePiece, and reset to automatic with undefined', () => {
+    store().addPiece('shelf')
+    const id = store().pieces[0].id
+    store().updatePiece(id, { z: 120 })
+    expect(store().pieces[0].z).toBe(120)
+    store().updatePiece(id, { z: undefined })
+    expect(store().pieces[0]).not.toHaveProperty('z')
+  })
+
+  it('moves a whole box with its z', () => {
+    store().addBox()
+    const id = store().boxes[0].id
+    store().updateBox(id, { z: 60 })
+    expect(store().pieces.filter((p) => p.boxId === id).every((p) => p.z !== undefined)).toBe(true)
+    store().updateBox(id, { z: undefined })
+    expect(store().pieces.some((p) => 'z' in p)).toBe(false)
+  })
+})

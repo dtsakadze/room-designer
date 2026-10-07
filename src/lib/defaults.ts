@@ -55,6 +55,9 @@ export const DOOR_ANGLES = [DOOR_OPEN_ANGLE, 155, 170]
 export const FILLER_WIDTH = 50
 export const CORNICE_HEIGHT = 80
 
+/** Space between the two lanes sliding door panels run in, so they don't rub. */
+export const SLIDING_LANE_GAP = 6
+
 /** Panels in a set of sliding doors, fewest first; two is the default. */
 export const SLIDING_PANELS = [2, 3, 4]
 /** How far neighbouring sliding panels overlap, so there's no gap to see through. */

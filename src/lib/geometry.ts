@@ -6,6 +6,7 @@ import {
   DOOR_OPEN_ANGLE,
   MAX_SLIDING_OVERLAP,
   PLINTH_RECESS,
+  SLIDING_LANE_GAP,
   SLIDING_OVERLAP,
   SLIDING_PANELS,
   SLIDING_TRACK_HEIGHT,
@@ -68,6 +69,9 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'drawer' || (piece.close !== 'soft' && piece.close !== 'push')) {
     delete normalized.close
   }
+  // Automatic front-to-back placement is stored as no value.
+  if (typeof piece.z === 'number' && Number.isFinite(piece.z)) normalized.z = Math.max(0, round(piece.z))
+  else delete normalized.z
   if (!piece.boxId) delete normalized.boxId
   // The back wall (the default) is stored as no value.
   if (!isSideWall(piece.wall)) delete normalized.wall
@@ -236,10 +240,10 @@ const overlaps = (a: Edges, b: Edges) =>
   a.left < b.right && a.right > b.left && a.bottom < b.top && a.top > b.bottom
 
 /**
- * Where each piece starts, front to back, in mm from the wall (z = 0). Pieces
- * don't store this yet, so everything sits flush against the back: the back
- * panel takes the first `thickness.back` mm, and the rest start in front of it.
- * The exceptions: the plinth sits at the front, set back a little, a rail
+ * Where each piece starts, front to back, in mm from the wall (z = 0): its own
+ * `z` when it has one. Otherwise everything sits flush against the back: the
+ * back panel takes the first `thickness.back` mm, and the rest start in front
+ * of it. The exceptions: the plinth sits at the front, set back a little, a rail
  * runs along the front unless it's marked as a back rail, trim sits flush
  * with the front edge, a door stands in
  * front of the unit (overlay) or just inside its front edge (inset), and so
@@ -248,13 +252,15 @@ const overlaps = (a: Edges, b: Edges) =>
 export function depthStart(pieces: Piece[], thickness: Thickness) {
   const hasBack = pieces.some((piece) => piece.kind === 'back')
   const behind = (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
+  // A part given its own front-to-back position goes there; the rest are automatic.
   const front = Math.max(
     0,
     ...pieces
       .filter((piece) => !['plinth', 'rail', 'door', 'drawer', 'filler', 'cornice'].includes(piece.kind))
-      .map((piece) => behind(piece) + piece.depth),
+      .map((piece) => (piece.z ?? behind(piece)) + piece.depth),
   )
   return (piece: Piece) => {
+    if (piece.z !== undefined) return piece.z
     if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
     // Trim sits flush with the front edges of the unit, like an inset door.
@@ -292,13 +298,19 @@ const CLASH_TOLERANCE = 0.5
 /**
  * The solid boxes a piece is made of in the room, given where it starts front
  * to back: a drawer's boards (its space is mostly empty, and an overlay front
- * reaches over the unit's edges), a double door's two leaves, or the piece
- * itself.
+ * reaches over the unit's edges), a double door's two leaves, sliding door
+ * panels each in their lane, or the piece itself.
  */
 export function pieceSolids(piece: Piece, z: number, thickness: Thickness, room: Room): RoomBox[] {
   if (piece.kind === 'drawer') {
     return drawerParts(piece, thickness).map((part) =>
       roomBox({ ...piece, ...part }, z + part.z, room),
+    )
+  }
+  if (piece.kind === 'door' && piece.sliding) {
+    // Each panel in its lane: the front lane stands one lane spacing ahead of the back one.
+    return slidingPanels({ ...piece, sliding: piece.sliding }).map((panel) =>
+      roomBox(panel, z + (panel.lane === 0 ? slidingLaneSpacing(piece) : 0), room),
     )
   }
   const box = roomBox(piece, z, room)
@@ -403,6 +415,19 @@ export function slidingPanels<T extends { x: number; y: number; width: number; h
     lane: index % 2,
   }))
 }
+
+/**
+ * How far apart a set of sliding doors' two lanes are, front to back: a
+ * panel's thickness and a small gap, so the panels slide past each other.
+ */
+export const slidingLaneSpacing = (piece: Pick<Piece, 'depth'>) => piece.depth + SLIDING_LANE_GAP
+
+/**
+ * How deep a part is from where it starts, front to back: its depth, or for a
+ * set of sliding doors both lanes (the back lane starts where the set does).
+ */
+export const depthSpan = (piece: Piece) =>
+  piece.kind === 'door' && piece.sliding ? piece.depth + slidingLaneSpacing(piece) : piece.depth
 
 /** Parts that run across a unit, from one side to the other, and can be fitted between its sides. */
 export const FITS_BETWEEN_SIDES: readonly PieceKind[] = ['shelf', 'horizontal', 'plinth', 'rail', 'drawer', 'rod']

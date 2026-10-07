@@ -1,5 +1,5 @@
 import { BOARD } from '../lib/defaults'
-import { type Rect, depthStart, wallDepthStart } from '../lib/geometry'
+import { type Rect, depthSpan, depthStart, wallDepthStart } from '../lib/geometry'
 import { adjacentWalls, fromWall, roomBox, wallLength, wallOf } from '../lib/room'
 import type { Piece, Room, Thickness, Wall } from '../types'
 
@@ -31,13 +31,13 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
     case 'left':
       return [...pieces]
         .sort((a, b) => b.x - a.x)
-        .map((piece) => ({ ...piece, x: zStart(piece), width: piece.depth }))
+        .map((piece) => ({ ...piece, x: zStart(piece), width: depthSpan(piece) }))
     // The mirror of that: the wall on the right, and pieces further right are
     // nearer. Where parts overlap, the two sides can show different things.
     case 'right':
       return [...pieces]
         .sort((a, b) => a.x + a.width - (b.x + b.width))
-        .map((piece) => ({ ...piece, x: -(zStart(piece) + piece.depth), width: piece.depth }))
+        .map((piece) => ({ ...piece, x: -(zStart(piece) + depthSpan(piece)), width: depthSpan(piece) }))
     // A plan: the wall along the top (y = 0), the unit's front towards the
     // bottom. Higher pieces are nearer, so they draw last.
     case 'top':
@@ -45,8 +45,8 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
         .sort((a, b) => a.y + a.height - (b.y + b.height))
         .map((piece) => ({
           ...piece,
-          y: -(zStart(piece) + piece.depth),
-          height: piece.depth,
+          y: -(zStart(piece) + depthSpan(piece)),
+          height: depthSpan(piece),
         }))
     // From behind, so left and right swap. The back panel is nearest.
     case 'back':
@@ -68,7 +68,7 @@ export function roomPlan(pieces: Piece[], thickness: Thickness, room: Room): Pie
   return [...pieces]
     .sort((a, b) => a.y + a.height - (b.y + b.height))
     .map((piece) => {
-      const { min, max } = roomBox(piece, zStart(piece), room)
+      const { min, max } = roomBox({ ...piece, depth: depthSpan(piece) }, zStart(piece), room)
       return { ...piece, x: min[0], width: max[0] - min[0], y: -max[2], height: max[2] - min[2] }
     })
 }

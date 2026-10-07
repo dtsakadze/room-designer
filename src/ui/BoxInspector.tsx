@@ -6,6 +6,7 @@ import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
+import { ZField } from './ZField'
 import { wallOf } from '../lib/room'
 import { pieceLabel } from '../lib/defaults'
 
@@ -98,6 +99,12 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
         label="Y (off floor)"
         value={box.y}
         onChange={(y) => updateBox(box.id, { y })}
+      />
+      <ZField
+        value={box.z ?? 0}
+        custom={box.z !== undefined}
+        onChange={(z) => updateBox(box.id, { z })}
+        onReset={() => updateBox(box.id, { z: undefined })}
       />
 
       <div className="button-row">

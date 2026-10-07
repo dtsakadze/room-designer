@@ -4,6 +4,9 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Front-to-back position: every part and box has a Z field in the Selected panel (how far its back face is from the wall). It's automatic until you type a number, and Reset to automatic goes back. The side, top and 3D views and the clash check use it, so you can set a shelf back from the front or pull a door forward. A box's Z moves its sides, top, bottom and back together; parts inside it keep their own.
+- Sliding doors now show their two lanes in the side, top and 3D views: the front panels stand in front of the back ones, and overlapping panels no longer count as a clash.
+
 - Cornice and filler strips: Add → Trim has a Cornice (a board across the top front, placed on top of your unit and as wide as it) and a Filler strip (a narrow board to close the gap to a wall). Size and move them like any part; they're listed in the cut list under Trim and fillers.
 - Ceiling height: switch on Show the ceiling in the Room section to draw a dashed ceiling line in the front view, with how far it is above the highest part (in red if the unit is too tall). Select a filler strip or cornice and click Up to the ceiling to make it reach.
 

@@ -123,3 +123,19 @@ describe('rebuilding a box', () => {
     expect(rebuilt.left).not.toHaveProperty('bands')
   })
 })
+
+describe('box z', () => {
+  const box = { id: 'b', x: 0, y: 0, width: 600, height: 1000, depth: 500, joint: 'between' as const }
+
+  it('places every panel when set: the back panel at z, the rest in front of it', () => {
+    const panels = boxPanels({ ...box, z: 40 }, DEFAULT_THICKNESS)
+    expect(panels.find((p) => p.kind === 'back')?.z).toBe(40)
+    expect(panels.filter((p) => p.kind !== 'back').every((p) => p.z === 40 + DEFAULT_THICKNESS.back)).toBe(true)
+    expect(boxPanels(box, DEFAULT_THICKNESS).some((p) => 'z' in p)).toBe(false)
+  })
+
+  it('keeps z whole and not below the wall, and drops it when absent', () => {
+    expect(normalizeBox({ ...box, z: -3 }, DEFAULT_THICKNESS).z).toBe(0)
+    expect(normalizeBox({ ...box, z: undefined }, DEFAULT_THICKNESS)).not.toHaveProperty('z')
+  })
+})

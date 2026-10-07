@@ -3,7 +3,15 @@ import type { Piece } from '../types'
 import { DEFAULT_THICKNESS } from './defaults'
 import { cutList } from './cutList'
 import { autoBands, autoGrain } from './edges'
-import { depthStart, findClashes, normalizePiece } from './geometry'
+import { DEFAULT_ROOM } from './room'
+import {
+  depthSpan,
+  depthStart,
+  findClashes,
+  normalizePiece,
+  pieceSolids,
+  slidingLaneSpacing,
+} from './geometry'
 
 const thickness = DEFAULT_THICKNESS
 const piece = (id: string, kind: Piece['kind'], rect: Partial<Piece>): Piece =>
@@ -44,5 +52,50 @@ describe('trim', () => {
     expect(autoBands({ kind: 'filler' })).toEqual([])
     expect(autoGrain('filler')).toBe('height')
     expect(autoGrain('cornice')).toBe('width')
+  })
+})
+
+describe('front-to-back position (z)', () => {
+  const shelf = (z?: number) => piece('s', 'shelf', { x: -282, y: 400, width: 564, depth: 400, ...(z === undefined ? {} : { z }) })
+
+  it('puts a part where it says, and leaves the rest automatic', () => {
+    const zStart = depthStart([...unit, shelf(120)], thickness)
+    expect(zStart(shelf(120))).toBe(120)
+    expect(depthStart([...unit, shelf()], thickness)(shelf())).toBe(thickness.back)
+  })
+
+  it('keeps it a whole number, not below the wall, and drops it when absent', () => {
+    expect(piece('a', 'shelf', { z: 12.6 }).z).toBe(13)
+    expect(piece('b', 'shelf', { z: -5 }).z).toBe(0)
+    expect(piece('c', 'shelf', { z: undefined })).not.toHaveProperty('z')
+  })
+
+  it('moves the front of the unit, so doors follow a box moved forward', () => {
+    const forward = unit.map((p) => ({ ...p, z: (p.z ?? (p.kind === 'back' ? 0 : thickness.back)) + 50 }))
+    const door = piece('d', 'door', { x: -300, width: 600, height: 1000 })
+    expect(depthStart([...forward, door], thickness)(door)).toBe(550)
+  })
+
+  it('clashes only where the parts really meet front to back', () => {
+    const a = piece('a', 'shelf', { x: 0, y: 500, width: 300, depth: 100, z: 0 })
+    const b = piece('b', 'shelf', { x: 100, y: 500, width: 300, depth: 100, z: 200 })
+    expect(findClashes([a, b], thickness).size).toBe(0)
+    expect(findClashes([a, { ...b, z: 50 }], thickness).size).toBe(2)
+  })
+})
+
+describe('sliding door lanes', () => {
+  const set = piece('s', 'door', { x: -300, width: 600, height: 1000, sliding: 2 })
+
+  it('stand in two lanes front to back, so overlapping panels do not clash', () => {
+    expect(findClashes([...unit, set], thickness).size).toBe(0)
+    const spacing = slidingLaneSpacing(set)
+    const zs = pieceSolids(set, 500, thickness, DEFAULT_ROOM).map((box) => box.min[2])
+    expect(zs).toEqual([500 + spacing, 500])
+  })
+
+  it('count both lanes in the side and top views', () => {
+    expect(depthSpan(set)).toBe(set.depth + slidingLaneSpacing(set))
+    expect(depthSpan(piece('d', 'door', { sliding: undefined }))).toBe(thickness.front)
   })
 })

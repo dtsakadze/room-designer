@@ -24,7 +24,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 10
+export const FORMAT_VERSION = 11
 
 type Raw = Record<string, unknown>
 
@@ -95,6 +95,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // only the version changes; the bump makes an older app refuse such a save
   // rather than drop the trim and the ceiling.
   9: (data) => ({ ...data, formatVersion: 10 }),
+  // v11 adds each part's and box's optional front-to-back position `z`.
+  // Absent, it's placed automatically as before, so only the version changes;
+  // the bump makes an older app refuse such a save rather than put the part
+  // back against the back panel and save it that way.
+  10: (data) => ({ ...data, formatVersion: 11 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -264,7 +269,8 @@ function validate(data: Raw): ProjectData | null {
       grain: isDimension(raw.grain) ? raw.grain : undefined,
     }
     const handle = { noHandle: raw.noHandle === true }
-    const extras = { ...handle, fixed: raw.fixed === true, railAt, boxId, color, wall, ...door, ...drawer, ...finish }
+    const z = typeof raw.z === 'number' ? raw.z : undefined
+    const extras = { ...handle, fixed: raw.fixed === true, railAt, boxId, color, wall, z, ...door, ...drawer, ...finish }
     return [normalizePiece({ ...piece, ...extras }, thickness)]
   })
 
@@ -283,6 +289,7 @@ function validate(data: Raw): ProjectData | null {
       depth: raw.depth as number,
       joint: raw.joint === 'on' ? ('on' as const) : ('between' as const),
       ...(isSideWall(raw.wall) ? { wall: raw.wall } : {}),
+      ...(typeof raw.z === 'number' ? { z: raw.z } : {}),
     }
     return [normalizeBox(box, thickness)]
   })

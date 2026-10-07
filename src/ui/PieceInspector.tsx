@@ -24,7 +24,8 @@ import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
 import { WALL_LABELS, wallOf } from '../lib/room'
-import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels } from '../lib/geometry'
+import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels, wallDepthStart } from '../lib/geometry'
+import { ZField } from './ZField'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -36,6 +37,7 @@ export function PieceInspector() {
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
   const boardColors = useDesignStore((s) => s.boardColors)
   const fitPiece = useDesignStore((s) => s.fitBetweenSides)
+  const thickness = useDesignStore((s) => s.thickness)
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
@@ -126,7 +128,7 @@ export function PieceInspector() {
               />
             )
           })}
-          <p className="hint">Depth is recorded for later, but not drawn in this view.</p>
+          <p className="hint">Depth isn't drawn in this view; see the side, top and 3D views.</p>
           {board && (
             <p className="hint">Thickness is set for the whole project under Boards.</p>
           )}
@@ -149,6 +151,12 @@ export function PieceInspector() {
         label="Y (off floor)"
         value={piece.y}
         onChange={(y) => updatePiece(piece.id, { y })}
+      />
+      <ZField
+        value={wallDepthStart(pieces, thickness)(piece)}
+        custom={piece.z !== undefined}
+        onChange={(z) => updatePiece(piece.id, { z })}
+        onReset={() => updatePiece(piece.id, { z: undefined })}
       />
 
       <div className="button-row">
@@ -406,7 +414,7 @@ function SlidingOptions({ piece }: { piece: Piece }) {
       <p className="hint">
         Width and height are the whole set, tracks included. Each panel is {len(panels[0].width)} wide
         and {len(panels[0].height)} high (the {len(SLIDING_TRACK_HEIGHT)} tracks top and bottom take
-        the rest). The cut list has the panels and the two tracks.
+        the rest). The cut list has the panels and the two tracks. Z is where the back lane starts; the front lane is one panel thickness and a small gap in front of it.
       </p>
       <HandleField piece={piece} />
     </>

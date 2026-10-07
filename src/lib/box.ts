@@ -24,9 +24,14 @@ export function boxPanels(box: Box, thickness: Thickness): Piece[] {
   const flatX = between ? box.x + t : box.x
   const flatWidth = between ? box.width - 2 * t : box.width
 
+  // With a position of its own the box places every panel, back panel first
+  // and the rest in front of it; without one they're all automatic.
+  const startOf = (role: string) =>
+    box.z === undefined ? undefined : role === 'back' ? box.z : box.z + thickness.back
+
   const panel = (role: string, piece: Omit<Piece, 'id' | 'boxId'>): Piece =>
     normalizePiece(
-      { ...piece, id: `${box.id}:${role}`, boxId: box.id, wall: box.wall },
+      { ...piece, id: `${box.id}:${role}`, boxId: box.id, wall: box.wall, z: startOf(role) },
       thickness,
     )
 
@@ -77,7 +82,7 @@ export function boxPanels(box: Box, thickness: Thickness): Piece[] {
 /** Keeps a box big enough to hold its own boards, in whole mm, above the floor. */
 export function normalizeBox(box: Box, thickness: Thickness): Box {
   const min = 2 * thickness.body + 1
-  const { wall, ...rest } = box
+  const { wall, z, ...rest } = box
   return {
     ...rest,
     x: Math.round(box.x),
@@ -88,6 +93,8 @@ export function normalizeBox(box: Box, thickness: Thickness): Box {
     joint: box.joint === 'on' ? 'on' : 'between',
     // The back wall (the default) is stored as no value.
     ...(isSideWall(wall) ? { wall } : {}),
+    // Automatic is stored as no value.
+    ...(typeof z === 'number' && Number.isFinite(z) ? { z: Math.max(0, Math.round(z)) } : {}),
   }
 }
 
