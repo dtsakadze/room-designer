@@ -294,3 +294,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 *Decision*: the lengths and names of the hanging guides, and whether they show, are preferences kept in localStorage with the units (`useSettingsStore`), starting from the old fixed 1000 and 1700 mm. Up to six guides.
 *Why*: how long a person's clothes are says more about them than about a design, and it needs no save format change.
 *Instead of*: saving them in each project (a `FORMAT_VERSION` bump; worth it only if designs should carry their own clothes lengths), and the fixed two guides.
+
+**Sliding doors are a door with a panel count** (2026-10-08)
+*Decision*: a set of sliding doors is one `door` piece with optional `sliding` (2 to 4 panels) and `overlap` (default 50 mm). `width` and `height` are the whole set, tracks included; the panels (alternating front and back lane, drawn overlapping) and the 30 mm top and bottom tracks are worked out from them, like a double door's leaves. The tracks are hardware (cut to the set's width), not pieces. Sliding doors have no hinges or swing. This needed a save format bump (v9), as v4, v7 and v8 did for optional fields, so an older app refuses such a save instead of showing one hinged door.
+*Why*: it reuses everything a door already has (cut list, banding, grain, handles, placing, undo) and adds no new part kind.
+*Instead of*: a box-like group that owns its panels and tracks as pieces (more to keep in sync for little gain), and giving pieces a front-to-back position now, which is the proper way to show the lanes in the side and 3D views and is left for later: the set is one slab there.

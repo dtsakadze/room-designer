@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { findClashes } from '../lib/geometry'
 import { toProjectData } from '../lib/project'
-import { DEFAULT_THICKNESS } from '../lib/defaults'
+import { DEFAULT_THICKNESS, slidingDoorDefaults } from '../lib/defaults'
 import { wallOf } from '../lib/room'
 import { useDesignStore } from './useDesignStore'
 
@@ -747,5 +747,18 @@ describe('opening another design', () => {
     store().addPiece('shelf')
     store().loadProject(emptyProject())
     expect(store()).toMatchObject({ activeWall: 'back', selectedId: null, selectedIds: [] })
+  })
+})
+
+describe('sliding doors', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('are added as a door with two panels, centred, and can go back to hinged', () => {
+    store().addPiece('door', slidingDoorDefaults(DEFAULT_THICKNESS))
+    const door = store().pieces[0]
+    expect(door).toMatchObject({ kind: 'door', sliding: 2 })
+    expect(door.x).toBe(-door.width / 2)
+    store().updatePiece(door.id, { sliding: undefined })
+    expect(store().pieces[0]).not.toHaveProperty('sliding')
   })
 })

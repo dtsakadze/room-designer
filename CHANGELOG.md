@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Sliding doors: click Sliding doors under Add → Fronts to add a set of 2 to 4 panels in tracks along the top and bottom. Pick the number of panels and how far they overlap in the Selected panel; the front view draws the tracks and the overlapping panels. The cut list has the panels, and the two tracks (cut to the set's width) under Hardware. A hinged door can be switched to sliding and back there too.
+
 - Hanging guides are adjustable: under Settings → Hanging guides, change how far each line hangs below a rod, rename it, add or remove lines, or untick Show to hide them.
 
 ## 1.7.0 — 2026-10-04

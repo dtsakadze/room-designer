@@ -24,7 +24,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 8
+export const FORMAT_VERSION = 9
 
 type Raw = Record<string, unknown>
 
@@ -85,6 +85,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // board's, as before, so only the version changes; the bump makes an older
   // app refuse such a save rather than drop the colours.
   7: (data) => ({ ...data, formatVersion: 8 }),
+  // v9 adds sliding doors: a door's optional `sliding` (its panel count) and
+  // `overlap`. Absent, a door is hinged as before, so only the version
+  // changes; the bump makes an older app refuse such a save rather than show
+  // the set as one hinged door and save it back that way.
+  8: (data) => ({ ...data, formatVersion: 9 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -239,6 +244,9 @@ function validate(data: Raw): ProjectData | null {
       // Checked against the angles hinges come in by `normalizePiece`.
       openAngle: typeof raw.openAngle === 'number' ? raw.openAngle : undefined,
       softClose: raw.softClose === true,
+      // Checked against the panel counts and overlaps allowed by `normalizePiece`.
+      sliding: typeof raw.sliding === 'number' ? raw.sliding : undefined,
+      overlap: typeof raw.overlap === 'number' ? raw.overlap : undefined,
     }
     const drawer = {
       extension: raw.extension === 'full' ? ('full' as const) : undefined,

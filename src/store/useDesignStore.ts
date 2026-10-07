@@ -64,7 +64,8 @@ type DesignState = {
   /** While a batch is open, all changes undo as one step (see `beginBatch`). */
   batch: { open: boolean; recorded: boolean }
 
-  addPiece: (kind: PieceKind) => void
+  /** Adds a part; `options` overrides its starting values (e.g. sliding doors, a door with `sliding`). */
+  addPiece: (kind: PieceKind, options?: Partial<Piece>) => void
   addBox: () => void
   /** Resizes, moves or changes a box; its panels are rebuilt to match. */
   updateBox: (id: string, patch: Partial<Omit<Box, 'id'>>) => void
@@ -288,11 +289,15 @@ export const useDesignStore = create<DesignState>()(
       future: [],
       batch: { open: false, recorded: false },
 
-      addPiece: (kind) =>
+      addPiece: (kind, options) =>
         set((state) => {
           record(state)
+          const base = createPiece(kind, nextId(), state.thickness, state.unitDepth)
           const piece: Piece = {
-            ...createPiece(kind, nextId(), state.thickness, state.unitDepth),
+            ...base,
+            ...options,
+            // Centred on x = 0 like any new part, whatever width the options gave it.
+            x: -(options?.width ?? base.width) / 2,
             ...onActiveWall(state),
           }
           // Drop it on the floor to the right of everything else on this wall,

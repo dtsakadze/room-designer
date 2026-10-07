@@ -76,9 +76,9 @@ export const hasHandle = (piece: Piece) =>
   !piece.noHandle &&
   !(piece.kind === 'drawer' && piece.close === 'push')
 
-/** Handles or knobs to buy: one per door leaf (two for a double door) and per drawer that has one. */
+/** Handles or knobs to buy: one per door leaf (two for a double door, one per panel for sliding ones) and per drawer that has one. */
 export function handleCount(pieces: Piece[]) {
   return pieces
     .filter(hasHandle)
-    .reduce((sum, piece) => sum + (piece.kind === 'door' && piece.double ? 2 : 1), 0)
+    .reduce((sum, piece) => sum + (piece.kind === 'door' ? (piece.sliding ?? (piece.double ? 2 : 1)) : 1), 0)
 }

@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece } from '../types'
-import { DEFAULT_THICKNESS, DOOR_LEAF_GAP } from './defaults'
-import { cutList } from './cutList'
-import { depthStart, findClashes, neighbourGaps, normalizePiece } from './geometry'
+import {
+  DEFAULT_THICKNESS,
+  DOOR_LEAF_GAP,
+  SLIDING_OVERLAP,
+  SLIDING_TRACK_HEIGHT,
+  pieceLabel,
+} from './defaults'
+import { cutList, describeHardware, hardwareList } from './cutList'
+import { handleCount } from './fixings'
+import { depthStart, findClashes, neighbourGaps, normalizePiece, slidingPanels } from './geometry'
+import { doorHinges } from './hinges'
 
 const thickness = DEFAULT_THICKNESS
 const piece = (id: string, kind: Piece['kind'], rect: Partial<Piece>): Piece =>
@@ -65,5 +73,58 @@ describe('doors', () => {
         bands: { length: 2, width: 2 },
       },
     ])
+  })
+})
+
+describe('sliding doors', () => {
+  const sliding = (rect: Partial<Piece> = {}) =>
+    piece('s', 'door', { x: -600, width: 1200, height: 2000, sliding: 2, ...rect })
+
+  it('keep only the options that apply, and a valid panel count and overlap', () => {
+    const door = sliding({ double: true, inset: true, softClose: true, hinge: 'right', openAngle: 170 })
+    expect(door.sliding).toBe(2)
+    for (const key of ['double', 'inset', 'softClose', 'hinge', 'openAngle'] as const) {
+      expect(door).not.toHaveProperty(key)
+    }
+    expect(sliding({ sliding: 7 })).not.toHaveProperty('sliding')
+    expect(sliding({ overlap: SLIDING_OVERLAP })).not.toHaveProperty('overlap')
+    expect(sliding({ overlap: 80 }).overlap).toBe(80)
+    expect(sliding({ overlap: 5000 }).overlap).toBe(200)
+    expect(piece('d', 'shelf', { sliding: 2, overlap: 80 })).not.toHaveProperty('sliding')
+  })
+
+  it('split the set into overlapping panels in alternating lanes, between the tracks', () => {
+    const panels = slidingPanels({ ...sliding(), sliding: 2 })
+    // Two panels covering 1200 with 50 shared: (1200 + 50) / 2 each.
+    expect(panels.map((p) => [p.x, p.width, p.lane])).toEqual([
+      [-600, 625, 0],
+      [-25, 625, 1],
+    ])
+    expect(panels[0].y).toBe(SLIDING_TRACK_HEIGHT)
+    expect(panels[0].height).toBe(2000 - 2 * SLIDING_TRACK_HEIGHT)
+    const three = slidingPanels({ ...sliding({ sliding: 3 }), sliding: 3 })
+    expect(three.map((p) => p.lane)).toEqual([0, 1, 0])
+    expect(three.at(-1)!.x + three.at(-1)!.width).toBe(600)
+  })
+
+  it('are cut as one row of panels, and need a top and a bottom track', () => {
+    const door = sliding({ sliding: 3 })
+    const [row] = cutList([door], thickness)[0].rows
+    expect(row).toMatchObject({ label: 'Sliding door panel', quantity: 3, length: 1940 })
+    const hardware = hardwareList([door], thickness)
+    expect(hardware.filter((r) => r.item === 'track')).toEqual([
+      { item: 'track', position: 'bottom', length: 1200, quantity: 1 },
+      { item: 'track', position: 'top', length: 1200, quantity: 1 },
+    ])
+    expect(describeHardware(hardware.find((r) => r.item === 'track')!, (mm) => `${mm}`).name).toBe(
+      'Sliding door track, bottom, 1200',
+    )
+  })
+
+  it('have no hinges, and a handle per panel', () => {
+    expect(doorHinges([sliding()], thickness)).toEqual([])
+    expect(hardwareList([sliding()], thickness).some((r) => r.item === 'hinges')).toBe(false)
+    expect(handleCount([sliding({ sliding: 3 })])).toBe(3)
+    expect(pieceLabel(sliding())).toBe('Sliding doors')
   })
 })

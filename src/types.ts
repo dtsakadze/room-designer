@@ -81,6 +81,14 @@ export type Piece = {
   openAngle?: number
   /** Doors only: hinges that close the door gently. Absent means ordinary ones. */
   softClose?: boolean
+  /**
+   * Doors only: a set of sliding doors, this many panels (2 to 4) running in
+   * tracks along the top and bottom, instead of a hinged door. `width` and
+   * `height` are the whole set, tracks included. Absent means hinged.
+   */
+  sliding?: number
+  /** Sliding doors only: how far neighbouring panels overlap, in mm. Absent means the standard overlap. */
+  overlap?: number
   /** Doors and drawers only: has no handle or knob. Absent means it has one. */
   noHandle?: boolean
   /**

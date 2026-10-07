@@ -51,6 +51,13 @@ export const RAIL_DEPTH = 100
 export const DOOR_OPEN_ANGLE = 110
 /** Hinges sold by how far they open: standard, then wide-angle ones. */
 export const DOOR_ANGLES = [DOOR_OPEN_ANGLE, 155, 170]
+/** Panels in a set of sliding doors, fewest first; two is the default. */
+export const SLIDING_PANELS = [2, 3, 4]
+/** How far neighbouring sliding panels overlap, so there's no gap to see through. */
+export const SLIDING_OVERLAP = 50
+export const MAX_SLIDING_OVERLAP = 200
+/** Height of the top and bottom track; the panels fit between them. */
+export const SLIDING_TRACK_HEIGHT = 30
 /** The gap between the two leaves of a double door, so they don't rub. */
 export const DOOR_LEAF_GAP = 3
 /**
@@ -111,10 +118,10 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
  * A piece's name: tells fixed shelves from adjustable ones, front rails from
  * back, single doors from double.
  */
-export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double'>) {
+export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double' | 'sliding'>) {
   if (piece.kind === 'shelf') return piece.fixed ? 'Fixed shelf' : 'Adjustable shelf'
   if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
-  if (piece.kind === 'door') return piece.double ? 'Double door' : 'Door'
+  if (piece.kind === 'door') return piece.sliding ? 'Sliding doors' : piece.double ? 'Double door' : 'Door'
   return PIECE_LABELS[piece.kind]
 }
 
@@ -177,6 +184,11 @@ function dimensions(
     case 'door':
       return { width: UNIT_WIDTH / 2, height: 2000, depth: 0 }
   }
+}
+
+/** Starting values for a set of sliding doors: two panels filling a unit's width. */
+export function slidingDoorDefaults(thickness: Thickness): Partial<Piece> {
+  return { sliding: SLIDING_PANELS[0], width: UNIT_WIDTH - 2 * thickness.body }
 }
 
 /** A fresh piece, centred on x = 0 and sitting on the floor. */

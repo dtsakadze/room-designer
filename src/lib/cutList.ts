@@ -2,7 +2,7 @@ import type { BoardKey, Dimension, Edge, Piece, PieceKind, Thickness } from '../
 import { BOARD, BOARDS, CLOSE_LABELS, EXTENSION_LABELS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
-import { doorLeaves } from './geometry'
+import { doorLeaves, slidingPanels } from './geometry'
 import { backFixings, carcassScrews, handleCount } from './fixings'
 import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
@@ -194,6 +194,13 @@ function boardsOf(piece: Piece, thickness: Thickness): Board[] {
     grain: grainOf(piece)!,
     order: kindOrder(piece.kind),
   }
+  if (piece.kind === 'door' && piece.sliding) {
+    return slidingPanels({ ...piece, sliding: piece.sliding }).map((panel) => ({
+      ...kind,
+      label: 'Sliding door panel',
+      size: panel,
+    }))
+  }
   if (piece.kind === 'door' && piece.double) {
     // One row per leaf, so "2 × Double door" can't read as two pairs.
     return doorLeaves(piece, true).map((leaf) => ({ ...kind, label: 'Double door leaf', size: leaf }))
@@ -240,6 +247,7 @@ export type HardwareRow =
   | { item: 'hinges'; fit: HingeFit; angle: number; softClose: boolean; quantity: number }
   | { item: 'rod'; diameter: number; length: number; quantity: number }
   | { item: 'rod-supports'; diameter: number; quantity: number }
+  | { item: 'track'; position: 'top' | 'bottom'; length: number; quantity: number }
   | { item: 'shelf-pins'; quantity: number }
   | { item: 'shelf-screws'; quantity: number }
   | { item: 'carcass-screws'; quantity: number }
@@ -266,7 +274,7 @@ const SUPPORTS_PER_ROD = 2
  * fixed one, the screws joining the carcass and fixing its backs (see
  * `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
  * too shallow for any runner are left out; the drawer's panel says so.
- * Runners come first, then hinges, rods and their supports, shelf pins and
+ * Runners come first, then hinges, rods and their supports, sliding door tracks (top and bottom, cut to the set's width), shelf pins and
  * screws, carcass fixings, then handles.
  */
 export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow[] {
@@ -293,6 +301,10 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
         length,
         quantity: 1,
       })
+    } else if (piece.kind === 'door' && piece.sliding) {
+      // A track along the top and one along the bottom, as wide as the set.
+      add({ item: 'track', position: 'top', length: piece.width, quantity: 1 })
+      add({ item: 'track', position: 'bottom', length: piece.width, quantity: 1 })
     } else if (piece.kind === 'rod') {
       // A rod's height is its diameter and its width its length.
       add({ item: 'rod', diameter: piece.height, length: piece.width, quantity: 1 })
@@ -316,11 +328,12 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     hinges: 1,
     rod: 2,
     'rod-supports': 3,
-    'shelf-pins': 4,
-    'shelf-screws': 5,
-    'carcass-screws': 6,
-    'back-fixings': 7,
-    handles: 8,
+    track: 4,
+    'shelf-pins': 5,
+    'shelf-screws': 6,
+    'carcass-screws': 7,
+    'back-fixings': 8,
+    handles: 9,
   }
   return [...rows.values()].sort(
     (a, b) =>
@@ -334,6 +347,7 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
           a.angle - b.angle ||
           Number(a.softClose) - Number(b.softClose)
         : 0) ||
+      ('position' in a && 'position' in b ? a.position.localeCompare(b.position) : 0) ||
       ('diameter' in a && 'diameter' in b ? a.diameter - b.diameter : 0) ||
       ('length' in a && 'length' in b ? b.length - a.length : 0),
   )
@@ -363,6 +377,8 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
     case 'rod-supports':
       return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
+    case 'track':
+      return { name: `Sliding door track, ${row.position}, ${len(row.length)}`, count: `${row.quantity}`, ...each }
     case 'shelf-pins':
       return { name: 'Shelf pins', count: `${row.quantity}`, ...each }
     case 'shelf-screws':

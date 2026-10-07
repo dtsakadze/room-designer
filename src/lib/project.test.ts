@@ -77,6 +77,27 @@ describe('readProject', () => {
     expect(doors[1]).toMatchObject({ hinge: 'right', inset: true, wall: 'left' })
   })
 
+  it('keeps sliding doors, and opens a save without them as before', () => {
+    const save = fixture('v4-doors') as RawSave
+    save.pieces.find((piece) => piece.kind === 'door')!.sliding = 3
+    save.pieces.find((piece) => piece.kind === 'door')!.overlap = 80
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the save didn't open")
+    const [door, other] = result.project.pieces.filter((piece) => piece.kind === 'door')
+    expect(door).toMatchObject({ sliding: 3, overlap: 80 })
+    expect(door).not.toHaveProperty('double')
+    expect(other).not.toHaveProperty('sliding')
+  })
+
+  it('keeps the sliding doors in the v9 sample', () => {
+    const result = readProject(fixture('v9-sliding'))
+    if (!result.ok) throw new Error("v9-sliding didn't open")
+    expect(result.project.pieces.find((piece) => piece.id === 'sliding-doors')).toMatchObject({
+      sliding: 3,
+      overlap: 80,
+    })
+  })
+
   it('keeps each drawer’s runner type', () => {
     const result = readProject(fixture('v4-drawers'))
     if (!result.ok) throw new Error("v4-drawers didn't open")
@@ -306,7 +327,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

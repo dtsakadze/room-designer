@@ -1,6 +1,7 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
-import { doorLeaves } from '../lib/geometry'
+import { SLIDING_TRACK_HEIGHT } from '../lib/defaults'
+import { doorLeaves, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
 import { CLASH } from './colors'
 import { toSvgY } from './view'
@@ -137,6 +138,7 @@ export function PieceRect({
  * hinges. A double door opens in the middle, each leaf hinged on its outer side.
  */
 function DoorMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+  if (piece.sliding) return <SlidingMarks piece={piece} y={y} unit={unit} />
   const leaves = doorLeaves(piece, piece.double)
   const mid = y + piece.height / 2
   const bottom = y + piece.height
@@ -162,6 +164,34 @@ function DoorMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }
           </g>
         )
       })}
+    </g>
+  )
+}
+
+/**
+ * A set of sliding doors: the two tracks, and each panel outlined where it
+ * runs. Panels in the front lane are drawn over the ones behind.
+ */
+function SlidingMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+  const panels = slidingPanels({ ...piece, sliding: piece.sliding! })
+  // Back lane first, so the front panels cover the edges of the ones behind.
+  const ordered = [...panels].sort((a, b) => b.lane - a.lane)
+  return (
+    <g style={{ pointerEvents: 'none' }} stroke="#6f6450" strokeWidth={unit}>
+      {[y, y + piece.height - SLIDING_TRACK_HEIGHT].map((trackY) => (
+        <rect key={trackY} x={piece.x} y={trackY} width={piece.width} height={SLIDING_TRACK_HEIGHT} fill="#8a8068" />
+      ))}
+      {ordered.map((panel) => (
+        <rect
+          key={panel.x}
+          x={panel.x}
+          y={y + SLIDING_TRACK_HEIGHT}
+          width={panel.width}
+          height={panel.height}
+          fill="#e8dcb8"
+          fillOpacity={panel.lane === 0 ? 0.85 : 0.6}
+        />
+      ))}
     </g>
   )
 }

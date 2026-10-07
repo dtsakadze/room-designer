@@ -51,7 +51,7 @@ type HingedEdge = { door: Piece; x: number; side: 'left' | 'right' }
  * than a body board apart); otherwise full overlay.
  */
 export function doorHinges(pieces: Piece[], thickness: Thickness): LeafHinges[] {
-  const doors = pieces.filter((piece) => piece.kind === 'door')
+  const doors = pieces.filter((piece) => piece.kind === 'door' && !piece.sliding)
   const edges: HingedEdge[] = doors.flatMap((door) =>
     doorLeaves(door, door.double).map((leaf, index) => {
       const side = door.double ? (index === 0 ? 'left' : 'right') : (door.hinge ?? 'left')

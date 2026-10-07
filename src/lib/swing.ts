@@ -49,7 +49,7 @@ function planPoint(wall: Wall, along: number, out: number, room: Room): PlanPoin
 export function doorSwings(pieces: Piece[], thickness: Thickness, room: Room): DoorSwing[] {
   const zStart = wallDepthStart(pieces, thickness)
   return pieces
-    .filter((piece) => piece.kind === 'door')
+    .filter((piece) => piece.kind === 'door' && !piece.sliding)
     .flatMap((door) => {
       const wall = wallOf(door)
       const face = zStart(door) + door.depth

@@ -5,6 +5,9 @@ import {
   DOOR_OPEN_ANGLE,
   EXTENSION_LABELS,
   RUNNER_LENGTHS,
+  SLIDING_OVERLAP,
+  SLIDING_PANELS,
+  SLIDING_TRACK_HEIGHT,
   pieceLabel,
 } from '../lib/defaults'
 import { HINGE_FIT_LABELS, doorHinges } from '../lib/hinges'
@@ -21,7 +24,7 @@ import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
 import { WALL_LABELS, wallOf } from '../lib/room'
-import { FITS_BETWEEN_SIDES, fitBetweenSides } from '../lib/geometry'
+import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels } from '../lib/geometry'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -206,11 +209,23 @@ const DIMENSIONS = [
  * and its hinges: how far they open and whether they're soft-close.
  */
 function DoorOptions({ piece }: { piece: Piece }) {
+  return piece.sliding ? <SlidingOptions piece={piece} /> : <HingedOptions piece={piece} />
+}
+
+function HingedOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
   const hinges = doorHinges(pieces, thickness).filter((leaf) => leaf.doorId === piece.id)
   const choices: { label: string; value: string; options: [string, string, DoorPatch][] }[] = [
+    {
+      label: 'Type',
+      value: 'hinged',
+      options: [
+        ['hinged', 'Hinged', {}],
+        ['sliding', 'Sliding', { sliding: SLIDING_PANELS[0], double: false }],
+      ],
+    },
     {
       label: 'Door',
       value: piece.double ? 'double' : 'single',
@@ -297,6 +312,65 @@ function DoorOptions({ piece }: { piece: Piece }) {
   )
 }
 
+/**
+ * A set of sliding doors: how many panels, and how far they overlap. The
+ * panels run in tracks along the top and bottom, which are part of the set's
+ * size, so there is no swing, hinge or fit to choose.
+ */
+function SlidingOptions({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const panels = slidingPanels({ ...piece, sliding: piece.sliding! })
+  const { len } = useUnits()
+
+  return (
+    <>
+      <div className="field">
+        <span className="field-label">Type</span>
+        <span className="unit-switch" role="radiogroup" aria-label="Type">
+          {['Hinged', 'Sliding'].map((text) => (
+            <button
+              key={text}
+              type="button"
+              role="radio"
+              aria-checked={text === 'Sliding'}
+              onClick={() => text === 'Hinged' && updatePiece(piece.id, { sliding: undefined })}
+            >
+              {text}
+            </button>
+          ))}
+        </span>
+      </div>
+      <div className="field">
+        <span className="field-label">Panels</span>
+        <span className="unit-switch" role="radiogroup" aria-label="Panels">
+          {SLIDING_PANELS.map((count) => (
+            <button
+              key={count}
+              type="button"
+              role="radio"
+              aria-checked={piece.sliding === count}
+              onClick={() => updatePiece(piece.id, { sliding: count })}
+            >
+              {count}
+            </button>
+          ))}
+        </span>
+      </div>
+      <NumberField
+        label="Overlap"
+        value={piece.overlap ?? SLIDING_OVERLAP}
+        onChange={(overlap) => updatePiece(piece.id, { overlap })}
+      />
+      <p className="hint">
+        Width and height are the whole set, tracks included. Each panel is {len(panels[0].width)} wide
+        and {len(panels[0].height)} high (the {len(SLIDING_TRACK_HEIGHT)} tracks top and bottom take
+        the rest). The cut list has the panels and the two tracks.
+      </p>
+      <HandleField piece={piece} />
+    </>
+  )
+}
+
 /** What the door runs into as it opens to 110°, if anything (only in a room with side walls). */
 function SwingWarning({ door }: { door: Piece }) {
   const pieces = useDesignStore((s) => s.pieces)
@@ -337,7 +411,7 @@ function HandleField({ piece }: { piece: Piece }) {
   )
 }
 
-type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle'>
+type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle' | 'sliding' | 'overlap'>
 
 /** "4 cup hinges, full overlay", or per leaf when a double door's leaves differ. */
 function hingeText(leaves: ReturnType<typeof doorHinges>) {

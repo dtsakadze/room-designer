@@ -1,10 +1,11 @@
-import { PIECE_GROUPS, PIECE_LABELS } from '../lib/defaults'
+import { PIECE_GROUPS, PIECE_LABELS, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
 
 export function ComponentPalette() {
   const addPiece = useDesignStore((s) => s.addPiece)
   const addBox = useDesignStore((s) => s.addBox)
+  const thickness = useDesignStore((s) => s.thickness)
   const defaultColor = useDesignStore((s) => s.defaultColor)
   const setDefaultColor = useDesignStore((s) => s.setDefaultColor)
 
@@ -44,6 +45,16 @@ export function ComponentPalette() {
                 {PIECE_LABELS[kind]}
               </button>
             ))}
+            {/* Sliding doors are a door with a panel count, so they sit with the other fronts. */}
+            {group.kinds.includes('door') && (
+              <button
+                type="button"
+                className="add-button"
+                onClick={() => addPiece('door', slidingDoorDefaults(thickness))}
+              >
+                Sliding doors
+              </button>
+            )}
           </div>
         </section>
       ))}

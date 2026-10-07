@@ -1,5 +1,15 @@
 import type { Piece, PieceKind, Room, Thickness, Wall } from '../types'
-import { BOARD, DOOR_ANGLES, DOOR_LEAF_GAP, DOOR_OPEN_ANGLE, PLINTH_RECESS } from './defaults'
+import {
+  BOARD,
+  DOOR_ANGLES,
+  DOOR_LEAF_GAP,
+  DOOR_OPEN_ANGLE,
+  MAX_SLIDING_OVERLAP,
+  PLINTH_RECESS,
+  SLIDING_OVERLAP,
+  SLIDING_PANELS,
+  SLIDING_TRACK_HEIGHT,
+} from './defaults'
 import { drawerParts } from './drawer'
 import { autoBands, autoGrain, boardEdges, faceDimensions } from './edges'
 import { DEFAULT_ROOM, type RoomBox, isSideWall, roomBox, wallOf } from './room'
@@ -27,17 +37,30 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
   // Door options, each stored only when it isn't the default (single, hinged
   // on the left, overlay). A double door is hinged on both sides.
+  // Sliding doors are a set of panels, not leaves on hinges: none of the hinge options apply.
+  const sliding = piece.kind === 'door' && SLIDING_PANELS.includes(piece.sliding!)
+  if (!sliding) {
+    delete normalized.sliding
+    delete normalized.overlap
+  } else {
+    delete normalized.double
+    delete normalized.inset
+    delete normalized.softClose
+    const overlap = Math.min(MAX_SLIDING_OVERLAP, Math.max(0, round(piece.overlap ?? SLIDING_OVERLAP)))
+    if (overlap === SLIDING_OVERLAP) delete normalized.overlap
+    else normalized.overlap = overlap
+  }
   if (piece.kind !== 'door' || !piece.double) delete normalized.double
   if (piece.kind !== 'door' || piece.double || piece.hinge !== 'right') delete normalized.hinge
   if (piece.kind !== 'door' || !piece.inset) delete normalized.inset
   if (
-    piece.kind !== 'door' ||
+    piece.kind !== 'door' || sliding ||
     piece.openAngle === DOOR_OPEN_ANGLE ||
     !DOOR_ANGLES.includes(piece.openAngle!)
   ) {
     delete normalized.openAngle
   }
-  if (piece.kind !== 'door' || !piece.softClose) delete normalized.softClose
+  if (piece.kind !== 'door' || sliding || !piece.softClose) delete normalized.softClose
   if ((piece.kind !== 'door' && piece.kind !== 'drawer') || !piece.noHandle) delete normalized.noHandle
   // Standard runners are the default, stored as no value.
   if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
@@ -354,6 +377,28 @@ export function doorLeaves<T extends { x: number; width: number }>(
     { ...piece, width },
     { ...piece, x: piece.x + piece.width - width, width },
   ]
+}
+
+/**
+ * The panels of a set of sliding doors, left to right: each as wide as the
+ * set less what its neighbours overlap, in alternating lanes (`lane` 0 is
+ * the front one), shorter than the set by the tracks they run in. Works on
+ * any rectangle that spans the set, like `doorLeaves`.
+ */
+export function slidingPanels<T extends { x: number; y: number; width: number; height: number }>(
+  piece: T & { sliding: number; overlap?: number },
+): (T & { lane: number })[] {
+  const count = piece.sliding
+  const overlap = piece.overlap ?? SLIDING_OVERLAP
+  const width = Math.max(1, (piece.width + overlap * (count - 1)) / count)
+  return Array.from({ length: count }, (_, index) => ({
+    ...piece,
+    x: piece.x + index * (width - overlap),
+    y: piece.y + SLIDING_TRACK_HEIGHT,
+    width,
+    height: Math.max(1, piece.height - 2 * SLIDING_TRACK_HEIGHT),
+    lane: index % 2,
+  }))
 }
 
 /** Parts that run across a unit, from one side to the other, and can be fitted between its sides. */
