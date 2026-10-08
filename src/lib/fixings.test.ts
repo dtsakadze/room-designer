@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Box, Piece, PieceKind } from '../types'
 import { boxPanels } from './box'
 import { DEFAULT_THICKNESS } from './defaults'
-import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware } from './fixings'
+import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware, tippingUnits, antiTipBrackets } from './fixings'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -96,5 +96,35 @@ describe('joint hardware', () => {
     for (const joints of ['screws', 'confirmat', 'cam'] as const) {
       expect(jointHardware([], joints).every((row) => row.quantity === 0)).toBe(true)
     }
+  })
+})
+
+describe('anti-tip brackets', () => {
+  it('count two for each tall unit: a box is one unit', () => {
+    const tall = boxPanels(box('between'), thickness)
+    expect(tippingUnits(tall)).toBe(1)
+    expect(antiTipBrackets(tall)).toBe(2)
+    // Two boxes side by side are two units.
+    const next = boxPanels({ ...box('between'), id: 'c', x: 600 }, thickness)
+    expect(antiTipBrackets([...tall, ...next])).toBe(4)
+  })
+
+  it('leave out low units, and count a top whichever way it meets the sides', () => {
+    expect(tippingUnits(boxPanels({ ...box('between'), height: 600 }, thickness))).toBe(0)
+    expect(tippingUnits(boxPanels({ ...box('between'), height: 701 }, thickness))).toBe(1)
+    expect(tippingUnits(boxPanels(box('on'), thickness))).toBe(1)
+  })
+
+  it('count a carcass built from loose panels once, not its bottom or shelves, and only on its own wall', () => {
+    const loose = [
+      piece('l', 'vertical', { x: 0, width: 18, height: 2000, depth: 580 }),
+      piece('r', 'vertical', { x: 582, width: 18, height: 2000, depth: 580 }),
+      piece('bottom', 'horizontal', { x: 18, y: 0, width: 564, height: 18, depth: 580 }),
+      piece('top', 'horizontal', { x: 18, y: 1982, width: 564, height: 18, depth: 580 }),
+      piece('middle', 'horizontal', { x: 18, y: 1000, width: 564, height: 18, depth: 580 }),
+      piece('shelf', 'shelf', { x: 18, y: 500, width: 564, height: 18, depth: 580 }),
+    ]
+    expect(tippingUnits(loose)).toBe(1)
+    expect(tippingUnits([...loose, ...loose.map((p) => ({ ...p, id: `${p.id}2`, wall: 'left' as const }))])).toBe(2)
   })
 })

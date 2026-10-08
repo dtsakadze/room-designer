@@ -3,7 +3,7 @@ import { BOARD, BOARDS, CLOSE_LABELS, EXTENSION_LABELS, pieceLabel } from './def
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves, slidingPanels } from './geometry'
-import { backFixings, handleCount, jointHardware } from './fixings'
+import { antiTipBrackets, backFixings, handleCount, jointHardware } from './fixings'
 import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 import { rodCentreSupports } from './spans'
@@ -259,6 +259,8 @@ export type HardwareRow =
   | { item: 'cam-bolts'; quantity: number }
   | { item: 'dowels'; quantity: number }
   | { item: 'back-fixings'; quantity: number }
+  | { item: 'anti-tip-brackets'; quantity: number }
+  | { item: 'wall-anchors'; quantity: number }
   | { item: 'handles'; quantity: number }
 
 /** The order runner kinds are listed in, ordinary ones first. */
@@ -273,7 +275,8 @@ const SUPPORTS_PER_ROD = 2
  * see `doorHinges`), each hanging rod (by diameter and the length to cut it
  * to), its end supports (and centre supports when it's too long to span unsupported), four pins per adjustable shelf and four screws per
  * fixed one, the screws, confirmat screws or cam locks, bolts and dowels joining the
- * carcass and the nails fixing its backs (see `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
+ * carcass the nails fixing its backs, and the anti-tip brackets and wall anchors for
+ * units over 700 mm (see `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
  * too shallow for any runner are left out; the drawer's panel says so.
  * Runners come first, then hinges, rods and their supports, sliding door tracks (top and bottom, cut to the set's width), shelf pins and
  * screws, carcass fixings, then handles.
@@ -324,6 +327,9 @@ export function hardwareList(
   const fixings = [
     ...jointHardware(pieces, joints),
     { item: 'back-fixings', quantity: backFixings(pieces) },
+    { item: 'anti-tip-brackets', quantity: antiTipBrackets(pieces) },
+    // One anchor with its screw for each bracket.
+    { item: 'wall-anchors', quantity: antiTipBrackets(pieces) },
     { item: 'handles', quantity: handleCount(pieces) },
   ] as const
   for (const row of fixings) if (row.quantity > 0) add(row)
@@ -343,7 +349,9 @@ export function hardwareList(
     'cam-bolts': 11,
     dowels: 12,
     'back-fixings': 13,
-    handles: 14,
+    'anti-tip-brackets': 14,
+    'wall-anchors': 15,
+    handles: 16,
   }
   return [...rows.values()].sort(
     (a, b) =>
@@ -405,6 +413,10 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: 'Cam bolts', count: `${row.quantity}`, ...each }
     case 'dowels':
       return { name: 'Dowels', count: `${row.quantity}`, ...each }
+    case 'anti-tip-brackets':
+      return { name: 'Anti-tip brackets (units over 700 mm tall)', count: `${row.quantity}`, ...each }
+    case 'wall-anchors':
+      return { name: 'Wall anchors and screws for the brackets (choose for your wall)', count: `${row.quantity}`, ...each }
     case 'back-fixings':
       return { name: 'Nails or screws for back panels', count: `${row.quantity}`, ...each }
     case 'handles':

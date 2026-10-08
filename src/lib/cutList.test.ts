@@ -214,3 +214,20 @@ describe('hardware by joint type', () => {
     expect(items('cam')).toEqual(['cam-locks', 'cam-bolts', 'dowels'])
   })
 })
+
+describe('anti-tip hardware', () => {
+  it('lists brackets and one wall anchor for each, only for tall units', () => {
+    const unit = (height: number): Piece[] => [
+      piece('vertical', { x: 0, width: 18, height, depth: 580 }),
+      piece('vertical', { x: 582, width: 18, height, depth: 580 }),
+      piece('horizontal', { x: 18, y: height - 18, width: 564, height: 18, depth: 580 }),
+    ]
+    const rows = (pieces: Piece[]) =>
+      hardwareList(pieces, thickness).filter((row) => row.item === 'anti-tip-brackets' || row.item === 'wall-anchors')
+    expect(rows(unit(2000))).toEqual([
+      { item: 'anti-tip-brackets', quantity: 2 },
+      { item: 'wall-anchors', quantity: 2 },
+    ])
+    expect(rows(unit(600))).toEqual([])
+  })
+})

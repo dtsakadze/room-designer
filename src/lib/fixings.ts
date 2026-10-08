@@ -112,6 +112,37 @@ export function jointHardware(pieces: Piece[], joints: JointType): JointRow[] {
   }
 }
 
+/** Units taller than this, in mm, should be fixed to the wall so they can't tip over. */
+export const TIP_HEIGHT = 700
+
+/** Anti-tip brackets per unit, at the top, one near each side. */
+const BRACKETS_PER_UNIT = 2
+
+/**
+ * How many units need fixing to the wall: each top board of a carcass (a
+ * board across the unit whose top is level with, or above, the sides it's
+ * joined to) that's higher than `TIP_HEIGHT`. A box is one unit, and so is
+ * each separate carcass built from loose panels. Shelves and bottoms further
+ * down a unit aren't tops.
+ */
+export function tippingUnits(pieces: Piece[]) {
+  const uprights = pieces.filter(isUpright)
+  return pieces.filter(
+    (across) =>
+      across.kind === 'horizontal' &&
+      across.y + across.height > TIP_HEIGHT &&
+      uprights.some(
+        (upright) =>
+          wallOf(upright) === wallOf(across) &&
+          joined(across, upright) &&
+          across.y + across.height >= upright.y + upright.height - TOUCH,
+      ),
+  ).length
+}
+
+/** Brackets, and so wall anchors, for a design: two for every unit that could tip. */
+export const antiTipBrackets = (pieces: Piece[]) => tippingUnits(pieces) * BRACKETS_PER_UNIT
+
 /** Nails or screws round every back panel's edge, about every 150 mm. */
 export function backFixings(pieces: Piece[]) {
   return pieces
