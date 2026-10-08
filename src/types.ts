@@ -62,6 +62,18 @@ export type HandleType = 'bar' | 'knob' | 'profile' | 'push'
 /** What a door's panels are made of when they aren't board: glass or a mirror. */
 export type PaneType = 'glass' | 'mirror'
 
+/**
+ * The full sheet a board is bought as, in mm: `length` runs along the grain,
+ * and `kerf` is what the saw cut takes away at every cut.
+ */
+export type SheetSetup = { length: number; width: number; kerf: number }
+
+/**
+ * The boards bought as whole sheets, with the sheet each comes on. A board
+ * without one is bought cut to size, from the cut list.
+ */
+export type BoardSheets = Partial<Record<BoardKey, SheetSetup>>
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 

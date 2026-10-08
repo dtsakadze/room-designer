@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Sheet layout, if you want it: under Settings → Boards, each board is either Cut to size (the default: you order the pieces from the cut list) or Whole sheets, with its sheet length, width and saw cut. A board bought as whole sheets gets a Sheet layout in the cut list: each sheet drawn to scale with its parts placed on it, how many sheets you need and how much is waste. Parts on a board with grain aren't turned, and parts too big for the sheet are listed.
+
 - Wood grain is drawn: on the boards marked as having a grain (Settings → Boards → Grain), parts show fine grain lines in the front, side, back and top views and a wood texture in 3D, running the way each part's grain runs (turn a part's grain in its Selected panel). Where the grain runs into the face, as on the ends of a board, there are no lines.
 - Glass and mirror doors: select a door or a set of sliding doors and pick Panel: Glass or Mirror. They're drawn light blue or silver with a shine in the flat views, and see-through (glass) or shiny (mirror) in 3D. Panes are 4 mm thick and bought to size, so they're in the hardware list (one pane for each leaf or sliding panel), not the cut list, and have no colour or edge banding.
 

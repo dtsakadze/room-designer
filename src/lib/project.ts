@@ -1,5 +1,6 @@
-import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, HandleType, JointType, PaneType, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, BoardSheets, Box, HandleType, JointType, PaneType, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
+import { DEFAULT_KERF, cleanSheet } from './sheets'
 import {
   BOARDS,
   DEFAULT_THICKNESS,
@@ -25,7 +26,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 15
+export const FORMAT_VERSION = 16
 
 type Raw = Record<string, unknown>
 
@@ -120,6 +121,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // board door as before, so only the version changes; the bump makes an
   // older app refuse such a save rather than show glass as a board.
   14: (data) => ({ ...data, formatVersion: 15 }),
+  // v16 adds `boardSheets`, the full sheet of each board that's bought as
+  // whole sheets. Absent, every board is bought cut to size, as before, so
+  // only the version changes; the bump makes an older app refuse such a save
+  // rather than drop the sheets.
+  15: (data) => ({ ...data, formatVersion: 16 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -139,6 +145,8 @@ export type ProjectData = {
   thickness: Thickness
   /** What each board is, for the cut list; absent when none is named. */
   boardNames?: BoardNames
+  /** The boards bought as whole sheets, with their sheet; absent when all are bought cut to size. */
+  boardSheets?: BoardSheets
   /** How the carcass is joined, for the hardware list; absent means plain screws. */
   joints?: JointType
   /** What each board is made of; absent when none is set (chipboard). */
@@ -170,6 +178,7 @@ export function toProjectData(
     boardNames?: BoardNames
     boardMaterials?: BoardMaterials
     joints?: JointType
+    boardSheets?: BoardSheets
     grainedBoards?: BoardKey[]
     holePitch?: number
     boardColors?: BoardColors
@@ -188,6 +197,7 @@ export function toProjectData(
     thickness: design.thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(Object.keys(design.boardMaterials ?? {}).length > 0 ? { boardMaterials: design.boardMaterials } : {}),
+    ...(Object.keys(design.boardSheets ?? {}).length > 0 ? { boardSheets: design.boardSheets } : {}),
     ...(design.joints && design.joints !== 'screws' ? { joints: design.joints } : {}),
     ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
     holePitch: design.holePitch ?? DEFAULT_HOLE_PITCH,
@@ -252,6 +262,7 @@ function validate(data: Raw): ProjectData | null {
   }
   const boardNames = readBoardNames(data.boardNames)
   const boardMaterials = readBoardMaterials(data.boardMaterials)
+  const boardSheets = readBoardSheets(data.boardSheets)
   const grainedBoards = readGrainedBoards(data.grainedBoards)
   const boardColors = readBoardColors(data.boardColors)
   const edgeColors = readBoardColors(data.edgeColors)
@@ -347,6 +358,7 @@ function validate(data: Raw): ProjectData | null {
     thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(Object.keys(boardMaterials).length > 0 ? { boardMaterials } : {}),
+    ...(Object.keys(boardSheets).length > 0 ? { boardSheets } : {}),
     ...(data.joints === 'confirmat' || data.joints === 'cam' ? { joints: data.joints } : {}),
     ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
     holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
@@ -369,6 +381,22 @@ export function readBoardNames(value: unknown): BoardNames {
     if (name) names[key] = name
   }
   return names
+}
+
+/** Board sheets worth keeping: known boards, each with a sheet of sizes that make sense. */
+export function readBoardSheets(value: unknown): BoardSheets {
+  if (!isRecord(value)) return {}
+  const sheets: BoardSheets = {}
+  for (const { key } of BOARDS) {
+    const sheet = value[key]
+    if (!isRecord(sheet) || !positive(sheet.length) || !positive(sheet.width)) continue
+    sheets[key] = cleanSheet({
+      length: sheet.length as number,
+      width: sheet.width as number,
+      kerf: typeof sheet.kerf === 'number' ? sheet.kerf : DEFAULT_KERF,
+    })
+  }
+  return sheets
 }
 
 /** Board materials worth keeping: known boards and materials; chipboard (the default) is stored as nothing. */

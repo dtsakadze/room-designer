@@ -272,8 +272,22 @@ button {
 }
 
 /* A board-style box holding a length, which needs room for four digits. */
-.board.board-lengths .field-input input {
+.board.board-lengths .field-input input,
+.board .sheet-fields .field-input input {
   width: 72px;
+}
+
+.sheet-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sheet-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 6px 0;
 }
 
 .board-intro {

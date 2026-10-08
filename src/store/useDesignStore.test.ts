@@ -840,3 +840,20 @@ describe('joint type', () => {
     expect(store().joints).toBe('screws')
   })
 })
+
+describe('boards bought as whole sheets', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('are set per board with a clean sheet, undoable, and saved; null goes back to cut to size', () => {
+    store().setBoardSheet('body', { length: 2800.4, width: 2070, kerf: 3 })
+    expect(store().boardSheets).toEqual({ body: { length: 2800, width: 2070, kerf: 3 } })
+    store().setBoardSheet('body', { length: 2800, width: 2070, kerf: 3 })
+    expect(store().past).toHaveLength(1)
+    expect(toProjectData(store()).boardSheets).toEqual({ body: { length: 2800, width: 2070, kerf: 3 } })
+    store().setBoardSheet('body', null)
+    expect(store().boardSheets).toEqual({})
+    expect(toProjectData(store())).not.toHaveProperty('boardSheets')
+    store().undo()
+    expect(store().boardSheets.body?.length).toBe(2800)
+  })
+})

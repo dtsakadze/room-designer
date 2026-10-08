@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BoardColors, BoardKey, BoardMaterial, BoardMaterials, BoardNames, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
+import type { BoardColors, BoardKey, BoardMaterial, BoardMaterials, BoardNames, BoardSheets, SheetSetup, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { FITS_BETWEEN_SIDES, contentBounds, fitBetweenSides, normalizePiece } from '../lib/geometry'
 import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
+import { cleanSheet } from '../lib/sheets'
 import { DEFAULT_HOLE_PITCH, clampHolePitch, isAdjustable, snapToHoles } from '../lib/shelfPins'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
@@ -16,6 +17,7 @@ type Snapshot = {
   thickness: Thickness
   boardNames: BoardNames
   boardMaterials: BoardMaterials
+  boardSheets: BoardSheets
   joints: JointType
   grainedBoards: BoardKey[]
   holePitch: number
@@ -40,6 +42,8 @@ type DesignState = {
   boardNames: BoardNames
   /** What each board is made of; a board without one is chipboard. */
   boardMaterials: BoardMaterials
+  /** The boards bought as whole sheets, with their sheet; the rest are bought cut to size. */
+  boardSheets: BoardSheets
   /** How the carcass is joined, for the hardware list. */
   joints: JointType
   /** Boards with a grain, in the order of `BOARDS`. */
@@ -124,6 +128,8 @@ type DesignState = {
   /** Names a board for the cut list; an empty name goes back to its role. */
   setBoardName: (board: BoardKey, name: string) => void
   setBoardMaterial: (board: BoardKey, material: BoardMaterial) => void
+  /** Buys a board as whole sheets of this size, or null for cut to size. */
+  setBoardSheet: (board: BoardKey, sheet: SheetSetup | null) => void
   setJoints: (joints: JointType) => void
   /** Says whether a board has a grain, which the cut list then follows. */
   setBoardGrain: (board: BoardKey, grain: boolean) => void
@@ -181,8 +187,8 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, boardNames, boardMaterials, joints, grainedBoards, holePitch, boardColors, edgeColors, room } = get()
-      return { pieces, boxes, thickness, boardNames, boardMaterials, joints, grainedBoards, holePitch, boardColors, edgeColors, room }
+      const { pieces, boxes, thickness, boardNames, boardMaterials, boardSheets, joints, grainedBoards, holePitch, boardColors, edgeColors, room } = get()
+      return { pieces, boxes, thickness, boardNames, boardMaterials, boardSheets, joints, grainedBoards, holePitch, boardColors, edgeColors, room }
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
@@ -191,6 +197,7 @@ export const useDesignStore = create<DesignState>()(
       state.thickness = snapshot.thickness
       state.boardNames = snapshot.boardNames
       state.boardMaterials = snapshot.boardMaterials
+      state.boardSheets = snapshot.boardSheets
       state.joints = snapshot.joints
       state.grainedBoards = snapshot.grainedBoards
       state.holePitch = snapshot.holePitch
@@ -287,6 +294,7 @@ export const useDesignStore = create<DesignState>()(
       thickness: DEFAULT_THICKNESS,
       boardNames: {},
       boardMaterials: {},
+      boardSheets: {},
       joints: 'screws',
       grainedBoards: [],
       holePitch: DEFAULT_HOLE_PITCH,
@@ -639,6 +647,15 @@ export const useDesignStore = create<DesignState>()(
           else state.boardMaterials[board] = material
         }),
 
+      setBoardSheet: (board, sheet) =>
+        set((state) => {
+          const next = sheet && cleanSheet(sheet)
+          if (JSON.stringify(state.boardSheets[board] ?? null) === JSON.stringify(next)) return
+          record(state)
+          if (next) state.boardSheets[board] = next
+          else delete state.boardSheets[board]
+        }),
+
       setJoints: (joints) =>
         set((state) => {
           if (state.joints === joints) return
@@ -743,6 +760,7 @@ export const useDesignStore = create<DesignState>()(
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
           state.boardMaterials = project.boardMaterials ?? {}
+          state.boardSheets = project.boardSheets ?? {}
           state.joints = project.joints ?? 'screws'
           state.grainedBoards = project.grainedBoards ?? []
           state.holePitch = project.holePitch ?? DEFAULT_HOLE_PITCH
@@ -767,6 +785,7 @@ export const useDesignStore = create<DesignState>()(
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
           state.boardMaterials = project.boardMaterials ?? {}
+          state.boardSheets = project.boardSheets ?? {}
           state.joints = project.joints ?? 'screws'
           state.grainedBoards = project.grainedBoards ?? []
           state.holePitch = project.holePitch

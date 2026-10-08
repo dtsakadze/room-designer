@@ -122,6 +122,26 @@ describe('readProject', () => {
     expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
   })
 
+  it('keeps the boards bought as whole sheets, and opens older saves as cut to size', () => {
+    const result = readProject(fixture('v16-sheets'))
+    if (!result.ok) throw new Error("v16-sheets didn't open")
+    expect(result.project.boardSheets).toEqual({
+      body: { length: 2800, width: 2070, kerf: 3 },
+      front: { length: 2440, width: 1220, kerf: 4 },
+    })
+    const old = readProject(fixture('v15-panes'))
+    if (!old.ok) throw new Error("v15-panes didn't open")
+    expect(old.project).not.toHaveProperty('boardSheets')
+    const bad = fixture('v16-sheets') as { boardSheets: unknown }
+    bad.boardSheets = { body: { length: 'long', width: 100 }, front: { length: 99999, width: 1220 }, nonsense: { length: 1, width: 1 }, back: { length: 2000, width: 1000, kerf: 'wide' } }
+    const cleaned = readProject(bad)
+    if (!cleaned.ok) throw new Error("the edited save didn't open")
+    expect(cleaned.project.boardSheets).toEqual({
+      front: { length: 10000, width: 1220, kerf: 3 },
+      back: { length: 2000, width: 1000, kerf: 3 },
+    })
+  })
+
   it('keeps glass and mirror doors, with their own thickness', () => {
     const result = readProject(fixture('v15-panes'))
     if (!result.ok) throw new Error("v15-panes didn't open")
@@ -420,7 +440,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes', 'v16-sheets'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

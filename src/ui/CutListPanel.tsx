@@ -8,6 +8,8 @@ import {
   hardwareList,
 } from '../lib/cutList'
 import { boardName } from '../lib/defaults'
+import { layoutSheets } from '../lib/sheets'
+import { SheetLayouts } from './SheetLayouts'
 import { UNITS } from '../lib/units'
 import { cutListCsv, hardwareCsv } from '../lib/csv'
 import { downloadFile, fileBase } from '../lib/projectFile'
@@ -114,6 +116,11 @@ export function CutListTables() {
   const banding = bandingTotals(groups)
   const joints = useDesignStore((s) => s.joints)
   const hardware = hardwareList(pieces, thickness, joints)
+  const boardSheets = useDesignStore((s) => s.boardSheets)
+  const layouts = layoutSheets(
+    groups.flatMap((group) => group.rows),
+    boardSheets,
+  )
   const { num, len, unit } = useUnits()
 
   return (
@@ -192,6 +199,8 @@ export function CutListTables() {
         </table>
       </>
     )}
+
+    <SheetLayouts layouts={layouts} boardNames={boardNames} />
 
     {hardware.length > 0 && (
       <>

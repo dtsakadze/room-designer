@@ -11,6 +11,7 @@ import type { BoardKey, BoardMaterial, JointType } from '../types'
 import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
+import { DEFAULT_SHEETS } from '../lib/sheets'
 import { NumberField } from './NumberField'
 import { ColorField } from './ColorField'
 import { BOARD_FILLS } from '../canvas/colors'
@@ -37,6 +38,8 @@ export function BoardSettings() {
   const setHolePitch = useDesignStore((s) => s.setHolePitch)
   const boardMaterials = useDesignStore((s) => s.boardMaterials)
   const joints = useDesignStore((s) => s.joints)
+  const boardSheets = useDesignStore((s) => s.boardSheets)
+  const setBoardSheet = useDesignStore((s) => s.setBoardSheet)
   const setJoints = useDesignStore((s) => s.setJoints)
   const setBoardMaterial = useDesignStore((s) => s.setBoardMaterial)
   const setUnit = useSettingsStore((s) => s.setUnit)
@@ -64,7 +67,7 @@ export function BoardSettings() {
       <section className="section">
         <h2>Boards</h2>
         <p className="hint board-intro">
-          Every part follows its board&apos;s thickness and colour (unless you give a part its own). Names show in the cut list. Pick the material the board is made of: shelves are checked against how far it can span without sagging (the body board's). Tick Grain for wood-look boards, so the cut list keeps the grain running the right way.
+          Every part follows its board&apos;s thickness and colour (unless you give a part its own). Names show in the cut list. Pick the material the board is made of: shelves are checked against how far it can span without sagging (the body board's). Tick Grain for wood-look boards, so the cut list keeps the grain running the right way. Cut to size: you order the pieces from the cut list. Whole sheets: the cut list also shows how the parts fit on the sheets.
         </p>
         <div className="stack">
           {BOARDS.map((board) => (
@@ -93,6 +96,46 @@ export function BoardSettings() {
                   </button>
                 ))}
               </div>
+              <div className="unit-switch wide-switch" role="radiogroup" aria-label={`${board.label} is bought`}>
+                {[
+                  ['Cut to size', false],
+                  ['Whole sheets', true],
+                ].map(([text, sheets]) => (
+                  <button
+                    key={String(text)}
+                    type="button"
+                    role="radio"
+                    aria-checked={!!boardSheets[board.key] === sheets}
+                    onClick={() =>
+                      setBoardSheet(
+                        board.key,
+                        sheets ? (boardSheets[board.key] ?? DEFAULT_SHEETS[boardMaterials[board.key] ?? 'chipboard']) : null,
+                      )
+                    }
+                  >
+                    {String(text)}
+                  </button>
+                ))}
+              </div>
+              {boardSheets[board.key] && (
+                <div className="sheet-fields">
+                  <NumberField
+                    label="Sheet length"
+                    value={boardSheets[board.key]!.length}
+                    onChange={(length) => setBoardSheet(board.key, { ...boardSheets[board.key]!, length })}
+                  />
+                  <NumberField
+                    label="Sheet width"
+                    value={boardSheets[board.key]!.width}
+                    onChange={(width) => setBoardSheet(board.key, { ...boardSheets[board.key]!, width })}
+                  />
+                  <NumberField
+                    label="Saw cut"
+                    value={boardSheets[board.key]!.kerf}
+                    onChange={(kerf) => setBoardSheet(board.key, { ...boardSheets[board.key]!, kerf })}
+                  />
+                </div>
+              )}
               <ColorField
                 label="Colour"
                 value={boardColors[board.key] ?? null}
