@@ -40,6 +40,12 @@ export type Thickness = Record<BoardKey, number>
  */
 export type BoardNames = Partial<Record<BoardKey, string>>
 
+/** What a board is made of, which decides how far a shelf cut from it can span before it sags. */
+export type BoardMaterial = 'chipboard' | 'mdf' | 'plywood' | 'solid'
+
+/** The material of each board. A board without one is chipboard, the commonest and the most cautious. */
+export type BoardMaterials = Partial<Record<BoardKey, BoardMaterial>>
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 

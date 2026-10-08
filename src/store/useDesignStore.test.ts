@@ -805,3 +805,23 @@ describe('front-to-back position', () => {
     expect(store().pieces.some((p) => 'z' in p)).toBe(false)
   })
 })
+
+describe('board materials', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('are set per board, undoable, with chipboard stored as nothing', () => {
+    store().setBoardMaterial('body', 'plywood')
+    expect(store().boardMaterials).toEqual({ body: 'plywood' })
+    store().setBoardMaterial('body', 'plywood')
+    expect(store().past).toHaveLength(1)
+    store().setBoardMaterial('body', 'chipboard')
+    expect(store().boardMaterials).toEqual({})
+    store().undo()
+    expect(store().boardMaterials).toEqual({ body: 'plywood' })
+  })
+
+  it('save with the project', () => {
+    store().setBoardMaterial('front', 'solid')
+    expect(toProjectData(store()).boardMaterials).toEqual({ front: 'solid' })
+  })
+})

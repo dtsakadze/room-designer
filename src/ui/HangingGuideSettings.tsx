@@ -29,7 +29,7 @@ export function HangingGuideSettings() {
         </p>
         {guides.map((guide, index) => (
           // Index keys: two guides can share a label, and the fields edit in place.
-          <div key={index} className="board">
+          <div key={index} className="board board-lengths">
             <input
               className="board-name"
               type="text"

@@ -5,6 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
+import { useSpanWarnings } from './useSpanWarnings'
 
 /**
  * Every part in the design, under its wall when there's more than one.
@@ -18,6 +19,7 @@ export function PartsList() {
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const room = useDesignStore((s) => s.room)
   const clashes = useClashes()
+  const spans = useSpanWarnings()
   const { num, unit } = useUnits()
 
   if (pieces.length === 0) return <p className="muted">No parts yet.</p>
@@ -32,6 +34,7 @@ export function PartsList() {
               'part-row',
               selectedIds.includes(piece.id) && 'part-row-selected',
               clashes.has(piece.id) && 'part-row-clash',
+              spans.has(piece.id) && 'part-row-warn',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -53,6 +56,13 @@ export function PartsList() {
 
   return (
     <>
+      {spans.size > 0 && (
+        <p className="hint hint-warn">
+          {spans.size === 1 ? '1 shelf or rod spans' : `${spans.size} shelves or rods span`} further
+          than {spans.size === 1 ? 'it' : 'they'} safely can (shown in orange). Select one to see
+          its limit.
+        </p>
+      )}
       {clashes.size > 0 && (
         <p className="hint hint-error">
           {clashes.size} parts overlap each other (shown in red). Move or resize them so they

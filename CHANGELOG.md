@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Shelf and rod span warnings: a shelf wider than its board can span without sagging, or a rod longer than it can carry, gets an orange outline, is marked in the Parts list, and the Selected panel says what the limit is. The shelf limit comes from the new Material choice under Settings → Boards (Chipboard, MDF, Plywood or Solid wood) and the board's thickness, so a thicker or stiffer board spans further. The limits are rules of thumb for clothes and folded things; heavy loads such as books need less.
+
 ## 1.8.0 — 2026-10-08
 
 - Front-to-back position: every part and box has a Z field in the Selected panel (how far its back face is from the wall). It's automatic until you type a number, and Reset to automatic goes back. The side, top and 3D views and the clash check use it, so you can set a shelf back from the front or pull a door forward. A box's Z moves its sides, top, bottom and back together; parts inside it keep their own.

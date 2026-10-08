@@ -122,6 +122,20 @@ describe('readProject', () => {
     expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
   })
 
+  it('keeps board materials, and opens older saves as chipboard', () => {
+    const result = readProject(fixture('v12-materials'))
+    if (!result.ok) throw new Error("v12-materials didn't open")
+    expect(result.project.boardMaterials).toEqual({ body: 'plywood', front: 'solid', back: 'mdf' })
+    const old = readProject(fixture('v11-depth'))
+    if (!old.ok) throw new Error("v11-depth didn't open")
+    expect(old.project).not.toHaveProperty('boardMaterials')
+    const bad = fixture('v12-materials') as { boardMaterials: unknown }
+    bad.boardMaterials = { body: 'glass', front: 'chipboard', nonsense: 'mdf', drawer: 'mdf' }
+    const cleaned = readProject(bad)
+    if (!cleaned.ok) throw new Error("the edited save didn't open")
+    expect(cleaned.project.boardMaterials).toEqual({ drawer: 'mdf' })
+  })
+
   it('opens a save with no ceiling height as one without a ceiling', () => {
     const result = readProject(fixture('v8-colors'))
     if (!result.ok) throw new Error("v8-colors didn't open")
@@ -357,7 +371,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

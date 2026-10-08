@@ -1,4 +1,4 @@
-import type { BoardKey, Dimension, Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, BoardMaterial, Dimension, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -57,6 +57,13 @@ export const CORNICE_HEIGHT = 80
 
 /** Space between the two lanes sliding door panels run in, so they don't rub. */
 export const SLIDING_LANE_GAP = 6
+
+export const MATERIAL_LABELS: Record<BoardMaterial, string> = {
+  chipboard: 'Chipboard',
+  mdf: 'MDF',
+  plywood: 'Plywood',
+  solid: 'Solid wood',
+}
 
 /** Panels in a set of sliding doors, fewest first; two is the default. */
 export const SLIDING_PANELS = [2, 3, 4]

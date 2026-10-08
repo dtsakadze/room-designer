@@ -3,7 +3,7 @@ import type { Piece } from '../types'
 import { SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorLeaves, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { CLASH } from './colors'
+import { CLASH, SPAN_WARNING } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -26,6 +26,8 @@ type PieceRectProps = {
   doorMarks: boolean
   /** Overlaps another part: drawn red. */
   clashing: boolean
+  /** A shelf or rod that spans further than it can safely (see `spanWarnings`). */
+  overSpan: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
   onHoverChange: (id: string | null) => void
@@ -46,6 +48,7 @@ export function PieceRect({
   screws,
   doorMarks,
   clashing,
+  overSpan,
   unit,
   onPointerDown,
   onHoverChange,
@@ -73,8 +76,8 @@ export function PieceRect({
         rx={rx}
         fill={fill}
         fillOpacity={hollow ? 0.35 : 1}
-        stroke={selected ? '#2563eb' : clashing ? CLASH : showHover ? '#60a5fa' : '#9c8f6d'}
-        strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : 1)}
+        stroke={selected ? '#2563eb' : clashing ? CLASH : overSpan ? SPAN_WARNING : showHover ? '#60a5fa' : '#9c8f6d'}
+        strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : overSpan ? 2.4 : 1)}
         // A door's own marks are dashed, so its outline stays solid.
         strokeDasharray={hollow && piece.kind !== 'door' ? `${unit * 8} ${unit * 6}` : undefined}
         style={{ cursor: editable ? 'move' : 'pointer' }}

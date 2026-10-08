@@ -12,6 +12,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - A cut list: every board as length × width × thickness, with its edge banding (and its grain, on boards that have one), identical parts counted together, how much edge banding each board needs, and the hardware to buy: drawer runners, hanging rods cut to length and their end supports, and shelf pins.
 - The cut list and hardware list download as CSV, for spreadsheets, board shops and cutting optimisers.
 - Printable drawings: front, side and top views to scale with dimensions, plus the cut list, on A4 or A3 (or as a PDF); any view also exports as SVG or PNG.
+- Each board has a material (chipboard, MDF, plywood or solid wood). Shelves and hanging rods that span further than they can without sagging are outlined in orange and explained in the Selected panel; the limits are rules of thumb for clothes and folded things.
 - Adjustable shelves sit on shelf-pin holes (32 mm apart by default, set per project), so they always land where a hole can be drilled; fixed shelves go anywhere.
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
 - Select several parts (⌘/Ctrl-drag a selection rectangle, or ⌘/Ctrl-click) to move, nudge, colour or delete them together, and set a colour for new parts.

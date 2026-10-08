@@ -4,6 +4,7 @@ import {
   DOOR_ANGLES,
   DOOR_OPEN_ANGLE,
   EXTENSION_LABELS,
+  MATERIAL_LABELS,
   RUNNER_LENGTHS,
   SLIDING_OVERLAP,
   SLIDING_PANELS,
@@ -26,6 +27,7 @@ import { WallField } from './WallField'
 import { WALL_LABELS, wallOf } from '../lib/room'
 import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels, wallDepthStart } from '../lib/geometry'
 import { ZField } from './ZField'
+import { useSpanWarnings } from './useSpanWarnings'
 
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
@@ -97,6 +99,7 @@ export function PieceInspector() {
 
       {piece.kind === 'door' && <DoorOptions piece={piece} />}
       {(piece.kind === 'filler' || piece.kind === 'cornice') && <TrimOptions piece={piece} />}
+      <SpanNote piece={piece} />
       {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
       <FinishFields piece={piece} />
 
@@ -204,6 +207,24 @@ function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; on
               : 'Sets the width and X to fill the gap between the sides.'}
       </p>
     </>
+  )
+}
+
+/**
+ * Says when a shelf or rod spans further than it can safely between its
+ * supports, and what the limit is.
+ */
+function SpanNote({ piece }: { piece: Piece }) {
+  const warning = useSpanWarnings().get(piece.id)
+  const material = useDesignStore((s) => s.boardMaterials.body ?? 'chipboard')
+  const { len } = useUnits()
+  if (!warning) return null
+  return (
+    <p className="hint hint-warn">
+      {warning.kind === 'shelf'
+        ? `Spans ${len(warning.span)}, more than ${len(warning.max)}: ${MATERIAL_LABELS[material].toLowerCase()} this thick sags under a load. Add a divider, use a thicker or stiffer board (Settings → Boards), or make the bay narrower.`
+        : `Spans ${len(warning.span)}, more than ${len(warning.max)}: a rod this thick sags with clothes on it. Add a centre support or use a thicker rod.`}
+    </p>
   )
 }
 

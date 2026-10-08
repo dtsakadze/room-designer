@@ -271,6 +271,11 @@ button {
   width: 40px;
 }
 
+/* A board-style box holding a length, which needs room for four digits. */
+.board.board-lengths .field-input input {
+  width: 72px;
+}
+
 .board-intro {
   margin: -4px 0 10px;
 }
@@ -781,6 +786,14 @@ button kbd {
   color: var(--danger);
 }
 
+.part-row-warn span:first-child {
+  color: #d97706;
+}
+
+.hint-warn {
+  color: #b45309;
+}
+
 .add-button[aria-pressed='true'] {
   border-color: var(--accent);
   color: var(--accent);
@@ -914,6 +927,12 @@ button kbd {
 .wide-switch button {
   flex: 1;
   white-space: nowrap;
+}
+
+/* Choices too long for one row in the narrow sidebar, two to a row. */
+.unit-switch.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
 .unit-switch button[aria-checked='true'] {

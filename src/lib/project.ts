@@ -1,10 +1,11 @@
-import type { BoardColors, BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   BOARDS,
   DEFAULT_THICKNESS,
   DEFAULT_UNIT_DEPTH,
   MAX_BOARD_NAME,
+  MATERIAL_LABELS,
   MAX_UNIT_DEPTH,
   MIN_UNIT_DEPTH,
   PIECE_LABELS,
@@ -24,7 +25,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 11
+export const FORMAT_VERSION = 12
 
 type Raw = Record<string, unknown>
 
@@ -100,6 +101,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // the bump makes an older app refuse such a save rather than put the part
   // back against the back panel and save it that way.
   10: (data) => ({ ...data, formatVersion: 11 }),
+  // v12 adds an optional material per board (`boardMaterials`). Absent, every
+  // board is chipboard, as the span checks assume, so only the version
+  // changes; the bump makes an older app refuse such a save rather than drop
+  // the materials.
+  11: (data) => ({ ...data, formatVersion: 12 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -119,6 +125,8 @@ export type ProjectData = {
   thickness: Thickness
   /** What each board is, for the cut list; absent when none is named. */
   boardNames?: BoardNames
+  /** What each board is made of; absent when none is set (chipboard). */
+  boardMaterials?: BoardMaterials
   /** Boards with a grain, whose parts the cut list gives grain-first; absent when none has. */
   grainedBoards?: BoardKey[]
   /** Spacing of the shelf-pin holes adjustable shelves sit on, in mm. */
@@ -144,6 +152,7 @@ export function toProjectData(
     boxes?: Box[]
     thickness: Thickness
     boardNames?: BoardNames
+    boardMaterials?: BoardMaterials
     grainedBoards?: BoardKey[]
     holePitch?: number
     boardColors?: BoardColors
@@ -161,6 +170,7 @@ export function toProjectData(
     ...(name ? { name } : {}),
     thickness: design.thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
+    ...(Object.keys(design.boardMaterials ?? {}).length > 0 ? { boardMaterials: design.boardMaterials } : {}),
     ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
     holePitch: design.holePitch ?? DEFAULT_HOLE_PITCH,
     ...(Object.keys(design.boardColors ?? {}).length > 0 ? { boardColors: design.boardColors } : {}),
@@ -223,6 +233,7 @@ function validate(data: Raw): ProjectData | null {
     drawer: positive(stored.drawer) ?? body,
   }
   const boardNames = readBoardNames(data.boardNames)
+  const boardMaterials = readBoardMaterials(data.boardMaterials)
   const grainedBoards = readGrainedBoards(data.grainedBoards)
   const boardColors = readBoardColors(data.boardColors)
   const edgeColors = readBoardColors(data.edgeColors)
@@ -312,6 +323,7 @@ function validate(data: Raw): ProjectData | null {
     ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
     thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
+    ...(Object.keys(boardMaterials).length > 0 ? { boardMaterials } : {}),
     ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
     holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
     ...(Object.keys(boardColors).length > 0 ? { boardColors } : {}),
@@ -333,6 +345,17 @@ export function readBoardNames(value: unknown): BoardNames {
     if (name) names[key] = name
   }
   return names
+}
+
+/** Board materials worth keeping: known boards and materials; chipboard (the default) is stored as nothing. */
+export function readBoardMaterials(value: unknown): BoardMaterials {
+  if (!isRecord(value)) return {}
+  const materials: BoardMaterials = {}
+  for (const { key } of BOARDS) {
+    const material = value[key]
+    if (isMaterial(material) && material !== 'chipboard') materials[key] = material
+  }
+  return materials
 }
 
 /** Board colours worth keeping: known boards, `#rrggbb` only. */
@@ -361,6 +384,9 @@ export function cleanBoardName(value: unknown): string | null {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
+
+const isMaterial = (value: unknown): value is BoardMaterial =>
+  typeof value === 'string' && value in MATERIAL_LABELS
 
 const isKind = (value: unknown): value is PieceKind =>
   typeof value === 'string' && value in PIECE_LABELS

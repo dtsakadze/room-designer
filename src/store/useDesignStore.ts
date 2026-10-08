@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BoardColors, BoardKey, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
+import type { BoardColors, BoardKey, BoardMaterial, BoardMaterials, BoardNames, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { FITS_BETWEEN_SIDES, contentBounds, fitBetweenSides, normalizePiece } from '../lib/geometry'
 import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
@@ -15,6 +15,7 @@ type Snapshot = {
   boxes: Box[]
   thickness: Thickness
   boardNames: BoardNames
+  boardMaterials: BoardMaterials
   grainedBoards: BoardKey[]
   holePitch: number
   boardColors: BoardColors
@@ -36,6 +37,8 @@ type DesignState = {
   thickness: Thickness
   /** What each board is, for the cut list. */
   boardNames: BoardNames
+  /** What each board is made of; a board without one is chipboard. */
+  boardMaterials: BoardMaterials
   /** Boards with a grain, in the order of `BOARDS`. */
   grainedBoards: BoardKey[]
   /** Spacing of the shelf-pin holes in sides and dividers; adjustable shelves sit on them. */
@@ -117,6 +120,7 @@ type DesignState = {
   setThickness: (patch: Partial<Thickness>) => void
   /** Names a board for the cut list; an empty name goes back to its role. */
   setBoardName: (board: BoardKey, name: string) => void
+  setBoardMaterial: (board: BoardKey, material: BoardMaterial) => void
   /** Says whether a board has a grain, which the cut list then follows. */
   setBoardGrain: (board: BoardKey, grain: boolean) => void
   /** Colours a board's parts (those without a colour of their own), or null for the standard look. */
@@ -173,8 +177,8 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, boardColors, edgeColors, room } = get()
-      return { pieces, boxes, thickness, boardNames, grainedBoards, holePitch, boardColors, edgeColors, room }
+      const { pieces, boxes, thickness, boardNames, boardMaterials, grainedBoards, holePitch, boardColors, edgeColors, room } = get()
+      return { pieces, boxes, thickness, boardNames, boardMaterials, grainedBoards, holePitch, boardColors, edgeColors, room }
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
@@ -182,6 +186,7 @@ export const useDesignStore = create<DesignState>()(
       state.boxes = snapshot.boxes
       state.thickness = snapshot.thickness
       state.boardNames = snapshot.boardNames
+      state.boardMaterials = snapshot.boardMaterials
       state.grainedBoards = snapshot.grainedBoards
       state.holePitch = snapshot.holePitch
       state.boardColors = snapshot.boardColors
@@ -276,6 +281,7 @@ export const useDesignStore = create<DesignState>()(
       selectedIds: [],
       thickness: DEFAULT_THICKNESS,
       boardNames: {},
+      boardMaterials: {},
       grainedBoards: [],
       holePitch: DEFAULT_HOLE_PITCH,
       boardColors: {},
@@ -618,6 +624,15 @@ export const useDesignStore = create<DesignState>()(
           else delete state.boardNames[board]
         }),
 
+      setBoardMaterial: (board, material) =>
+        set((state) => {
+          if ((state.boardMaterials[board] ?? 'chipboard') === material) return
+          record(state)
+          // Chipboard is the default, stored as no value.
+          if (material === 'chipboard') delete state.boardMaterials[board]
+          else state.boardMaterials[board] = material
+        }),
+
       setBoardGrain: (board, grain) =>
         set((state) => {
           if (state.grainedBoards.includes(board) === grain) return
@@ -714,6 +729,7 @@ export const useDesignStore = create<DesignState>()(
           state.boxes = project.boxes ?? []
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
+          state.boardMaterials = project.boardMaterials ?? {}
           state.grainedBoards = project.grainedBoards ?? []
           state.holePitch = project.holePitch ?? DEFAULT_HOLE_PITCH
           state.boardColors = project.boardColors ?? {}
@@ -736,6 +752,7 @@ export const useDesignStore = create<DesignState>()(
           state.boxes = project.boxes
           state.thickness = project.thickness
           state.boardNames = project.boardNames ?? {}
+          state.boardMaterials = project.boardMaterials ?? {}
           state.grainedBoards = project.grainedBoards ?? []
           state.holePitch = project.holePitch
           state.boardColors = project.boardColors ?? {}

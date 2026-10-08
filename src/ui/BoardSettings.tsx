@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { BOARDS, DEPTH_PRESETS, MAX_BOARD_NAME } from '../lib/defaults'
-import type { BoardKey } from '../types'
+import { BOARDS, DEPTH_PRESETS, MATERIAL_LABELS, MAX_BOARD_NAME } from '../lib/defaults'
+import type { BoardKey, BoardMaterial } from '../types'
 import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
@@ -28,6 +28,8 @@ export function BoardSettings() {
   const setEdgeColor = useDesignStore((s) => s.setEdgeColor)
   const holePitch = useDesignStore((s) => s.holePitch)
   const setHolePitch = useDesignStore((s) => s.setHolePitch)
+  const boardMaterials = useDesignStore((s) => s.boardMaterials)
+  const setBoardMaterial = useDesignStore((s) => s.setBoardMaterial)
   const setUnit = useSettingsStore((s) => s.setUnit)
   const { unit, num, len } = useUnits()
 
@@ -53,7 +55,7 @@ export function BoardSettings() {
       <section className="section">
         <h2>Boards</h2>
         <p className="hint board-intro">
-          Every part follows its board&apos;s thickness and colour (unless you give a part its own). Names show in the cut list. Tick Grain for wood-look boards, so the cut list keeps the grain running the right way.
+          Every part follows its board&apos;s thickness and colour (unless you give a part its own). Names show in the cut list. Pick the material the board is made of: shelves are checked against how far it can span without sagging (the body board's). Tick Grain for wood-look boards, so the cut list keeps the grain running the right way.
         </p>
         <div className="stack">
           {BOARDS.map((board) => (
@@ -69,6 +71,19 @@ export function BoardSettings() {
                 onChange={(mm) => setThickness({ [board.key]: mm })}
               />
               <BoardNameField board={board.key} example={board.example} />
+              <div className="unit-switch two-columns" role="radiogroup" aria-label={`${board.label} material`}>
+                {(Object.keys(MATERIAL_LABELS) as BoardMaterial[]).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={(boardMaterials[board.key] ?? 'chipboard') === option}
+                    onClick={() => setBoardMaterial(board.key, option)}
+                  >
+                    {MATERIAL_LABELS[option]}
+                  </button>
+                ))}
+              </div>
               <ColorField
                 label="Colour"
                 value={boardColors[board.key] ?? null}

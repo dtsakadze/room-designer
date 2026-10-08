@@ -147,6 +147,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         state.defaultColor === previous.defaultColor &&
         state.thickness === previous.thickness &&
         state.boardNames === previous.boardNames &&
+        state.boardMaterials === previous.boardMaterials &&
         state.grainedBoards === previous.grainedBoards &&
         state.holePitch === previous.holePitch &&
         state.boardColors === previous.boardColors &&
