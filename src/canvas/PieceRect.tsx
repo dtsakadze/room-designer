@@ -26,7 +26,7 @@ type PieceRectProps = {
   doorMarks: boolean
   /** Overlaps another part: drawn red. */
   clashing: boolean
-  /** A shelf or rod that spans further than it can safely (see `spanWarnings`). */
+  /** A shelf that spans further than it can safely (see `spanWarnings`). */
   overSpan: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void

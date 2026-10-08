@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Piece } from '../types'
 import { DEFAULT_THICKNESS } from './defaults'
 import { normalizePiece } from './geometry'
-import { maxRodSpan, maxShelfSpan, spanWarnings } from './spans'
+import { maxRodSpan, maxShelfSpan, rodCentreSupports, spanWarnings } from './spans'
 
 const thickness = DEFAULT_THICKNESS
 const piece = (id: string, kind: Piece['kind'], rect: Partial<Piece>): Piece =>
@@ -31,8 +31,19 @@ describe('max rod span', () => {
   })
 })
 
+describe('rod centre supports', () => {
+  it('are none up to the limit, then one more for each further stretch', () => {
+    expect(rodCentreSupports({ width: 1200, height: 25 })).toBe(0)
+    expect(rodCentreSupports({ width: 1201, height: 25 })).toBe(1)
+    expect(rodCentreSupports({ width: 2400, height: 25 })).toBe(1)
+    expect(rodCentreSupports({ width: 2401, height: 25 })).toBe(2)
+    // A thicker rod carries further.
+    expect(rodCentreSupports({ width: 1500, height: 32 })).toBe(0)
+  })
+})
+
 describe('span warnings', () => {
-  it('flags only shelves and rods that are too long, with their limit', () => {
+  it('flags only shelves that are too long, with their limit; rods get supports instead', () => {
     const pieces = [
       piece('ok', 'shelf', { width: 700 }),
       piece('long', 'shelf', { width: 900 }),
@@ -41,9 +52,8 @@ describe('span warnings', () => {
       piece('side', 'vertical', { width: 18, height: 2000 }),
     ]
     const warnings = spanWarnings(pieces, thickness, {})
-    expect([...warnings.keys()]).toEqual(['long', 'rod'])
-    expect(warnings.get('long')).toEqual({ kind: 'shelf', span: 900, max: 700 })
-    expect(warnings.get('rod')).toEqual({ kind: 'rod', span: 1500, max: 1200 })
+    expect([...warnings.keys()]).toEqual(['long'])
+    expect(warnings.get('long')).toEqual({ span: 900, max: 700 })
   })
 
   it('follows the body board’s material', () => {

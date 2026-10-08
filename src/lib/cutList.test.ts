@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
-import { CUT_LIST_SECTIONS, bandingTotals, cutList, hardwareList } from './cutList'
+import { CUT_LIST_SECTIONS, bandingTotals, cutList, describeHardware, hardwareList } from './cutList'
 import { BOARD, DEFAULT_THICKNESS } from './defaults'
 import { normalizePiece } from './geometry'
 
@@ -146,6 +146,15 @@ describe('hardware list', () => {
       { item: 'rod-supports', diameter: 25, quantity: 6 },
       { item: 'rod-supports', diameter: 32, quantity: 2 },
     ])
+  })
+
+  it('adds centre supports to a rod too long to span unsupported', () => {
+    const list = hardwareList([piece('rod', { width: 1500, height: 25 }), piece('rod', { width: 2500, height: 25 })], thickness)
+    expect(list.filter((row) => row.item === 'rod-centre-supports')).toEqual([
+      { item: 'rod-centre-supports', diameter: 25, quantity: 3 },
+    ])
+    expect(list.map((row) => row.item)).toEqual(['rod', 'rod', 'rod-supports', 'rod-centre-supports'])
+    expect(describeHardware(list[3], (mm) => `${mm}`).name).toBe('Rod centre support brackets, ⌀25')
   })
 
   it('puts drawer runners first, then rods', () => {

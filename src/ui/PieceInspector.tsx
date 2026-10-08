@@ -27,6 +27,7 @@ import { WallField } from './WallField'
 import { WALL_LABELS, wallOf } from '../lib/room'
 import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels, wallDepthStart } from '../lib/geometry'
 import { ZField } from './ZField'
+import { maxRodSpan, rodCentreSupports } from '../lib/spans'
 import { useSpanWarnings } from './useSpanWarnings'
 
 export function PieceInspector() {
@@ -211,19 +212,27 @@ function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; on
 }
 
 /**
- * Says when a shelf or rod spans further than it can safely between its
- * supports, and what the limit is.
+ * Says when a shelf spans further than it can safely between its supports,
+ * and what the limit is; for a rod, how many centre supports it gets.
  */
 function SpanNote({ piece }: { piece: Piece }) {
   const warning = useSpanWarnings().get(piece.id)
   const material = useDesignStore((s) => s.boardMaterials.body ?? 'chipboard')
   const { len } = useUnits()
+  if (piece.kind === 'rod') {
+    // Not a warning: the hardware list already counts the brackets that fix it.
+    const centre = rodCentreSupports(piece)
+    if (centre === 0) return null
+    return (
+      <p className="hint">
+        {`Spans ${len(piece.width)}, more than the ${len(maxRodSpan(piece.height))} a rod this thick carries. ${centre === 1 ? 'One centre support bracket is' : `${centre} centre support brackets are`} in the hardware list.`}
+      </p>
+    )
+  }
   if (!warning) return null
   return (
     <p className="hint hint-warn">
-      {warning.kind === 'shelf'
-        ? `Spans ${len(warning.span)}, more than ${len(warning.max)}: ${MATERIAL_LABELS[material].toLowerCase()} this thick sags under a load. Add a divider, use a thicker or stiffer board (Settings → Boards), or make the bay narrower.`
-        : `Spans ${len(warning.span)}, more than ${len(warning.max)}: a rod this thick sags with clothes on it. Add a centre support or use a thicker rod.`}
+      {`Spans ${len(warning.span)}, more than ${len(warning.max)}: ${MATERIAL_LABELS[material].toLowerCase()} this thick sags under a load. Add a divider, use a thicker or stiffer board (Settings → Boards), or make the bay narrower.`}
     </p>
   )
 }

@@ -27,12 +27,21 @@ const ROD_SPAN_PER_DIAMETER = 48
 /** The longest a rod can be between its supports, in mm, to the nearest 10. */
 export const maxRodSpan = (diameter: number) => Math.round((diameter * ROD_SPAN_PER_DIAMETER) / 10) * 10
 
-export type SpanWarning = { kind: 'shelf' | 'rod'; span: number; max: number }
+/**
+ * Centre support brackets a rod needs so that no stretch between supports is
+ * longer than it can carry: none for a rod that's short enough, then one more
+ * for each further `maxRodSpan` of length.
+ */
+export const rodCentreSupports = (rod: Pick<Piece, 'width' | 'height'>) =>
+  Math.max(0, Math.ceil(rod.width / maxRodSpan(rod.height)) - 1)
+
+export type SpanWarning = { span: number; max: number }
 
 /**
- * The shelves and rods longer than they can safely be between their supports,
- * by part id. A shelf's span is its width (it rests on a side or divider at
- * each end, so a wider bay needs a thicker or stiffer board, or a divider).
+ * The shelves longer than they can safely be between their supports, by part
+ * id. A shelf's span is its width (it rests on a side or divider at each end,
+ * so a wider bay needs a thicker or stiffer board, or a divider). A rod that's
+ * too long isn't a warning: it gets centre supports (`rodCentreSupports`).
  */
 export function spanWarnings(
   pieces: Piece[],
@@ -43,9 +52,7 @@ export function spanWarnings(
   const shelfMax = maxShelfSpan(materials.body ?? 'chipboard', thickness.body)
   for (const piece of pieces) {
     if (piece.kind === 'shelf' && piece.width > shelfMax) {
-      warnings.set(piece.id, { kind: 'shelf', span: piece.width, max: shelfMax })
-    } else if (piece.kind === 'rod' && piece.width > maxRodSpan(piece.height)) {
-      warnings.set(piece.id, { kind: 'rod', span: piece.width, max: maxRodSpan(piece.height) })
+      warnings.set(piece.id, { span: piece.width, max: shelfMax })
     }
   }
   return warnings

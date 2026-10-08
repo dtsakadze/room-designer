@@ -58,9 +58,9 @@ export function PartsList() {
     <>
       {spans.size > 0 && (
         <p className="hint hint-warn">
-          {spans.size === 1 ? '1 shelf or rod spans' : `${spans.size} shelves or rods span`} further
-          than {spans.size === 1 ? 'it' : 'they'} safely can (shown in orange). Select one to see
-          its limit.
+          {spans.size === 1 ? '1 shelf spans' : `${spans.size} shelves span`} further than{' '}
+          {spans.size === 1 ? 'it' : 'they'} safely can (shown in orange). Select one to see its
+          limit.
         </p>
       )}
       {clashes.size > 0 && (

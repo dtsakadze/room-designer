@@ -6,6 +6,7 @@ import { doorLeaves, slidingPanels } from './geometry'
 import { backFixings, carcassScrews, handleCount } from './fixings'
 import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
+import { rodCentreSupports } from './spans'
 
 export type CutListRow = {
   kind: PieceKind
@@ -248,6 +249,7 @@ export type HardwareRow =
   | { item: 'hinges'; fit: HingeFit; angle: number; softClose: boolean; quantity: number }
   | { item: 'rod'; diameter: number; length: number; quantity: number }
   | { item: 'rod-supports'; diameter: number; quantity: number }
+  | { item: 'rod-centre-supports'; diameter: number; quantity: number }
   | { item: 'track'; position: 'top' | 'bottom'; length: number; quantity: number }
   | { item: 'shelf-pins'; quantity: number }
   | { item: 'shelf-screws'; quantity: number }
@@ -271,7 +273,7 @@ const SUPPORTS_PER_ROD = 2
  * What to buy besides boards, identical items counted together: a pair of
  * runners per drawer (by type and length), each door leaf's hinges (by kind,
  * see `doorHinges`), each hanging rod (by diameter and the length to cut it
- * to), its end supports, four pins per adjustable shelf and four screws per
+ * to), its end supports (and centre supports when it's too long to span unsupported), four pins per adjustable shelf and four screws per
  * fixed one, the screws joining the carcass and fixing its backs (see
  * `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
  * too shallow for any runner are left out; the drawer's panel says so.
@@ -310,6 +312,8 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
       // A rod's height is its diameter and its width its length.
       add({ item: 'rod', diameter: piece.height, length: piece.width, quantity: 1 })
       add({ item: 'rod-supports', diameter: piece.height, quantity: SUPPORTS_PER_ROD })
+      const centre = rodCentreSupports(piece)
+      if (centre > 0) add({ item: 'rod-centre-supports', diameter: piece.height, quantity: centre })
     } else if (isAdjustable(piece)) {
       add({ item: 'shelf-pins', quantity: PINS_PER_SHELF })
     } else if (piece.kind === 'shelf') {
@@ -329,12 +333,13 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     hinges: 1,
     rod: 2,
     'rod-supports': 3,
-    track: 4,
-    'shelf-pins': 5,
-    'shelf-screws': 6,
-    'carcass-screws': 7,
-    'back-fixings': 8,
-    handles: 9,
+    'rod-centre-supports': 4,
+    track: 5,
+    'shelf-pins': 6,
+    'shelf-screws': 7,
+    'carcass-screws': 8,
+    'back-fixings': 9,
+    handles: 10,
   }
   return [...rows.values()].sort(
     (a, b) =>
@@ -378,6 +383,8 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
     case 'rod-supports':
       return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
+    case 'rod-centre-supports':
+      return { name: `Rod centre support brackets, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
     case 'track':
       return { name: `Sliding door track, ${row.position}, ${len(row.length)}`, count: `${row.quantity}`, ...each }
     case 'shelf-pins':

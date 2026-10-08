@@ -21,7 +21,7 @@ export const FILLS: Record<PieceKind, string> = {
 export const SELECTED = '#2563eb'
 /** Parts that overlap another part. */
 export const CLASH = '#dc2626'
-/** Shelves and rods that span further than they can safely. */
+/** Shelves that span further than they can safely. */
 export const SPAN_WARNING = '#d97706'
 
 /** Darker versions, for a board seen edge-on: its cut edge, not its face. */

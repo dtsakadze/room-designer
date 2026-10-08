@@ -4,7 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
-- Shelf and rod span warnings: a shelf wider than its board can span without sagging, or a rod longer than it can carry, gets an orange outline, is marked in the Parts list, and the Selected panel says what the limit is. The shelf limit comes from the new Material choice under Settings → Boards (Chipboard, MDF, Plywood or Solid wood) and the board's thickness, so a thicker or stiffer board spans further. The limits are rules of thumb for clothes and folded things; heavy loads such as books need less.
+- Shelf span warnings: a shelf wider than its board can span without sagging gets an orange outline, is marked in the Parts list, and the Selected panel says what the limit is. The limit comes from the new Material choice under Settings → Boards (Chipboard, MDF, Plywood or Solid wood) and the board's thickness, so a thicker or stiffer board spans further. The limits are rules of thumb for clothes and folded things; heavy loads such as books need less.
+- Hanging rods longer than they can carry (1200 mm for a 25 mm rod) get centre support brackets: the Selected panel says how many, and the hardware list has them as Rod centre support brackets.
 
 ## 1.8.0 — 2026-10-08
 
