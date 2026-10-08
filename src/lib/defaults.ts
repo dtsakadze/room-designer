@@ -1,4 +1,4 @@
-import type { BoardKey, BoardMaterial, HandleType, PaneType, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
+import type { AccessoryType, BoardKey, BoardMaterial, HandleType, PaneType, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -96,6 +96,40 @@ export const PANE_LABELS: Record<PaneType, string> = { glass: 'Glass', mirror: '
 /** Glass and mirror panes are this thick, in mm, whatever the front board is. */
 export const PANE_THICKNESS = 4
 
+/**
+ * The accessories that can be added to a unit, with the size each starts at
+ * (a unit about 600 mm wide inside) and whether it pulls out on runners.
+ * Bought as one fitting, so they're in the hardware list, not the cut list.
+ */
+export const ACCESSORIES: {
+  type: AccessoryType
+  label: string
+  /** A word or two to write on the drawing, where there's room. */
+  short: string
+  width: number
+  height: number
+  depth: number
+  pullOut: boolean
+}[] = [
+  { type: 'trouser', label: 'Pull-out trouser rack', short: 'Trousers', width: 500, height: 100, depth: 450, pullOut: true },
+  { type: 'tie', label: 'Tie and belt rack', short: 'Ties and belts', width: 450, height: 80, depth: 450, pullOut: true },
+  { type: 'basket', label: 'Pull-out wire basket', short: 'Basket', width: 564, height: 200, depth: 450, pullOut: true },
+  { type: 'shoes-pullout', label: 'Pull-out shoe rack', short: 'Shoes', width: 564, height: 120, depth: 450, pullOut: true },
+  { type: 'shoes-angled', label: 'Angled shoe shelf', short: 'Angled shoes', width: 564, height: 150, depth: 350, pullOut: false },
+]
+
+export const ACCESSORY_TYPES = ACCESSORIES.map((accessory) => accessory.type)
+
+export const ACCESSORY_LABELS = Object.fromEntries(
+  ACCESSORIES.map(({ type, label }) => [type, label]),
+) as Record<AccessoryType, string>
+
+/** The starting values for an accessory of this type. */
+export function accessoryDefaults(type: AccessoryType): Partial<Piece> {
+  const { width, height, depth } = ACCESSORIES.find((accessory) => accessory.type === type)!
+  return { accessory: type, width, height, depth }
+}
+
 /** Panels in a set of sliding doors, fewest first; two is the default. */
 export const SLIDING_PANELS = [2, 3, 4]
 /** How far neighbouring sliding panels overlap, so there's no gap to see through. */
@@ -159,13 +193,15 @@ export const PIECE_LABELS: Record<PieceKind, string> = {
   door: 'Door',
   filler: 'Filler strip',
   cornice: 'Cornice',
+  accessory: 'Accessory',
 }
 
 /**
  * A piece's name: tells fixed shelves from adjustable ones, front rails from
  * back, single doors from double.
  */
-export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double' | 'sliding'>) {
+export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double' | 'sliding' | 'accessory'>) {
+  if (piece.kind === 'accessory') return piece.accessory ? ACCESSORY_LABELS[piece.accessory] : 'Accessory'
   if (piece.kind === 'shelf') return piece.fixed ? 'Fixed shelf' : 'Adjustable shelf'
   if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
   if (piece.kind === 'door') return piece.sliding ? 'Sliding doors' : piece.double ? 'Double door' : 'Door'
@@ -177,6 +213,8 @@ export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
   { title: 'Fronts', kinds: ['door'] },
   { title: 'Trim', kinds: ['cornice', 'filler'] },
+  // Offered as one button for each type of accessory, see `ACCESSORIES`.
+  { title: 'Accessories', kinds: ['accessory'] },
 ]
 
 /**
@@ -239,6 +277,9 @@ function dimensions(
       return { width: FILLER_WIDTH, height: 2000, depth: 0 }
     case 'cornice':
       return { width: UNIT_WIDTH, height: CORNICE_HEIGHT, depth: 0 }
+    // Sized by its type when added from Accessories; a basket otherwise.
+    case 'accessory':
+      return { width: inside, height: 200, depth: Math.max(1, unitDepth - SHELF_SETBACK) }
   }
 }
 

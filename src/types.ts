@@ -11,6 +11,7 @@ export type PieceKind =
   | 'door'
   | 'filler'
   | 'cornice'
+  | 'accessory'
 
 /**
  * One board, seen head-on. Everything lives in a single 2D world measured in
@@ -74,6 +75,9 @@ export type SheetSetup = { length: number; width: number; kerf: number }
  */
 export type BoardSheets = Partial<Record<BoardKey, SheetSetup>>
 
+/** The kinds of accessory that fit in a unit: bought as one fitting, not cut from board. */
+export type AccessoryType = 'trouser' | 'tie' | 'basket' | 'shoes-pullout' | 'shoes-angled'
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 
@@ -131,6 +135,8 @@ export type Piece = {
    * own. Absent means a board door.
    */
   pane?: PaneType
+  /** Accessories only: which kind it is (a pull-out trouser rack, a wire basket, a shoe rack, …). */
+  accessory?: AccessoryType
   /** Doors and drawers only: has no handle or knob. Absent means it has one. */
   noHandle?: boolean
   /**

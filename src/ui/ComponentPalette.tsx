@@ -1,4 +1,4 @@
-import { PIECE_GROUPS, PIECE_LABELS, slidingDoorDefaults } from '../lib/defaults'
+import { ACCESSORIES, PIECE_GROUPS, PIECE_LABELS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
 
@@ -35,16 +35,30 @@ export function ComponentPalette() {
         <section key={group.title} className="section">
           <h2>{group.title}</h2>
           <div className="add-grid">
-            {group.kinds.map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                className="add-button"
-                onClick={() => addPiece(kind)}
-              >
-                {PIECE_LABELS[kind]}
-              </button>
-            ))}
+            {group.kinds.map((kind) =>
+              kind === 'accessory' ? (
+                // One button for each type, each starting at its own size.
+                ACCESSORIES.map((accessory) => (
+                  <button
+                    key={accessory.type}
+                    type="button"
+                    className="add-button"
+                    onClick={() => addPiece('accessory', accessoryDefaults(accessory.type))}
+                  >
+                    {accessory.label}
+                  </button>
+                ))
+              ) : (
+                <button
+                  key={kind}
+                  type="button"
+                  className="add-button"
+                  onClick={() => addPiece(kind)}
+                >
+                  {PIECE_LABELS[kind]}
+                </button>
+              ),
+            )}
             {/* Sliding doors are a door with a panel count, so they sit with the other fronts. */}
             {group.kinds.includes('door') && (
               <button

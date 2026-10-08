@@ -1,4 +1,4 @@
-import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, BoardSheets, Box, HandleType, JointType, PaneType, Piece, PieceKind, Room, Thickness } from '../types'
+import type { AccessoryType, BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, BoardSheets, Box, HandleType, JointType, PaneType, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import { DEFAULT_KERF, cleanSheet } from './sheets'
 import {
@@ -26,7 +26,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 16
+export const FORMAT_VERSION = 17
 
 type Raw = Record<string, unknown>
 
@@ -126,6 +126,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // only the version changes; the bump makes an older app refuse such a save
   // rather than drop the sheets.
   15: (data) => ({ ...data, formatVersion: 16 }),
+  // v17 adds the `accessory` part kind (pull-out racks, baskets, shoe racks),
+  // with its `accessory` type. Nothing older has any, so only the version
+  // changes; the bump makes an older app refuse such a save rather than drop
+  // them.
+  16: (data) => ({ ...data, formatVersion: 17 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -295,6 +300,7 @@ function validate(data: Raw): ProjectData | null {
       openAngle: typeof raw.openAngle === 'number' ? raw.openAngle : undefined,
       softClose: raw.softClose === true,
       // Checked against the panel counts and overlaps allowed by `normalizePiece`.
+      accessory: typeof raw.accessory === 'string' ? (raw.accessory as AccessoryType) : undefined,
       pane: raw.pane === 'glass' || raw.pane === 'mirror' ? (raw.pane as PaneType) : undefined,
       sliding: typeof raw.sliding === 'number' ? raw.sliding : undefined,
       overlap: typeof raw.overlap === 'number' ? raw.overlap : undefined,

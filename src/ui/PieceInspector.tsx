@@ -1,4 +1,5 @@
 import {
+  ACCESSORIES,
   BOARD,
   CLOSE_LABELS,
   DOOR_ANGLES,
@@ -104,6 +105,7 @@ export function PieceInspector() {
 
       {piece.kind === 'door' && <DoorOptions piece={piece} />}
       {(piece.kind === 'filler' || piece.kind === 'cornice') && <TrimOptions piece={piece} />}
+      {piece.kind === 'accessory' && <AccessoryOptions piece={piece} />}
       <SpanNote piece={piece} />
       {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
       <FinishFields piece={piece} />
@@ -211,6 +213,37 @@ function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; on
             : piece.kind === 'drawer' && piece.overlay
               ? 'Sets the width and X so the front covers both sides.'
               : 'Sets the width and X to fill the gap between the sides.'}
+      </p>
+    </>
+  )
+}
+
+/**
+ * What kind of accessory this is, which only changes what it's called and
+ * how it's drawn and listed; its size stays as set.
+ */
+function AccessoryOptions({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const kind = ACCESSORIES.find((accessory) => accessory.type === piece.accessory)
+  return (
+    <>
+      <div className="choice choice-column" role="radiogroup" aria-label="Accessory">
+        {ACCESSORIES.map((accessory) => (
+          <label key={accessory.type} className="checkbox">
+            <input
+              type="radio"
+              name={`accessory-${piece.id}`}
+              checked={piece.accessory === accessory.type}
+              onChange={() => updatePiece(piece.id, { accessory: accessory.type })}
+            />
+            {accessory.label}
+          </label>
+        ))}
+      </div>
+      <p className="hint">
+        {kind?.pullOut
+          ? 'Bought as one fitting with its runners: the hardware list has it by width and depth. Size it to the opening, less the room the runners need on each side.'
+          : 'Bought as one fitting: the hardware list has it by width and depth.'}
       </p>
     </>
   )

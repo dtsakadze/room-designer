@@ -1,5 +1,5 @@
-import type { BoardKey, Dimension, Edge, JointType, PaneType, Piece, PieceKind, Thickness } from '../types'
-import { BOARD, BOARDS, CLOSE_LABELS, EXTENSION_LABELS, PANE_LABELS, PANE_THICKNESS, pieceLabel } from './defaults'
+import type { AccessoryType, BoardKey, Dimension, Edge, JointType, PaneType, Piece, PieceKind, Thickness } from '../types'
+import { BOARD, BOARDS, CLOSE_LABELS, ACCESSORY_LABELS, EXTENSION_LABELS, PANE_LABELS, PANE_THICKNESS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves, slidingPanels } from './geometry'
@@ -253,6 +253,7 @@ export type HardwareRow =
   | { item: 'rod-supports'; diameter: number; quantity: number }
   | { item: 'rod-centre-supports'; diameter: number; quantity: number }
   | { item: 'track'; position: 'top' | 'bottom'; length: number; quantity: number }
+  | { item: 'accessories'; accessory: AccessoryType; width: number; depth: number; quantity: number }
   | { item: 'panes'; pane: PaneType; width: number; height: number; thickness: number; quantity: number }
   | { item: 'shelf-pins'; quantity: number }
   | { item: 'shelf-screws'; quantity: number }
@@ -307,6 +308,15 @@ export function hardwareList(
     add({ item: 'hinges', fit, angle, softClose, quantity: count })
   }
   for (const piece of pieces) {
+    if (piece.kind === 'accessory') {
+      add({
+        item: 'accessories',
+        accessory: piece.accessory ?? 'basket',
+        width: Math.round(piece.width),
+        depth: Math.round(piece.depth),
+        quantity: 1,
+      })
+    }
     if (piece.kind === 'door' && piece.pane) {
       // Each panel or leaf is a pane of its own, cut to its size.
       for (const front of doorFronts(piece)) {
@@ -363,6 +373,7 @@ export function hardwareList(
     'rod-centre-supports',
     'track',
     'panes',
+    'accessories',
     'shelf-pins',
     'shelf-screws',
     'carcass-screws',
@@ -392,6 +403,7 @@ export function hardwareList(
           Number(a.softClose) - Number(b.softClose)
         : 0) ||
       ('position' in a && 'position' in b ? a.position.localeCompare(b.position) : 0) ||
+      ('accessory' in a && 'accessory' in b ? a.accessory.localeCompare(b.accessory) || b.width - a.width : 0) ||
       ('pane' in a && 'pane' in b ? a.pane.localeCompare(b.pane) || b.height - a.height || b.width - a.width : 0) ||
       ('diameter' in a && 'diameter' in b ? a.diameter - b.diameter : 0) ||
       ('length' in a && 'length' in b ? b.length - a.length : 0),
@@ -424,6 +436,12 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
     case 'rod-centre-supports':
       return { name: `Rod centre support brackets, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
+    case 'accessories':
+      return {
+        name: `${ACCESSORY_LABELS[row.accessory]}, ${len(row.width)} wide × ${len(row.depth)} deep`,
+        count: `${row.quantity}`,
+        ...each,
+      }
     case 'panes':
       return {
         name: `${PANE_LABELS[row.pane]} pane, ${len(row.width)} × ${len(row.height)} × ${len(row.thickness)}`,

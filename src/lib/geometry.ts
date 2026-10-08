@@ -3,6 +3,7 @@ import {
   BOARD,
   DOOR_ANGLES,
   DOOR_LEAF_GAP,
+  ACCESSORY_TYPES,
   DOOR_OPEN_ANGLE,
   HANDLE_TYPES,
   MAX_SLIDING_OVERLAP,
@@ -104,6 +105,10 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (!piece.grain || !faces.includes(piece.grain) || piece.grain === autoGrain(piece.kind)) {
     delete normalized.grain
   }
+  // An accessory is always one of the known kinds; anything else is a basket.
+  if (piece.kind === 'accessory') {
+    normalized.accessory = ACCESSORY_TYPES.includes(piece.accessory!) ? piece.accessory : 'basket'
+  } else delete normalized.accessory
   // Glass and mirror aren't board: their own thickness, and none of a board's finish.
   if (piece.kind === 'door' && PANE_TYPES.includes(piece.pane!)) {
     normalized.depth = PANE_THICKNESS
@@ -267,8 +272,8 @@ const overlaps = (a: Edges, b: Edges) =>
  * `z` when it has one. Otherwise everything sits flush against the back: the
  * back panel takes the first `thickness.back` mm, and the rest start in front
  * of it. The exceptions: the plinth sits at the front, set back a little, a rail
- * runs along the front unless it's marked as a back rail, trim sits flush
- * with the front edge, a door stands in
+ * runs along the front unless it's marked as a back rail, trim and
+ * accessories sit flush with the front edge, a door stands in
  * front of the unit (overlay) or just inside its front edge (inset), and so
  * does a drawer's front, its box behind it inside the unit.
  */
@@ -279,13 +284,15 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
   const front = Math.max(
     0,
     ...pieces
-      .filter((piece) => !['plinth', 'rail', 'door', 'drawer', 'filler', 'cornice'].includes(piece.kind))
+      .filter((piece) => !['plinth', 'rail', 'door', 'drawer', 'filler', 'cornice', 'accessory'].includes(piece.kind))
       .map((piece) => (piece.z ?? behind(piece)) + piece.depth),
   )
   return (piece: Piece) => {
     if (piece.z !== undefined) return piece.z
     if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
+    // A pull-out or shoe shelf starts at the front of the unit, not against the back.
+    if (piece.kind === 'accessory') return Math.max(0, front - piece.depth)
     // Trim sits flush with the front edges of the unit, like an inset door.
     if (piece.kind === 'filler' || piece.kind === 'cornice') return Math.max(0, front - piece.depth)
     if (piece.kind === 'door') return piece.inset ? Math.max(0, front - piece.depth) : front

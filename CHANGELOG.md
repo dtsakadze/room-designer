@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Accessories: Add → Accessories has a Pull-out trouser rack, Tie and belt rack, Pull-out wire basket, Pull-out shoe rack and Angled shoe shelf. Each starts at a usual size, sits at the front of your unit, has a tint of its own and its name written on it, and is drawn with simple lines (bars, hooks, a wire grid or slats); change its type, size and position in the Selected panel. They're bought as one fitting, so the hardware list has each by type, width and depth, and they aren't in the cut list.
+
 ## 1.9.0 — 2026-10-09
 
 - Looks to try in one click: Settings → Boards → Look has Standard (no colours and no grain, as a new project starts), Oak and white, All white, All black, Walnut and grey, Light oak all over, and Grey melamine with oak fronts. A look sets the colour and edge banding of every board and which boards have a grain; Undo brings back the old one. Parts you coloured yourself keep their colour unless you tick Also reset parts I coloured myself.

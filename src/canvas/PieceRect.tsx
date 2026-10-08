@@ -1,9 +1,9 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
-import { SLIDING_TRACK_HEIGHT } from '../lib/defaults'
+import { ACCESSORIES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorLeaves, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { CLASH, PANE_FILLS, SPAN_WARNING } from './colors'
+import { ACCESSORY_FILLS, CLASH, PANE_FILLS, SPAN_WARNING } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -108,6 +108,7 @@ export function PieceRect({
             style={{ pointerEvents: 'none' }}
           />
         ))}
+      {doorMarks && piece.kind === 'accessory' && <AccessoryMarks piece={piece} y={y} unit={unit} />}
       {doorMarks && piece.kind === 'door' && !piece.sliding && piece.pane && (
         <PaneSheen piece={piece} y={y} unit={unit} />
       )}
@@ -264,6 +265,66 @@ function Sheen({
         <polygon points={band(0.1, 0.14)} />
         <polygon points={band(0.34, 0.05)} />
       </g>
+    </g>
+  )
+}
+
+/**
+ * What an accessory looks like from the front, as simple lines: bars for a
+ * trouser rack, upright hooks for ties and belts, a wire grid for a basket,
+ * slats for a shoe rack (slanted on the angled shelf).
+ */
+function AccessoryMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+  const pad = Math.min(piece.width, piece.height) * 0.14
+  const [x0, x1] = [piece.x + pad, piece.x + piece.width - pad]
+  const [y0, y1] = [y + pad, y + piece.height - pad]
+  const across = (count: number): [number, number, number, number][] =>
+    Array.from({ length: count }, (_, i) => {
+      const at = y0 + ((y1 - y0) * i) / (count - 1)
+      return [x0, at, x1, at]
+    })
+  const up = (count: number): [number, number, number, number][] =>
+    Array.from({ length: count }, (_, i) => {
+      const at = x0 + ((x1 - x0) * i) / (count - 1)
+      return [at, y0, at, y1]
+    })
+  const lines: [number, number, number, number][] =
+    piece.accessory === 'trouser'
+      ? across(5)
+      : piece.accessory === 'tie'
+        ? up(9)
+        : piece.accessory === 'shoes-pullout'
+          ? across(3)
+          : piece.accessory === 'shoes-angled'
+            ? Array.from({ length: 5 }, (_, i): [number, number, number, number] => {
+                const at = x0 + ((x1 - x0) * i) / 4
+                return [at, y1, Math.min(x1, at + (x1 - x0) / 8), y0]
+              })
+            : [...across(4), ...up(10)]
+  // The type's name across the middle, when it fits at the size the other labels are.
+  const word = ACCESSORIES.find((accessory) => accessory.type === piece.accessory)?.short
+  const text = unit * 13
+  const fits = !!word && piece.width > word.length * text * 0.62 + pad * 2 && piece.height > text * 1.5
+  return (
+    <g stroke="#5b6572" strokeWidth={unit} style={{ pointerEvents: 'none' }}>
+      {lines.map(([ax, ay, bx, by], index) => (
+        <line key={index} x1={ax} y1={ay} x2={bx} y2={by} />
+      ))}
+      {fits && (
+        <text
+          x={piece.x + piece.width / 2}
+          y={y + piece.height / 2 + text / 3}
+          textAnchor="middle"
+          fontSize={text}
+          fill="#2f3945"
+          // A halo in the box's own colour keeps the word clear of the lines behind it.
+          stroke={ACCESSORY_FILLS[piece.accessory!]}
+          strokeWidth={text / 3}
+          paintOrder="stroke"
+        >
+          {word}
+        </text>
+      )}
     </g>
   )
 }

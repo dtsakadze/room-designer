@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { findClashes } from '../lib/geometry'
 import { LOOKS, STANDARD_LOOK } from '../lib/looks'
 import { toProjectData } from '../lib/project'
-import { DEFAULT_THICKNESS, slidingDoorDefaults } from '../lib/defaults'
+import { DEFAULT_THICKNESS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { wallOf } from '../lib/room'
 import { useDesignStore } from './useDesignStore'
 
@@ -895,5 +895,18 @@ describe('looks', () => {
     expect(store().grainedBoards).toEqual([])
     store().undo()
     expect(store().boardColors.front).toBe(oakWhite.boardColors.front)
+  })
+})
+
+describe('accessories', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('are added with the size of their type, and can change type without changing size', () => {
+    store().addPiece('accessory', accessoryDefaults('trouser'))
+    const [added] = store().pieces
+    expect(added).toMatchObject({ kind: 'accessory', accessory: 'trouser', width: 500, height: 100, depth: 450 })
+    expect(added.x).toBe(-250)
+    store().updatePiece(added.id, { accessory: 'basket' })
+    expect(store().pieces[0]).toMatchObject({ accessory: 'basket', width: 500, height: 100 })
   })
 })

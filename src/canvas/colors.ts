@@ -1,6 +1,6 @@
 import { BOARD } from '../lib/defaults'
 import { bandsOf } from '../lib/edges'
-import type { BoardColors, BoardKey, Edge, Piece, PieceKind } from '../types'
+import type { AccessoryType, BoardColors, BoardKey, Edge, Piece, PieceKind } from '../types'
 
 /** Part colours, shared by the flat views and the 3D preview. */
 export const FILLS: Record<PieceKind, string> = {
@@ -16,6 +16,16 @@ export const FILLS: Record<PieceKind, string> = {
   door: '#cdb68c',
   filler: '#cdb68c',
   cornice: '#cdb68c',
+  accessory: '#c3cad2',
+}
+
+/** Each kind of accessory has a tint of its own, so they read as different at a glance. */
+export const ACCESSORY_FILLS: Record<AccessoryType, string> = {
+  trouser: '#c7b79c',
+  tie: '#d3b3ba',
+  basket: '#b4c6d4',
+  'shoes-pullout': '#b9cbb0',
+  'shoes-angled': '#d8c995',
 }
 
 /** The look of glass and mirror panes in the flat views and 3D. */
@@ -59,13 +69,17 @@ export type DesignColors = { boardColors: BoardColors; edgeColors: BoardColors }
  * overrides the part's board, for a drawer's boards (its box isn't its front).
  */
 export function faceColor(
-  piece: Pick<Piece, 'kind' | 'color' | 'pane'>,
+  piece: Pick<Piece, 'kind' | 'color' | 'pane' | 'accessory'>,
   { boardColors }: Pick<DesignColors, 'boardColors'> & Partial<DesignColors>,
   board = boardOf(piece.kind),
 ) {
   if (piece.pane) return PANE_FILLS[piece.pane]
-  return piece.color ?? (board && boardColors[board]) ?? FILLS[piece.kind]
+  return piece.color ?? (board && boardColors[board]) ?? kindFill(piece)
 }
+
+/** A part's standard colour: its kind's, or for an accessory its type's. */
+const kindFill = (piece: Pick<Piece, 'kind' | 'accessory'>) =>
+  (piece.accessory && ACCESSORY_FILLS[piece.accessory]) || FILLS[piece.kind]
 
 /** The flat views a board can be seen edge-on in. */
 export type EdgeView = 'front' | 'back' | 'left' | 'right' | 'top'
@@ -92,5 +106,5 @@ export function edgeOnColor(piece: Piece, view: EdgeView, colors: DesignColors) 
   if (banding && BOARD[piece.kind] && bandsOf(piece).includes(FACING[view])) return banding
   if (piece.color) return piece.color
   const boardColor = board && colors.boardColors[board]
-  return boardColor ? darken(boardColor, 0.18) : EDGE_FILLS[piece.kind]
+  return boardColor ? darken(boardColor, 0.18) : piece.accessory ? darken(kindFill(piece), 0.18) : EDGE_FILLS[piece.kind]
 }

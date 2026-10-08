@@ -122,6 +122,26 @@ describe('readProject', () => {
     expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
   })
 
+  it('keeps accessories with their type, and turns an unknown type into a basket', () => {
+    const result = readProject(fixture('v17-accessories'))
+    if (!result.ok) throw new Error("v17-accessories didn't open")
+    const types = result.project.pieces.filter((piece) => piece.kind === 'accessory').map((piece) => piece.accessory)
+    expect(types).toEqual(['trouser', 'basket', 'basket', 'shoes-angled'])
+    const bad = fixture('v17-accessories') as { pieces: { id: string; accessory?: unknown }[] }
+    bad.pieces.find((piece) => piece.id === 'trousers')!.accessory = 'jacuzzi'
+    delete bad.pieces.find((piece) => piece.id === 'shoes')!.accessory
+    const cleaned = readProject(bad)
+    if (!cleaned.ok) throw new Error("the edited save didn't open")
+    const accessory = (id: string) => cleaned.project.pieces.find((piece) => piece.id === id)?.accessory
+    expect([accessory('trousers'), accessory('shoes')]).toEqual(['basket', 'basket'])
+    // Only accessories have a type.
+    const shelf = fixture('v17-accessories') as { pieces: { id: string; accessory?: unknown; kind: string }[] }
+    shelf.pieces.push({ id: 'shelf-typed', kind: 'shelf', accessory: 'tie', x: 0, y: 0, width: 500, height: 18, depth: 400 } as never)
+    const typed = readProject(shelf)
+    if (!typed.ok) throw new Error("the edited save didn't open")
+    expect(typed.project.pieces.find((piece) => piece.id === 'shelf-typed')).not.toHaveProperty('accessory')
+  })
+
   it('keeps the boards bought as whole sheets, and opens older saves as cut to size', () => {
     const result = readProject(fixture('v16-sheets'))
     if (!result.ok) throw new Error("v16-sheets didn't open")
@@ -440,7 +460,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes', 'v16-sheets'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes', 'v16-sheets', 'v17-accessories'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))
