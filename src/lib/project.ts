@@ -1,4 +1,4 @@
-import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, HandleType, JointType, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, HandleType, JointType, PaneType, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   BOARDS,
@@ -25,7 +25,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 14
+export const FORMAT_VERSION = 15
 
 type Raw = Record<string, unknown>
 
@@ -116,6 +116,10 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // the version changes; the bump makes an older app refuse such a save
   // rather than turn the choice back into a plain handle.
   13: (data) => ({ ...data, formatVersion: 14 }),
+  // v15 adds a door's optional `pane` (`glass` or `mirror`). Absent, it's a
+  // board door as before, so only the version changes; the bump makes an
+  // older app refuse such a save rather than show glass as a board.
+  14: (data) => ({ ...data, formatVersion: 15 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -280,6 +284,7 @@ function validate(data: Raw): ProjectData | null {
       openAngle: typeof raw.openAngle === 'number' ? raw.openAngle : undefined,
       softClose: raw.softClose === true,
       // Checked against the panel counts and overlaps allowed by `normalizePiece`.
+      pane: raw.pane === 'glass' || raw.pane === 'mirror' ? (raw.pane as PaneType) : undefined,
       sliding: typeof raw.sliding === 'number' ? raw.sliding : undefined,
       overlap: typeof raw.overlap === 'number' ? raw.overlap : undefined,
     }

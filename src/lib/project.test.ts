@@ -122,6 +122,22 @@ describe('readProject', () => {
     expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
   })
 
+  it('keeps glass and mirror doors, with their own thickness', () => {
+    const result = readProject(fixture('v15-panes'))
+    if (!result.ok) throw new Error("v15-panes didn't open")
+    const door = (id: string) => result.project.pieces.find((piece) => piece.id === id)!
+    expect(door('door-glass')).toMatchObject({ pane: 'glass', depth: 4 })
+    expect(door('door-mirror')).toMatchObject({ pane: 'mirror', sliding: 2, depth: 4 })
+    expect(door('door-board')).not.toHaveProperty('pane')
+    const bad = fixture('v15-panes') as { pieces: { id: string; kind: string; pane?: unknown }[] }
+    bad.pieces.find((piece) => piece.id === 'door-glass')!.pane = 'diamond'
+    bad.pieces.push({ id: 'shelf-pane', kind: 'shelf', x: 0, y: 0, width: 500, height: 18, depth: 400, pane: 'glass' } as never)
+    const cleaned = readProject(bad)
+    if (!cleaned.ok) throw new Error("the edited save didn't open")
+    expect(cleaned.project.pieces.find((piece) => piece.id === 'door-glass')).not.toHaveProperty('pane')
+    expect(cleaned.project.pieces.find((piece) => piece.id === 'shelf-pane')).not.toHaveProperty('pane')
+  })
+
   it('keeps what doors and drawers are opened with', () => {
     const result = readProject(fixture('v14-handles'))
     if (!result.ok) throw new Error("v14-handles didn't open")
@@ -404,7 +420,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))

@@ -2,13 +2,14 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { drawerParts } from '../lib/drawer'
-import { bandsOf } from '../lib/edges'
+import { bandsOf, grainOf } from '../lib/edges'
+import { roomAxisOf } from '../lib/grain'
 import { pieceSolids, wallDepthStart } from '../lib/geometry'
 import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
-import type { BoardKey, Edge, Piece, Room, Thickness } from '../types'
+import type { BoardKey, Dimension, Edge, Piece, Room, Thickness } from '../types'
 import { CLASH, type DesignColors, SELECTED, boardOf, faceColor } from './colors'
 
 const BACKGROUND = '#f4f6f9'
@@ -37,6 +38,7 @@ export default function Preview3D() {
   const selectedId = useDesignStore((s) => s.selectedId)
   const boardColors = useDesignStore((s) => s.boardColors)
   const edgeColors = useDesignStore((s) => s.edgeColors)
+  const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const clashes = useClashes()
 
   // Scene, camera, renderer and controls: set up once.
@@ -137,16 +139,18 @@ export default function Preview3D() {
       const colors = { boardColors, edgeColors }
       // A drawer as its boards, so you can see into it past a see-through door;
       // each is cut from its own board, with its own banding.
-      const boards: { board: BoardKey | null; bands: Edge[] }[] =
+      const boards: { board: BoardKey | null; bands: Edge[]; grain: Dimension | null }[] =
         piece.kind === 'drawer'
           ? drawerParts(piece, thickness)
-          : [{ board: boardOf(piece.kind), bands: piece.kind === 'rod' ? [] : bandsOf(piece) }]
+          : [{ board: boardOf(piece.kind), bands: piece.kind === 'rod' ? [] : bandsOf(piece), grain: piece.pane ? null : grainOf(piece) }]
       pieceSolids(piece, zStart(piece), thickness, room).forEach((box, index) => {
-        const { board, bands } = boards[index] ?? boards[0]
-        current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, room)))
+        const { board, bands, grain } = boards[index] ?? boards[0]
+        // Wood grain on the boards marked as having one, along the way each part's grain runs.
+        const grainAxis = board && grain && grainedBoards.includes(board) ? roomAxisOf(grain, wallOf(piece)) : null
+        current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, room, grainAxis)))
       })
     }
-  }, [pieces, thickness, room, selectedId, clashes, showDoors, boardColors, edgeColors])
+  }, [pieces, thickness, room, selectedId, clashes, showDoors, boardColors, edgeColors, grainedBoards])
 
   // The room's outline on the floor, once there's more than one wall.
   useEffect(() => {
@@ -168,17 +172,81 @@ export default function Preview3D() {
 }
 
 /**
+ * The room axes along the two sides of each face of a `BoxGeometry` (its
+ * material groups: +x, -x, +y, -y, +z, -z), as texture u then v.
+ */
+const FACE_AXES = [
+  [2, 1],
+  [2, 1],
+  [0, 2],
+  [0, 2],
+  [0, 1],
+  [0, 1],
+] as const
+
+/** How many mm one tile of the grain texture covers. */
+const GRAIN_TILE = 500
+const grainCanvases: Partial<Record<'across' | 'up', HTMLCanvasElement>> = {}
+
+/**
+ * Wood grain for a face, as faint dark lines on white (so the part's colour
+ * still shows) running `across` its first side or `up` its second, repeated to
+ * suit the face's size in mm. The canvas is drawn once and shared.
+ */
+function woodTexture(direction: 'across' | 'up', width: number, height: number) {
+  let canvas = grainCanvases[direction]
+  if (!canvas) {
+    const size = 256
+    canvas = document.createElement('canvas')
+    canvas.width = canvas.height = size
+    const context = canvas.getContext('2d')!
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, size, size)
+    // A fixed spread of lines, so every board has the same grain and it never flickers.
+    let seed = 7
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+    for (let line = 0; line < 70; line++) {
+      const at = random() * size
+      context.strokeStyle = `rgba(90, 60, 20, ${0.05 + random() * 0.16})`
+      context.lineWidth = 0.6 + random() * 1.8
+      context.beginPath()
+      if (direction === 'across') {
+        context.moveTo(0, at)
+        context.lineTo(size, at)
+      } else {
+        context.moveTo(at, 0)
+        context.lineTo(at, size)
+      }
+      context.stroke()
+    }
+    grainCanvases[direction] = canvas
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+  texture.repeat.set(Math.max(width / GRAIN_TILE, 0.05), Math.max(height / GRAIN_TILE, 0.05))
+  return texture
+}
+
+/**
  * How a solid is coloured: its face colour, and the faces of its box that are
  * banded edges with their banding colour (only when the board has one).
  */
-type Finish = { face: string; edge: string | null; bandedFaces: number[] }
+type Finish = { face: string; edge: string | null; bandedFaces: number[]; grainAxis: number | null }
 
-function finishOf(piece: Piece, board: BoardKey | null, bands: Edge[], colors: DesignColors, room: Room): Finish {
+function finishOf(
+  piece: Piece,
+  board: BoardKey | null,
+  bands: Edge[],
+  colors: DesignColors,
+  room: Room,
+  grainAxis: number | null,
+): Finish {
   const face = faceColor(piece, colors, board)
   const edge = (board && colors.edgeColors[board]) || null
-  if (!edge || bands.length === 0) return { face, edge: null, bandedFaces: [] }
+  if (!edge || bands.length === 0) return { face, edge: null, bandedFaces: [], grainAxis }
   const faces = boxFaces(piece, room)
-  return { face, edge, bandedFaces: bands.map((band) => faces[band]) }
+  return { face, edge, bandedFaces: bands.map((band) => faces[band]), grainAxis }
 }
 
 /**
@@ -205,24 +273,39 @@ function boxFaces(piece: Piece, room: Room): Record<Edge, number> {
  * so the part still reads as wood.
  */
 function buildPiece(piece: Piece, box: RoomBox, tint: string | null, finish: Finish) {
-  const paint = (color: string) =>
+  const pane = piece.kind === 'door' ? piece.pane : undefined
+  const paint = (color: string, map?: THREE.Texture) =>
     new THREE.MeshStandardMaterial({
+      ...(map ? { map } : {}),
+      // Glass is nearly clear and a mirror is shiny; both let you see the inside.
+      ...(pane === 'mirror' ? { metalness: 0.5 } : {}),
       color: tint ? new THREE.Color(color).lerp(new THREE.Color(tint), 0.45) : color,
-      roughness: 0.85,
+      roughness: pane ? 0.1 : 0.85,
       // The back panel and doors would hide the inside from most angles, so they're faint.
       transparent: piece.kind === 'back' || piece.kind === 'door',
-      opacity: piece.kind === 'back' ? 0.45 : piece.kind === 'door' ? 0.35 : 1,
+      opacity: piece.kind === 'back' ? 0.45 : pane === 'glass' ? 0.25 : pane === 'mirror' ? 0.6 : piece.kind === 'door' ? 0.35 : 1,
       // Keeps a faint door from hiding the parts behind it.
       depthWrite: piece.kind !== 'door',
     })
   const faceMaterial = paint(finish.face)
   const edgeMaterial = finish.edge && paint(finish.edge)
+  const size = [0, 1, 2].map((axis) => box.max[axis] - box.min[axis])
+  const [sx, sy, sz] = size
+  // A face the grain lies along shows lines; one it runs into (the end of the board) stays plain.
+  const grainFace = (index: number) => {
+    const [u, v] = FACE_AXES[index]
+    if (finish.grainAxis === u) return paint(finish.face, woodTexture('across', size[u], size[v]))
+    if (finish.grainAxis === v) return paint(finish.face, woodTexture('up', size[u], size[v]))
+    return faceMaterial
+  }
+  const grained = finish.grainAxis !== null && piece.kind !== 'rod' && !pane
   const material =
-    edgeMaterial && piece.kind !== 'rod'
-      ? Array.from({ length: 6 }, (_, index) => (finish.bandedFaces.includes(index) ? edgeMaterial : faceMaterial))
+    (edgeMaterial || grained) && piece.kind !== 'rod'
+      ? Array.from({ length: 6 }, (_, index) =>
+          edgeMaterial && finish.bandedFaces.includes(index) ? edgeMaterial : grained ? grainFace(index) : faceMaterial,
+        )
       : faceMaterial
 
-  const [sx, sy, sz] = [0, 1, 2].map((axis) => box.max[axis] - box.min[axis])
   // A rod runs along its wall: across the room on the back wall, front to
   // back on a side wall.
   const geometry =
@@ -282,9 +365,12 @@ function disposeChildren(group: THREE.Group) {
   group.traverse((object) => {
     if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
       object.geometry.dispose()
-      // A banded part has a material per face, sharing two between them.
-      const materials = [object.material].flat() as THREE.Material[]
-      for (const material of new Set(materials)) material.dispose()
+      // A banded or grained part has a material per face, sharing some between them.
+      const materials = [object.material].flat() as THREE.MeshStandardMaterial[]
+      for (const material of new Set(materials)) {
+        material.map?.dispose()
+        material.dispose()
+      }
     }
   })
   group.clear()

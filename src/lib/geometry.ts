@@ -6,6 +6,8 @@ import {
   DOOR_OPEN_ANGLE,
   HANDLE_TYPES,
   MAX_SLIDING_OVERLAP,
+  PANE_THICKNESS,
+  PANE_TYPES,
   PLINTH_RECESS,
   SLIDING_LANE_GAP,
   SLIDING_OVERLAP,
@@ -102,6 +104,13 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (!piece.grain || !faces.includes(piece.grain) || piece.grain === autoGrain(piece.kind)) {
     delete normalized.grain
   }
+  // Glass and mirror aren't board: their own thickness, and none of a board's finish.
+  if (piece.kind === 'door' && PANE_TYPES.includes(piece.pane!)) {
+    normalized.depth = PANE_THICKNESS
+    delete normalized.bands
+    delete normalized.grain
+    delete normalized.color
+  } else delete normalized.pane
   return normalized
 }
 

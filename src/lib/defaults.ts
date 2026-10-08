@@ -1,4 +1,4 @@
-import type { BoardKey, BoardMaterial, HandleType, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, BoardMaterial, HandleType, PaneType, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -88,6 +88,13 @@ export const HANDLE_LABELS: Record<HandleType | 'handle' | 'none', string> = {
   push: 'Push-to-open',
   none: 'None',
 }
+
+export const PANE_TYPES: PaneType[] = ['glass', 'mirror']
+
+export const PANE_LABELS: Record<PaneType, string> = { glass: 'Glass', mirror: 'Mirror' }
+
+/** Glass and mirror panes are this thick, in mm, whatever the front board is. */
+export const PANE_THICKNESS = 4
 
 /** Panels in a set of sliding doors, fewest first; two is the default. */
 export const SLIDING_PANELS = [2, 3, 4]

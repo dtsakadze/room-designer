@@ -49,7 +49,7 @@ export const edgeRunsAlong = (edge: Edge, axis: Dimension) =>
  * That's the front edge of the carcass, shelves, dividers and front rails,
  * and every edge of a door. Back panels, plinths and back rails are hidden.
  */
-export function autoBands(piece: Pick<Piece, 'kind' | 'railAt'>): Edge[] {
+export function autoBands(piece: Pick<Piece, 'kind' | 'railAt' | 'pane'>): Edge[] {
   switch (piece.kind) {
     case 'vertical':
     case 'divider':
@@ -59,7 +59,8 @@ export function autoBands(piece: Pick<Piece, 'kind' | 'railAt'>): Edge[] {
     case 'rail':
       return piece.railAt === 'back' ? [] : ['front']
     case 'door':
-      return ['top', 'bottom', 'left', 'right']
+      // Glass and mirror edges are ground, not banded.
+      return piece.pane ? [] : ['top', 'bottom', 'left', 'right']
     // The edges that show: a cornice's top is against the ceiling, and a
     // filler is cut to the wall on site, so it gets none by default.
     case 'cornice':
@@ -97,7 +98,7 @@ export function autoGrain(kind: PieceKind): Dimension | null {
 }
 
 /** A board part's banded edges: its own choice, or the usual ones. */
-export const bandsOf = (piece: Pick<Piece, 'kind' | 'railAt' | 'bands'>) =>
+export const bandsOf = (piece: Pick<Piece, 'kind' | 'railAt' | 'bands' | 'pane'>) =>
   piece.bands ?? autoBands(piece)
 
 /** The way a part's grain runs: its own choice, or the usual way. */

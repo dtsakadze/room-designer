@@ -18,6 +18,9 @@ export const FILLS: Record<PieceKind, string> = {
   cornice: '#cdb68c',
 }
 
+/** The look of glass and mirror panes in the flat views and 3D. */
+export const PANE_FILLS = { glass: '#bcdcea', mirror: '#d3d9e0' } as const
+
 export const SELECTED = '#2563eb'
 /** Parts that overlap another part. */
 export const CLASH = '#dc2626'
@@ -56,10 +59,11 @@ export type DesignColors = { boardColors: BoardColors; edgeColors: BoardColors }
  * overrides the part's board, for a drawer's boards (its box isn't its front).
  */
 export function faceColor(
-  piece: Pick<Piece, 'kind' | 'color'>,
+  piece: Pick<Piece, 'kind' | 'color' | 'pane'>,
   { boardColors }: Pick<DesignColors, 'boardColors'> & Partial<DesignColors>,
   board = boardOf(piece.kind),
 ) {
+  if (piece.pane) return PANE_FILLS[piece.pane]
   return piece.color ?? (board && boardColors[board]) ?? FILLS[piece.kind]
 }
 
@@ -82,6 +86,7 @@ const FACING: Record<EdgeView, Edge> = {
  * reads differently from a face.
  */
 export function edgeOnColor(piece: Piece, view: EdgeView, colors: DesignColors) {
+  if (piece.pane) return darken(PANE_FILLS[piece.pane], 0.2)
   const board = boardOf(piece.kind)
   const banding = board && colors.edgeColors[board]
   if (banding && BOARD[piece.kind] && bandsOf(piece).includes(FACING[view])) return banding

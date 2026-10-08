@@ -4,6 +4,9 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Wood grain is drawn: on the boards marked as having a grain (Settings → Boards → Grain), parts show fine grain lines in the front, side, back and top views and a wood texture in 3D, running the way each part's grain runs (turn a part's grain in its Selected panel). Where the grain runs into the face, as on the ends of a board, there are no lines.
+- Glass and mirror doors: select a door or a set of sliding doors and pick Panel: Glass or Mirror. They're drawn light blue or silver with a shine in the flat views, and see-through (glass) or shiny (mirror) in 3D. Panes are 4 mm thick and bought to size, so they're in the hardware list (one pane for each leaf or sliding panel), not the cut list, and have no colour or edge banding.
+
 - What opens a door or drawer: select one and pick Opened with: Handle or knob (as before), Bar handle, Knob, J-profile grip, Push-to-open (hinged doors; a drawer's push-to-open is under its runners) or None. The hardware list counts each kind, and gives J-profile cut to the length of every front that has one. Nothing is drawn on the front.
 
 - Anti-tip brackets and wall anchors: the hardware list now has two anti-tip brackets for every unit taller than 700 mm (a box, or a carcass built from loose panels, counted by its top board), and a wall anchor with its screw for each bracket. Which anchors to buy depends on your wall.

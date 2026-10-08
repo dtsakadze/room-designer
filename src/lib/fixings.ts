@@ -177,7 +177,7 @@ export const hasHandle = (piece: Piece) => {
 }
 
 /** The fronts a door or drawer is made of, each opened by its own handle: a double door's leaves, sliding panels. */
-function fronts(piece: Piece): { width: number; height: number }[] {
+export function doorFronts(piece: Piece): { width: number; height: number }[] {
   if (piece.kind === 'door' && piece.sliding) return slidingPanels({ ...piece, sliding: piece.sliding })
   if (piece.kind === 'door' && piece.double) return doorLeaves(piece, true)
   return [piece]
@@ -185,7 +185,7 @@ function fronts(piece: Piece): { width: number; height: number }[] {
 
 /** Handles or knobs to buy: one per door leaf (two for a double door, one per panel for sliding ones) and per drawer that has one. */
 export function handleCount(pieces: Piece[]) {
-  return pieces.filter(hasHandle).reduce((sum, piece) => sum + fronts(piece).length, 0)
+  return pieces.filter(hasHandle).reduce((sum, piece) => sum + doorFronts(piece).length, 0)
 }
 
 type OpenerRow =
@@ -204,7 +204,7 @@ export function openerHardware(pieces: Piece[]): OpenerRow[] {
   for (const piece of pieces) {
     const opener = openerOf(piece)
     if (!opener) continue
-    const leaves = fronts(piece)
+    const leaves = doorFronts(piece)
     if (opener === 'profile') {
       for (const leaf of leaves) profiles.push(Math.round(piece.sliding ? leaf.height : leaf.width))
     } else counts[opener] += leaves.length

@@ -5,6 +5,8 @@ import {
   DOOR_OPEN_ANGLE,
   EXTENSION_LABELS,
   HANDLE_LABELS,
+  PANE_LABELS,
+  PANE_THICKNESS,
   MATERIAL_LABELS,
   RUNNER_LENGTHS,
   SLIDING_OVERLAP,
@@ -53,13 +55,14 @@ export function PieceInspector() {
 
   // A rod is round: one length along the wall, one diameter for the section.
   const isRod = piece.kind === 'rod'
-  const board = BOARD[piece.kind]
+  // A glass or mirror door isn't board: no thickness from the project, colour or banding.
+  const board = piece.pane ? undefined : BOARD[piece.kind]
 
   return (
     <div className="stack">
       <p className="muted">{pieceLabel(piece)}</p>
 
-      <ColorField
+      {!piece.pane && <ColorField
         // A fresh picker per part, so it always opens on this part's colour and
         // a picker left open can't recolour the next part selected.
         key={piece.id}
@@ -70,7 +73,7 @@ export function PieceInspector() {
         emptyLabel={boardOfPiece && boardColors[boardOfPiece] ? 'Board colour' : 'Standard'}
         onChange={(color) => setPieceColors([piece.id], color)}
         onReset={() => setPieceColors([piece.id], null)}
-      />
+      />}
 
       {piece.kind === 'shelf' && (
         <label className="checkbox">
@@ -122,7 +125,7 @@ export function PieceInspector() {
         <>
           {DIMENSIONS.map(({ key, label }) => {
             // A board's thickness comes from the project, so it's shown, not edited.
-            const isThickness = board?.axis === key
+            const isThickness = board?.axis === key || (!!piece.pane && key === 'depth')
             return (
               <NumberField
                 key={key}
@@ -137,6 +140,7 @@ export function PieceInspector() {
           {board && (
             <p className="hint">Thickness is set for the whole project under Boards.</p>
           )}
+          {piece.pane && <p className="hint">Glass and mirror panes are {PANE_THICKNESS} mm thick.</p>}
         </>
       )}
 
@@ -307,6 +311,7 @@ function HingedOptions({ piece }: { piece: Piece }) {
         ['sliding', 'Sliding', { sliding: SLIDING_PANELS[0], double: false }],
       ],
     },
+    panelChoice(piece),
     {
       label: 'Door',
       value: piece.double ? 'double' : 'single',
@@ -437,6 +442,7 @@ function SlidingOptions({ piece }: { piece: Piece }) {
           ))}
         </span>
       </div>
+      <PanelField piece={piece} />
       <NumberField
         label="Overlap"
         value={piece.overlap ?? SLIDING_OVERLAP}
@@ -528,7 +534,51 @@ function HandleField({ piece }: { piece: Piece }) {
   )
 }
 
-type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle' | 'sliding' | 'overlap'>
+type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle' | 'sliding' | 'overlap' | 'pane'>
+
+/** What the door's panels are made of: board, glass or a mirror. */
+const PANELS = [
+  ['board', 'Board', { pane: undefined }],
+  ['glass', PANE_LABELS.glass, { pane: 'glass' }],
+  ['mirror', PANE_LABELS.mirror, { pane: 'mirror' }],
+] as const
+
+const panelChoice = (piece: Piece) => ({
+  label: 'Panel',
+  value: piece.pane ?? 'board',
+  options: PANELS.map(([value, text, patch]): [string, string, DoorPatch] => [value, text, patch]),
+})
+
+function PanelField({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const choice = panelChoice(piece)
+  return (
+    <>
+      <div className="field">
+        <span className="field-label">{choice.label}</span>
+        <span className="unit-switch" role="radiogroup" aria-label={choice.label}>
+          {choice.options.map(([value, text, patch]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={choice.value === value}
+              onClick={() => updatePiece(piece.id, patch)}
+            >
+              {text}
+            </button>
+          ))}
+        </span>
+      </div>
+      {piece.pane && (
+        <p className="hint">
+          {PANE_LABELS[piece.pane]} panes are {PANE_THICKNESS} mm thick and bought to size: they're
+          in the hardware list, not the cut list, and have no colour or edge banding.
+        </p>
+      )}
+    </>
+  )
+}
 
 /** "4 cup hinges, full overlay", or per leaf when a double door's leaves differ. */
 function hingeText(leaves: ReturnType<typeof doorHinges>) {

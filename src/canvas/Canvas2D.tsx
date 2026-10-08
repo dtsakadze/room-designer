@@ -25,7 +25,9 @@ import { fileBase } from '../lib/projectFile'
 import { UNITS } from '../lib/units'
 import { isAdjustable } from '../lib/shelfPins'
 import { CeilingLine } from './CeilingLine'
+import { GrainPatterns } from './GrainPatterns'
 import { GridLayer } from './GridLayer'
+import { grainDirection } from '../lib/grain'
 import { PieceRect } from './PieceRect'
 import { ResizeHandles } from './ResizeHandles'
 import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
@@ -128,6 +130,7 @@ export function Canvas2D() {
   const allPieces = useDesignStore((s) => s.pieces)
   const showDoors = useSettingsStore((s) => s.showDoors)
   const showHangingGuides = useSettingsStore((s) => s.showHangingGuides)
+  const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const setShowDoors = useSettingsStore((s) => s.setShowDoors)
   const hasDoors = allPieces.some((piece) => piece.kind === 'door')
   // With doors hidden they're gone from every view and can't be clicked, so
@@ -706,6 +709,7 @@ export function Canvas2D() {
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
       >
+        <GrainPatterns unit={unit} />
         <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />
         {inRoom && (
           <RoomWallsFront room={room} wall={activeWall} view={view} unit={unit} />
@@ -740,6 +744,7 @@ export function Canvas2D() {
             // Screws show where the shelf meets the sides: from the front or back.
             clashing={clashes.has(piece.id)}
             overSpan={spanWarnings.has(piece.id)}
+            grain={grainDirection(piece, viewName, grainedBoards)}
             screws={!!piece.fixed && (viewName === 'front' || viewName === 'back')}
             // From behind, a door's hinges would show on the wrong side.
             doorMarks={isFront}

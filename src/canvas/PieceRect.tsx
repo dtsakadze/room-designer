@@ -3,7 +3,7 @@ import type { Piece } from '../types'
 import { SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorLeaves, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { CLASH, SPAN_WARNING } from './colors'
+import { CLASH, PANE_FILLS, SPAN_WARNING } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -26,6 +26,8 @@ type PieceRectProps = {
   doorMarks: boolean
   /** Overlaps another part: drawn red. */
   clashing: boolean
+  /** The way grain lines run on this part's face in this view, or null for none. */
+  grain: 'horizontal' | 'vertical' | null
   /** A shelf that spans further than it can safely (see `spanWarnings`). */
   overSpan: boolean
   unit: number
@@ -49,6 +51,7 @@ export function PieceRect({
   doorMarks,
   clashing,
   overSpan,
+  grain,
   unit,
   onPointerDown,
   onHoverChange,
@@ -83,6 +86,17 @@ export function PieceRect({
         style={{ cursor: editable ? 'move' : 'pointer' }}
         {...handlers}
       />
+      {grain && (
+        <rect
+          x={piece.x}
+          y={y}
+          width={piece.width}
+          height={piece.height}
+          rx={rx}
+          fill={`url(#grain-${grain})`}
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
       {screws &&
         [piece.x + SCREW_INSET, piece.x + piece.width - SCREW_INSET].map((cx) => (
           <circle
@@ -94,6 +108,9 @@ export function PieceRect({
             style={{ pointerEvents: 'none' }}
           />
         ))}
+      {doorMarks && piece.kind === 'door' && !piece.sliding && piece.pane && (
+        <PaneSheen piece={piece} y={y} unit={unit} />
+      )}
       {doorMarks && piece.kind === 'door' && <DoorMarks piece={piece} y={y} unit={unit} />}
       {clashing && (
         <rect
@@ -191,10 +208,62 @@ function SlidingMarks({ piece, y, unit }: { piece: Piece; y: number; unit: numbe
           y={y + SLIDING_TRACK_HEIGHT}
           width={panel.width}
           height={panel.height}
-          fill="#e8dcb8"
+          fill={piece.pane ? PANE_FILLS[piece.pane] : '#e8dcb8'}
           fillOpacity={panel.lane === 0 ? 0.85 : 0.6}
         />
       ))}
+      {piece.pane &&
+        ordered.map((panel) => (
+          <Sheen
+            key={`sheen-${panel.x}`}
+            id={`${piece.id}-${panel.x}`}
+            rect={{ x: panel.x, y: y + SLIDING_TRACK_HEIGHT, width: panel.width, height: panel.height }}
+            mirror={piece.pane === 'mirror'}
+          />
+        ))}
+    </g>
+  )
+}
+
+/** The light on glass or a mirror: each leaf of a double door gets its own. */
+function PaneSheen({ piece, y }: { piece: Piece; y: number; unit: number }) {
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {doorLeaves(piece, piece.double).map((leaf, index) => (
+        <Sheen
+          key={index}
+          id={`${piece.id}-${index}`}
+          rect={{ x: leaf.x, y, width: leaf.width, height: piece.height }}
+          mirror={piece.pane === 'mirror'}
+        />
+      ))}
+    </g>
+  )
+}
+
+/** Two slanted bands of light across a pane, clipped to it; stronger on a mirror. */
+function Sheen({
+  id,
+  rect: { x, y, width, height },
+  mirror,
+}: {
+  id: string
+  rect: { x: number; y: number; width: number; height: number }
+  mirror: boolean
+}) {
+  const clip = `sheen-${id.replace(/[^a-zA-Z0-9]/g, '-')}`
+  const slant = height * 0.35
+  const band = (from: number, size: number) =>
+    `${x + width * from},${y + height} ${x + width * (from + size)},${y + height} ${x + width * (from + size) + slant},${y} ${x + width * from + slant},${y}`
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      <clipPath id={clip}>
+        <rect x={x} y={y} width={width} height={height} />
+      </clipPath>
+      <g clipPath={`url(#${clip})`} fill="#fff" fillOpacity={mirror ? 0.6 : 0.4}>
+        <polygon points={band(0.1, 0.14)} />
+        <polygon points={band(0.34, 0.05)} />
+      </g>
     </g>
   )
 }

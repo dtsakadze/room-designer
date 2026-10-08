@@ -3,11 +3,14 @@ import type { Piece } from '../types'
 import {
   DEFAULT_THICKNESS,
   DOOR_LEAF_GAP,
+  PANE_THICKNESS,
   SLIDING_OVERLAP,
   SLIDING_TRACK_HEIGHT,
   pieceLabel,
 } from './defaults'
 import { cutList, describeHardware, hardwareList } from './cutList'
+import { PANE_FILLS, faceColor } from '../canvas/colors'
+import { bandsOf } from './edges'
 import { handleCount } from './fixings'
 import { depthStart, findClashes, neighbourGaps, normalizePiece, slidingPanels } from './geometry'
 import { doorHinges } from './hinges'
@@ -126,5 +129,36 @@ describe('sliding doors', () => {
     expect(hardwareList([sliding()], thickness).some((r) => r.item === 'hinges')).toBe(false)
     expect(handleCount([sliding({ sliding: 3 })])).toBe(3)
     expect(pieceLabel(sliding())).toBe('Sliding doors')
+  })
+})
+
+describe('glass and mirror doors', () => {
+  const pane = (rect: Partial<Piece> = {}) =>
+    piece('g', 'door', { x: -300, width: 600, height: 2000, pane: 'glass', ...rect })
+
+  it('are 4 mm thick whatever the front board is, with no board finish', () => {
+    const door = pane({ depth: 30, color: '#ff0000', bands: ['top'], grain: 'width' })
+    expect(door.depth).toBe(PANE_THICKNESS)
+    for (const key of ['color', 'bands', 'grain'] as const) expect(door).not.toHaveProperty(key)
+    expect(piece('s', 'shelf', { pane: 'glass' })).not.toHaveProperty('pane')
+    expect(pane({ pane: 'wood' as never })).not.toHaveProperty('pane')
+  })
+
+  it('are left out of the cut list and listed as panes, one for each leaf or panel', () => {
+    const doors = [pane(), pane({ width: 603, double: true, pane: 'mirror' }), pane({ width: 1200, sliding: 2, pane: 'mirror' })]
+    expect(cutList(doors, thickness)).toEqual([])
+    const panes = hardwareList(doors, thickness).filter((row) => row.item === 'panes')
+    expect(panes).toEqual([
+      { item: 'panes', pane: 'glass', width: 600, height: 2000, thickness: 4, quantity: 1 },
+      { item: 'panes', pane: 'mirror', width: 300, height: 2000, thickness: 4, quantity: 2 },
+      { item: 'panes', pane: 'mirror', width: 625, height: 1940, thickness: 4, quantity: 2 },
+    ])
+    expect(describeHardware(panes[0], (mm) => `${mm}`).name).toBe('Glass pane, 600 × 2000 × 4')
+  })
+
+  it('look like glass, not the board colour, and are not banded', () => {
+    expect(faceColor(pane(), { boardColors: { front: '#000000' } })).toBe(PANE_FILLS.glass)
+    expect(faceColor(pane({ pane: 'mirror' }), { boardColors: {} })).toBe(PANE_FILLS.mirror)
+    expect(bandsOf(pane())).toEqual([])
   })
 })

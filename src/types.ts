@@ -59,6 +59,9 @@ export type JointType = 'screws' | 'confirmat' | 'cam'
  */
 export type HandleType = 'bar' | 'knob' | 'profile' | 'push'
 
+/** What a door's panels are made of when they aren't board: glass or a mirror. */
+export type PaneType = 'glass' | 'mirror'
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 
@@ -110,6 +113,12 @@ export type Piece = {
   sliding?: number
   /** Sliding doors only: how far neighbouring panels overlap, in mm. Absent means the standard overlap. */
   overlap?: number
+  /**
+   * Doors only: its panels are glass or a mirror rather than board, so they
+   * have no board finish (colour, banding, grain) and a thickness of their
+   * own. Absent means a board door.
+   */
+  pane?: PaneType
   /** Doors and drawers only: has no handle or knob. Absent means it has one. */
   noHandle?: boolean
   /**

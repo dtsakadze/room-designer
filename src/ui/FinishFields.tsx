@@ -13,7 +13,8 @@ export function FinishFields({ piece }: { piece: Piece }) {
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const board = BOARD[piece.kind]
   const isDrawer = piece.kind === 'drawer'
-  if (!board && !isDrawer) return null
+  // Glass and mirror aren't board, so there's no banding or grain.
+  if ((!board && !isDrawer) || piece.pane) return null
 
   // A drawer's grain is its front's, which faces forward.
   const axis = board?.axis ?? 'depth'
