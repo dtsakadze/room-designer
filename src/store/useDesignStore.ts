@@ -8,6 +8,7 @@ import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPan
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
 import { cleanSheet } from '../lib/sheets'
+import type { Look } from '../lib/looks'
 import { DEFAULT_HOLE_PITCH, clampHolePitch, isAdjustable, snapToHoles } from '../lib/shelfPins'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
@@ -131,6 +132,11 @@ type DesignState = {
   /** Buys a board as whole sheets of this size, or null for cut to size. */
   setBoardSheet: (board: BoardKey, sheet: SheetSetup | null) => void
   setJoints: (joints: JointType) => void
+  /**
+   * Sets every board's colour, edge banding colour and grain to a look, as one
+   * undo step. With `resetParts`, parts coloured by hand go back to their board's.
+   */
+  applyLook: (look: Look, resetParts: boolean) => void
   /** Says whether a board has a grain, which the cut list then follows. */
   setBoardGrain: (board: BoardKey, grain: boolean) => void
   /** Colours a board's parts (those without a colour of their own), or null for the standard look. */
@@ -654,6 +660,21 @@ export const useDesignStore = create<DesignState>()(
           record(state)
           if (next) state.boardSheets[board] = next
           else delete state.boardSheets[board]
+        }),
+
+      applyLook: (look, resetParts) =>
+        set((state) => {
+          const grained = BOARDS.map(({ key }) => key).filter((key) => look.grained.includes(key))
+          const same =
+            JSON.stringify([state.boardColors, state.edgeColors, state.grainedBoards]) ===
+            JSON.stringify([look.boardColors, look.edgeColors, grained])
+          const coloured = resetParts && state.pieces.some((piece) => piece.color)
+          if (same && !coloured) return
+          record(state)
+          state.boardColors = { ...look.boardColors }
+          state.edgeColors = { ...look.edgeColors }
+          state.grainedBoards = grained
+          if (resetParts) for (const piece of state.pieces) delete piece.color
         }),
 
       setJoints: (joints) =>

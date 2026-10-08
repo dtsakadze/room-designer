@@ -12,6 +12,7 @@ import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { DEFAULT_SHEETS } from '../lib/sheets'
+import { LookPicker } from './LookPicker'
 import { NumberField } from './NumberField'
 import { ColorField } from './ColorField'
 import { BOARD_FILLS } from '../canvas/colors'
@@ -63,6 +64,8 @@ export function BoardSettings() {
           ))}
         </div>
       </section>
+
+      <LookPicker />
 
       <section className="section">
         <h2>Boards</h2>

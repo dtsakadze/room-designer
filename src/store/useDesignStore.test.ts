@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { findClashes } from '../lib/geometry'
+import { LOOKS, STANDARD_LOOK } from '../lib/looks'
 import { toProjectData } from '../lib/project'
 import { DEFAULT_THICKNESS, slidingDoorDefaults } from '../lib/defaults'
 import { wallOf } from '../lib/room'
@@ -855,5 +856,44 @@ describe('boards bought as whole sheets', () => {
     expect(toProjectData(store())).not.toHaveProperty('boardSheets')
     store().undo()
     expect(store().boardSheets.body?.length).toBe(2800)
+  })
+})
+
+describe('looks', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+  const oakWhite = LOOKS.find((look) => look.id === 'oak-white')!
+  const black = LOOKS.find((look) => look.id === 'all-black')!
+
+  it('set every board’s colours and grain as one undo step, and skip a look already applied', () => {
+    store().applyLook(oakWhite, false)
+    expect(store().boardColors.front).toBe(oakWhite.boardColors.front)
+    expect(store().edgeColors.body).toBe(oakWhite.edgeColors.body)
+    expect(store().grainedBoards).toEqual(['front'])
+    store().applyLook(oakWhite, false)
+    expect(store().past).toHaveLength(1)
+    store().undo()
+    expect(store().boardColors).toEqual({})
+    expect(store().grainedBoards).toEqual([])
+  })
+
+  it('keep parts coloured by hand, unless told to reset them', () => {
+    store().addPiece('shelf')
+    const id = store().pieces[0].id
+    store().setPieceColors([id], '#ff0000')
+    store().applyLook(black, false)
+    expect(store().pieces[0].color).toBe('#ff0000')
+    store().applyLook(black, true)
+    expect(store().pieces[0]).not.toHaveProperty('color')
+    expect(store().boardColors.body).toBe(black.boardColors.body)
+  })
+
+  it('can go back to the standard look: no colours and no grain, as a project starts', () => {
+    store().applyLook(oakWhite, false)
+    store().applyLook(STANDARD_LOOK, false)
+    expect(store().boardColors).toEqual({})
+    expect(store().edgeColors).toEqual({})
+    expect(store().grainedBoards).toEqual([])
+    store().undo()
+    expect(store().boardColors.front).toBe(oakWhite.boardColors.front)
   })
 })

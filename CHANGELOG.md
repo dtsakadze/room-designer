@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Looks to try in one click: Settings → Boards → Look has Standard (no colours and no grain, as a new project starts), Oak and white, All white, All black, Walnut and grey, Light oak all over, and Grey melamine with oak fronts. A look sets the colour and edge banding of every board and which boards have a grain; Undo brings back the old one. Parts you coloured yourself keep their colour unless you tick Also reset parts I coloured myself.
+
 - Sheet layout, if you want it: under Settings → Boards, each board is either Cut to size (the default: you order the pieces from the cut list) or Whole sheets, with its sheet length, width and saw cut. A board bought as whole sheets gets a Sheet layout in the cut list: each sheet drawn to scale with its parts placed on it, how many sheets you need and how much is waste. Parts on a board with grain aren't turned, and parts too big for the sheet are listed.
 
 - Wood grain is drawn: on the boards marked as having a grain (Settings → Boards → Grain), parts show fine grain lines in the front, side, back and top views and a wood texture in 3D, running the way each part's grain runs (turn a part's grain in its Selected panel). Where the grain runs into the face, as on the ends of a board, there are no lines.

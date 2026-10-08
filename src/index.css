@@ -1282,3 +1282,39 @@ button kbd {
 .print-dialog .button-row {
   justify-content: flex-end;
 }
+
+.looks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.look-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  font-size: 13px;
+  text-align: left;
+}
+
+.look-button[aria-checked='true'] {
+  border-color: var(--accent);
+  background: #eef3fd;
+  color: var(--accent);
+}
+
+.look-swatches {
+  display: flex;
+}
+
+.look-swatches span {
+  width: 14px;
+  height: 14px;
+  margin-right: -4px;
+  border: 1px solid #9c8f6d;
+  border-radius: 50%;
+}
