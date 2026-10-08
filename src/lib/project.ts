@@ -1,4 +1,4 @@
-import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, JointType, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   BOARDS,
@@ -25,7 +25,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 12
+export const FORMAT_VERSION = 13
 
 type Raw = Record<string, unknown>
 
@@ -106,6 +106,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // changes; the bump makes an older app refuse such a save rather than drop
   // the materials.
   11: (data) => ({ ...data, formatVersion: 12 }),
+  // v13 adds an optional joint type (`joints`: `confirmat` or `cam`). Absent,
+  // the carcass is joined with plain screws, as the hardware list counted
+  // before, so only the version changes; the bump makes an older app refuse
+  // such a save rather than drop the choice.
+  12: (data) => ({ ...data, formatVersion: 13 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -125,6 +130,8 @@ export type ProjectData = {
   thickness: Thickness
   /** What each board is, for the cut list; absent when none is named. */
   boardNames?: BoardNames
+  /** How the carcass is joined, for the hardware list; absent means plain screws. */
+  joints?: JointType
   /** What each board is made of; absent when none is set (chipboard). */
   boardMaterials?: BoardMaterials
   /** Boards with a grain, whose parts the cut list gives grain-first; absent when none has. */
@@ -153,6 +160,7 @@ export function toProjectData(
     thickness: Thickness
     boardNames?: BoardNames
     boardMaterials?: BoardMaterials
+    joints?: JointType
     grainedBoards?: BoardKey[]
     holePitch?: number
     boardColors?: BoardColors
@@ -171,6 +179,7 @@ export function toProjectData(
     thickness: design.thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(Object.keys(design.boardMaterials ?? {}).length > 0 ? { boardMaterials: design.boardMaterials } : {}),
+    ...(design.joints && design.joints !== 'screws' ? { joints: design.joints } : {}),
     ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
     holePitch: design.holePitch ?? DEFAULT_HOLE_PITCH,
     ...(Object.keys(design.boardColors ?? {}).length > 0 ? { boardColors: design.boardColors } : {}),
@@ -324,6 +333,7 @@ function validate(data: Raw): ProjectData | null {
     thickness,
     ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
     ...(Object.keys(boardMaterials).length > 0 ? { boardMaterials } : {}),
+    ...(data.joints === 'confirmat' || data.joints === 'cam' ? { joints: data.joints } : {}),
     ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
     holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
     ...(Object.keys(boardColors).length > 0 ? { boardColors } : {}),

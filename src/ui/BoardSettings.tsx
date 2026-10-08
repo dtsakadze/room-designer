@@ -1,6 +1,13 @@
 import { useState } from 'react'
-import { BOARDS, DEPTH_PRESETS, MATERIAL_LABELS, MAX_BOARD_NAME } from '../lib/defaults'
-import type { BoardKey, BoardMaterial } from '../types'
+import {
+  BOARDS,
+  DEPTH_PRESETS,
+  JOINT_HINTS,
+  JOINT_LABELS,
+  MATERIAL_LABELS,
+  MAX_BOARD_NAME,
+} from '../lib/defaults'
+import type { BoardKey, BoardMaterial, JointType } from '../types'
 import { UNITS, UNIT_ORDER } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
@@ -29,6 +36,8 @@ export function BoardSettings() {
   const holePitch = useDesignStore((s) => s.holePitch)
   const setHolePitch = useDesignStore((s) => s.setHolePitch)
   const boardMaterials = useDesignStore((s) => s.boardMaterials)
+  const joints = useDesignStore((s) => s.joints)
+  const setJoints = useDesignStore((s) => s.setJoints)
   const setBoardMaterial = useDesignStore((s) => s.setBoardMaterial)
   const setUnit = useSettingsStore((s) => s.setUnit)
   const { unit, num, len } = useUnits()
@@ -122,6 +131,29 @@ export function BoardSettings() {
           <p className="hint">
             Adjustable shelves rest on pins in holes drilled this far apart in the sides, usually{' '}
             {len(DEFAULT_HOLE_PITCH)}. They snap to the holes; fixed shelves go anywhere.
+          </p>
+        </div>
+      </section>
+
+      <section className="section">
+        <h2>Joints</h2>
+        <div className="stack">
+          <div className="choice choice-column" role="radiogroup" aria-label="Joints">
+            {(Object.keys(JOINT_LABELS) as JointType[]).map((option) => (
+              <label key={option} className="checkbox">
+                <input
+                  type="radio"
+                  name="joints"
+                  checked={joints === option}
+                  onChange={() => setJoints(option)}
+                />
+                {JOINT_LABELS[option]}
+              </label>
+            ))}
+          </div>
+          <p className="hint">
+            {JOINT_HINTS[joints]} Sets what the hardware list counts for the carcass joints and
+            fixed shelves (typical numbers, not exact). Nothing is drawn.
           </p>
         </div>
       </section>

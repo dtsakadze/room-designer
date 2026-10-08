@@ -1,4 +1,4 @@
-import type { Piece } from '../types'
+import type { JointType, Piece } from '../types'
 import { wallOf } from './room'
 
 /**
@@ -46,15 +46,70 @@ function joined(across: Piece, upright: Piece) {
  * these.
  */
 export function carcassScrews(pieces: Piece[]) {
+  return carcassJoints(pieces).reduce((sum, depth) => sum + screwsPerJoint(depth), 0)
+}
+
+/** The depth of every carcass joint (the shallower of the two boards), as `carcassScrews` finds them. */
+function carcassJoints(pieces: Piece[]) {
   const uprights = pieces.filter(isUpright)
-  let screws = 0
+  const joints: number[] = []
   for (const across of pieces.filter(isAcross)) {
     for (const upright of uprights) {
       if (wallOf(upright) !== wallOf(across) || !joined(across, upright)) continue
-      screws += screwsPerJoint(Math.min(across.depth, upright.depth))
+      joints.push(Math.min(across.depth, upright.depth))
     }
   }
-  return screws
+  return joints
+}
+
+/** Screws a fixed shelf needs: two through each side, near its front and back edges, so it holds the sides straight. */
+const SCREWS_PER_FIXED_SHELF = 4
+
+/** Cam locks in a joint: one in a narrow board, two across a deep one; each has a bolt. */
+const camsPerJoint = (depth: number) => (depth < 300 ? 1 : 2)
+
+/** Dowels beside each cam lock, so the boards can't twist. */
+const DOWELS_PER_CAM = 2
+
+/** The row of hardware a joint count turns into, `quantity` of it. */
+type JointRow = {
+  item: 'carcass-screws' | 'shelf-screws' | 'confirmat-screws' | 'cam-locks' | 'cam-bolts' | 'dowels'
+  quantity: number
+}
+
+/**
+ * What joins the boards of the carcass: screws, confirmat screws, or cam
+ * locks with bolts and dowels, in the numbers that go with the same joints
+ * (tops, bottoms and rails to sides and dividers, and each fixed shelf to the
+ * sides it sits between). Typical figures, not exact: shops and boards differ.
+ */
+export function jointHardware(pieces: Piece[], joints: JointType): JointRow[] {
+  const carcass = carcassJoints(pieces)
+  // A fixed shelf is joined to a side at each end.
+  const shelves = pieces.filter((piece) => piece.kind === 'shelf' && piece.fixed)
+  const shelfJoints = shelves.flatMap((shelf) => [shelf.depth, shelf.depth])
+  switch (joints) {
+    case 'screws':
+      return [
+        { item: 'shelf-screws', quantity: shelves.length * SCREWS_PER_FIXED_SHELF },
+        { item: 'carcass-screws', quantity: carcassScrews(pieces) },
+      ]
+    case 'confirmat':
+      return [
+        {
+          item: 'confirmat-screws',
+          quantity: carcassScrews(pieces) + shelves.length * SCREWS_PER_FIXED_SHELF,
+        },
+      ]
+    case 'cam': {
+      const cams = [...carcass, ...shelfJoints].reduce((sum, depth) => sum + camsPerJoint(depth), 0)
+      return [
+        { item: 'cam-locks', quantity: cams },
+        { item: 'cam-bolts', quantity: cams },
+        { item: 'dowels', quantity: cams * DOWELS_PER_CAM },
+      ]
+    }
+  }
 }
 
 /** Nails or screws round every back panel's edge, about every 150 mm. */

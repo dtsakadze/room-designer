@@ -46,6 +46,12 @@ export type BoardMaterial = 'chipboard' | 'mdf' | 'plywood' | 'solid'
 /** The material of each board. A board without one is chipboard, the commonest and the most cautious. */
 export type BoardMaterials = Partial<Record<BoardKey, BoardMaterial>>
 
+/**
+ * How the carcass is put together, for the hardware list: plain screws,
+ * confirmat screws, or cam locks with their bolts and dowels.
+ */
+export type JointType = 'screws' | 'confirmat' | 'cam'
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 

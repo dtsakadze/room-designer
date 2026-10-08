@@ -1,9 +1,9 @@
-import type { BoardKey, Dimension, Edge, Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, Dimension, Edge, JointType, Piece, PieceKind, Thickness } from '../types'
 import { BOARD, BOARDS, CLOSE_LABELS, EXTENSION_LABELS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves, slidingPanels } from './geometry'
-import { backFixings, carcassScrews, handleCount } from './fixings'
+import { backFixings, handleCount, jointHardware } from './fixings'
 import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 import { rodCentreSupports } from './spans'
@@ -254,14 +254,12 @@ export type HardwareRow =
   | { item: 'shelf-pins'; quantity: number }
   | { item: 'shelf-screws'; quantity: number }
   | { item: 'carcass-screws'; quantity: number }
+  | { item: 'confirmat-screws'; quantity: number }
+  | { item: 'cam-locks'; quantity: number }
+  | { item: 'cam-bolts'; quantity: number }
+  | { item: 'dowels'; quantity: number }
   | { item: 'back-fixings'; quantity: number }
   | { item: 'handles'; quantity: number }
-
-/**
- * Screws a fixed shelf needs: two through each side, near its front and back
- * edges, so it holds the sides straight.
- */
-const SCREWS_PER_FIXED_SHELF = 4
 
 /** The order runner kinds are listed in, ordinary ones first. */
 const CLOSES = Object.keys(CLOSE_LABELS) as (keyof typeof CLOSE_LABELS)[]
@@ -274,13 +272,17 @@ const SUPPORTS_PER_ROD = 2
  * runners per drawer (by type and length), each door leaf's hinges (by kind,
  * see `doorHinges`), each hanging rod (by diameter and the length to cut it
  * to), its end supports (and centre supports when it's too long to span unsupported), four pins per adjustable shelf and four screws per
- * fixed one, the screws joining the carcass and fixing its backs (see
- * `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
+ * fixed one, the screws, confirmat screws or cam locks, bolts and dowels joining the
+ * carcass and the nails fixing its backs (see `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
  * too shallow for any runner are left out; the drawer's panel says so.
  * Runners come first, then hinges, rods and their supports, sliding door tracks (top and bottom, cut to the set's width), shelf pins and
  * screws, carcass fixings, then handles.
  */
-export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow[] {
+export function hardwareList(
+  pieces: Piece[],
+  thickness: Thickness,
+  joints: JointType = 'screws',
+): HardwareRow[] {
   const rows = new Map<string, HardwareRow>()
   const add = (row: HardwareRow) => {
     const { quantity, ...what } = row
@@ -316,13 +318,11 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
       if (centre > 0) add({ item: 'rod-centre-supports', diameter: piece.height, quantity: centre })
     } else if (isAdjustable(piece)) {
       add({ item: 'shelf-pins', quantity: PINS_PER_SHELF })
-    } else if (piece.kind === 'shelf') {
-      add({ item: 'shelf-screws', quantity: SCREWS_PER_FIXED_SHELF })
     }
   }
 
   const fixings = [
-    { item: 'carcass-screws', quantity: carcassScrews(pieces) },
+    ...jointHardware(pieces, joints),
     { item: 'back-fixings', quantity: backFixings(pieces) },
     { item: 'handles', quantity: handleCount(pieces) },
   ] as const
@@ -338,8 +338,12 @@ export function hardwareList(pieces: Piece[], thickness: Thickness): HardwareRow
     'shelf-pins': 6,
     'shelf-screws': 7,
     'carcass-screws': 8,
-    'back-fixings': 9,
-    handles: 10,
+    'confirmat-screws': 9,
+    'cam-locks': 10,
+    'cam-bolts': 11,
+    dowels: 12,
+    'back-fixings': 13,
+    handles: 14,
   }
   return [...rows.values()].sort(
     (a, b) =>
@@ -393,6 +397,14 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: 'Screws for fixed shelves', count: `${row.quantity}`, ...each }
     case 'carcass-screws':
       return { name: 'Carcass screws (tops, bottoms, rails to sides)', count: `${row.quantity}`, ...each }
+    case 'confirmat-screws':
+      return { name: 'Confirmat screws, 7 × 50 mm (carcass joints and fixed shelves)', count: `${row.quantity}`, ...each }
+    case 'cam-locks':
+      return { name: 'Cam locks (carcass joints and fixed shelves)', count: `${row.quantity}`, ...each }
+    case 'cam-bolts':
+      return { name: 'Cam bolts', count: `${row.quantity}`, ...each }
+    case 'dowels':
+      return { name: 'Dowels', count: `${row.quantity}`, ...each }
     case 'back-fixings':
       return { name: 'Nails or screws for back panels', count: `${row.quantity}`, ...each }
     case 'handles':

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Box, Piece, PieceKind } from '../types'
 import { boxPanels } from './box'
 import { DEFAULT_THICKNESS } from './defaults'
-import { backFixings, carcassScrews, handleCount, hasHandle } from './fixings'
+import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware } from './fixings'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -61,5 +61,40 @@ describe('handles', () => {
     expect(piece('a', 'door', { noHandle: true }).noHandle).toBe(true)
     expect(piece('a', 'door', { noHandle: false })).not.toHaveProperty('noHandle')
     expect(piece('g', 'shelf', { noHandle: true })).not.toHaveProperty('noHandle')
+  })
+})
+
+describe('joint hardware', () => {
+  const panels = boxPanels(box('between'), thickness)
+  const fixed = piece('f', 'shelf', { x: -582, y: 900, width: 1164, height: 18, depth: 580, fixed: true })
+
+  it('is screws as before: carcass screws, and four for each fixed shelf', () => {
+    expect(jointHardware([...panels, fixed], 'screws')).toEqual([
+      { item: 'shelf-screws', quantity: 4 },
+      { item: 'carcass-screws', quantity: 12 },
+    ])
+  })
+
+  it('is the same number of confirmat screws, in one row', () => {
+    expect(jointHardware([...panels, fixed], 'confirmat')).toEqual([
+      { item: 'confirmat-screws', quantity: 16 },
+    ])
+  })
+
+  it('is cam locks and bolts, with two dowels each: one in a narrow joint, two in a deep one', () => {
+    // Four deep carcass joints and a fixed shelf's two: two locks each.
+    expect(jointHardware([...panels, fixed], 'cam')).toEqual([
+      { item: 'cam-locks', quantity: 12 },
+      { item: 'cam-bolts', quantity: 12 },
+      { item: 'dowels', quantity: 24 },
+    ])
+    const narrow = [piece('s', 'vertical', { x: 0, width: 18, height: 700, depth: 250 }), piece('r', 'rail', { x: 18, y: 0, width: 400, height: 18, depth: 100 })]
+    expect(jointHardware(narrow, 'cam')[0]).toEqual({ item: 'cam-locks', quantity: 1 })
+  })
+
+  it('is nothing without joints', () => {
+    for (const joints of ['screws', 'confirmat', 'cam'] as const) {
+      expect(jointHardware([], joints).every((row) => row.quantity === 0)).toBe(true)
+    }
   })
 })

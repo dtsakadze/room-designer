@@ -148,6 +148,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         state.thickness === previous.thickness &&
         state.boardNames === previous.boardNames &&
         state.boardMaterials === previous.boardMaterials &&
+        state.joints === previous.joints &&
         state.grainedBoards === previous.grainedBoards &&
         state.holePitch === previous.holePitch &&
         state.boardColors === previous.boardColors &&

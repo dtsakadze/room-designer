@@ -1,4 +1,4 @@
-import type { BoardKey, BoardMaterial, Dimension, Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, BoardMaterial, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -63,6 +63,19 @@ export const MATERIAL_LABELS: Record<BoardMaterial, string> = {
   mdf: 'MDF',
   plywood: 'Plywood',
   solid: 'Solid wood',
+}
+
+export const JOINT_LABELS: Record<JointType, string> = {
+  screws: 'Screws',
+  confirmat: 'Confirmat screws',
+  cam: 'Cam locks and dowels',
+}
+
+/** What each joint type is, in a line, for the settings. */
+export const JOINT_HINTS: Record<JointType, string> = {
+  screws: 'Plain screws through the sides.',
+  confirmat: 'Confirmat screws (7 × 50 mm), the usual one for board.',
+  cam: 'Cam locks with their bolts and dowels, for joints you can take apart.',
 }
 
 /** Panels in a set of sliding doors, fewest first; two is the default. */

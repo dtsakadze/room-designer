@@ -825,3 +825,18 @@ describe('board materials', () => {
     expect(toProjectData(store()).boardMaterials).toEqual({ front: 'solid' })
   })
 })
+
+describe('joint type', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('is plain screws to start, changes as an undoable step, and is saved unless screws', () => {
+    expect(store().joints).toBe('screws')
+    expect(toProjectData(store())).not.toHaveProperty('joints')
+    store().setJoints('cam')
+    store().setJoints('cam')
+    expect(store().past).toHaveLength(1)
+    expect(toProjectData(store()).joints).toBe('cam')
+    store().undo()
+    expect(store().joints).toBe('screws')
+  })
+})

@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Joints: choose how the carcass is put together under Settings → Boards → Joints: Screws (as before), Confirmat screws, or Cam locks and dowels. The hardware list counts what goes with it for the carcass joints and fixed shelves: confirmat screws, or cam locks, cam bolts and dowels (typical numbers, not exact). Nothing is drawn on the parts.
+
 - Shelf span warnings: a shelf wider than its board can span without sagging gets an orange outline, is marked in the Parts list, and the Selected panel says what the limit is. The limit comes from the new Material choice under Settings → Boards (Chipboard, MDF, Plywood or Solid wood) and the board's thickness, so a thicker or stiffer board spans further. The limits are rules of thumb for clothes and folded things; heavy loads such as books need less.
 - Hanging rods longer than they can carry (1200 mm for a 25 mm rod) get centre support brackets: the Selected panel says how many, and the hardware list has them as Rod centre support brackets.
 

@@ -782,6 +782,12 @@ button kbd {
   gap: 14px;
 }
 
+/* Options with longer names, one to a line. */
+.choice.choice-column {
+  flex-direction: column;
+  gap: 6px;
+}
+
 .part-row-clash span:first-child {
   color: var(--danger);
 }

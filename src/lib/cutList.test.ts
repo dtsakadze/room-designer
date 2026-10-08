@@ -198,3 +198,19 @@ describe('hardware list', () => {
     expect(cutList([piece('rod', { width: 1164, height: 25 })], thickness)).toEqual([])
   })
 })
+
+describe('hardware by joint type', () => {
+  const box: Piece[] = [
+    piece('vertical', { x: 0, width: 18, height: 700, depth: 580 }),
+    piece('vertical', { x: 582, width: 18, height: 700, depth: 580 }),
+    piece('horizontal', { x: 18, y: 0, width: 564, height: 18, depth: 580 }),
+  ]
+
+  it('lists screws, confirmat screws or cam locks, bolts and dowels, never a mix', () => {
+    const items = (joints?: 'screws' | 'confirmat' | 'cam') =>
+      hardwareList(box, thickness, joints).map((row) => row.item)
+    expect(items()).toEqual(['carcass-screws'])
+    expect(items('confirmat')).toEqual(['confirmat-screws'])
+    expect(items('cam')).toEqual(['cam-locks', 'cam-bolts', 'dowels'])
+  })
+})

@@ -69,7 +69,8 @@ function CsvButtons() {
   )
   const { num, len, unit } = useUnits()
   const base = fileBase(project) || 'boardcut'
-  const hardware = hardwareList(pieces, thickness)
+  const joints = useDesignStore((s) => s.joints)
+  const hardware = hardwareList(pieces, thickness, joints)
 
   const downloadCutList = () => {
     const groups = cutList(pieces, thickness, grainedBoards)
@@ -111,7 +112,8 @@ export function CutListTables() {
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const groups = cutList(pieces, thickness, grainedBoards)
   const banding = bandingTotals(groups)
-  const hardware = hardwareList(pieces, thickness)
+  const joints = useDesignStore((s) => s.joints)
+  const hardware = hardwareList(pieces, thickness, joints)
   const { num, len, unit } = useUnits()
 
   return (
