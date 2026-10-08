@@ -231,3 +231,27 @@ describe('anti-tip hardware', () => {
     expect(rows(unit(600))).toEqual([])
   })
 })
+
+describe('hardware for handles', () => {
+  it('lists each kind separately, with J-profile by length, grouped when equal', () => {
+    const list = hardwareList(
+      [
+        piece('door', { width: 600, height: 2000, handle: 'profile' }),
+        piece('door', { width: 600, height: 2000, handle: 'profile' }),
+        piece('door', { width: 450, height: 2000, handle: 'profile' }),
+        piece('door', { width: 600, height: 2000, handle: 'bar' }),
+        piece('door', { width: 600, height: 2000, handle: 'push' }),
+      ],
+      thickness,
+    )
+    expect(list.filter((row) => ['bar-handles', 'push-latches', 'j-profile'].includes(row.item))).toEqual([
+      { item: 'bar-handles', quantity: 1 },
+      { item: 'j-profile', length: 600, quantity: 2 },
+      { item: 'j-profile', length: 450, quantity: 1 },
+      { item: 'push-latches', quantity: 1 },
+    ])
+    expect(describeHardware({ item: 'j-profile', length: 600, quantity: 2 }, (mm) => `${mm}`).name).toBe(
+      'J-profile grip, 600 long',
+    )
+  })
+})

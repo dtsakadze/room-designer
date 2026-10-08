@@ -3,7 +3,7 @@ import { BOARD, BOARDS, CLOSE_LABELS, EXTENSION_LABELS, pieceLabel } from './def
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorLeaves, slidingPanels } from './geometry'
-import { antiTipBrackets, backFixings, handleCount, jointHardware } from './fixings'
+import { antiTipBrackets, backFixings, jointHardware, openerHardware } from './fixings'
 import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 import { rodCentreSupports } from './spans'
@@ -262,6 +262,10 @@ export type HardwareRow =
   | { item: 'anti-tip-brackets'; quantity: number }
   | { item: 'wall-anchors'; quantity: number }
   | { item: 'handles'; quantity: number }
+  | { item: 'bar-handles'; quantity: number }
+  | { item: 'knobs'; quantity: number }
+  | { item: 'push-latches'; quantity: number }
+  | { item: 'j-profile'; length: number; quantity: number }
 
 /** The order runner kinds are listed in, ordinary ones first. */
 const CLOSES = Object.keys(CLOSE_LABELS) as (keyof typeof CLOSE_LABELS)[]
@@ -276,7 +280,8 @@ const SUPPORTS_PER_ROD = 2
  * to), its end supports (and centre supports when it's too long to span unsupported), four pins per adjustable shelf and four screws per
  * fixed one, the screws, confirmat screws or cam locks, bolts and dowels joining the
  * carcass the nails fixing its backs, and the anti-tip brackets and wall anchors for
- * units over 700 mm (see `fixings.ts`), and a handle per door leaf and drawer that has one. Drawers
+ * units over 700 mm (see `fixings.ts`), and what opens each door leaf and drawer (handles, knobs, J-profile cut to
+ * length, or push latches). Drawers
  * too shallow for any runner are left out; the drawer's panel says so.
  * Runners come first, then hinges, rods and their supports, sliding door tracks (top and bottom, cut to the set's width), shelf pins and
  * screws, carcass fixings, then handles.
@@ -330,7 +335,7 @@ export function hardwareList(
     { item: 'anti-tip-brackets', quantity: antiTipBrackets(pieces) },
     // One anchor with its screw for each bracket.
     { item: 'wall-anchors', quantity: antiTipBrackets(pieces) },
-    { item: 'handles', quantity: handleCount(pieces) },
+    ...openerHardware(pieces),
   ] as const
   for (const row of fixings) if (row.quantity > 0) add(row)
 
@@ -352,6 +357,10 @@ export function hardwareList(
     'anti-tip-brackets': 14,
     'wall-anchors': 15,
     handles: 16,
+    'bar-handles': 17,
+    knobs: 18,
+    'j-profile': 19,
+    'push-latches': 20,
   }
   return [...rows.values()].sort(
     (a, b) =>
@@ -421,5 +430,13 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: 'Nails or screws for back panels', count: `${row.quantity}`, ...each }
     case 'handles':
       return { name: 'Handles or knobs', count: `${row.quantity}`, ...each }
+    case 'bar-handles':
+      return { name: 'Bar handles', count: `${row.quantity}`, ...each }
+    case 'knobs':
+      return { name: 'Knobs', count: `${row.quantity}`, ...each }
+    case 'j-profile':
+      return { name: `J-profile grip, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
+    case 'push-latches':
+      return { name: 'Push-to-open latches', count: `${row.quantity}`, ...each }
   }
 }

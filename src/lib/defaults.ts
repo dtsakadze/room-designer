@@ -1,4 +1,4 @@
-import type { BoardKey, BoardMaterial, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
+import type { BoardKey, BoardMaterial, HandleType, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -76,6 +76,17 @@ export const JOINT_HINTS: Record<JointType, string> = {
   screws: 'Plain screws through the sides.',
   confirmat: 'Confirmat screws (7 × 50 mm), the usual one for board.',
   cam: 'Cam locks with their bolts and dowels, for joints you can take apart.',
+}
+
+export const HANDLE_TYPES: HandleType[] = ['bar', 'knob', 'profile', 'push']
+
+export const HANDLE_LABELS: Record<HandleType | 'handle' | 'none', string> = {
+  handle: 'Handle or knob',
+  bar: 'Bar handle',
+  knob: 'Knob',
+  profile: 'J-profile grip',
+  push: 'Push-to-open',
+  none: 'None',
 }
 
 /** Panels in a set of sliding doors, fewest first; two is the default. */

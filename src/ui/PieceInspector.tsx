@@ -4,6 +4,7 @@ import {
   DOOR_ANGLES,
   DOOR_OPEN_ANGLE,
   EXTENSION_LABELS,
+  HANDLE_LABELS,
   MATERIAL_LABELS,
   RUNNER_LENGTHS,
   SLIDING_OVERLAP,
@@ -476,18 +477,54 @@ function SwingWarning({ door }: { door: Piece }) {
 const listed = (items: string[]) =>
   items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
 
-/** Whether a door or drawer gets a handle or knob, for the hardware list. */
+/**
+ * What a door or drawer is opened with, for the hardware list: a handle or
+ * knob (not chosen yet), a bar handle, a knob, a J-profile grip, nothing, or
+ * for a hinged door a push-to-open latch. A drawer's push-to-open is its
+ * runners'.
+ */
 function HandleField({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
+  const options: (keyof typeof HANDLE_LABELS)[] = [
+    'handle',
+    'bar',
+    'knob',
+    'profile',
+    ...(piece.kind === 'door' && !piece.sliding ? (['push'] as const) : []),
+    'none',
+  ]
+  const value = piece.noHandle ? 'none' : (piece.handle ?? 'handle')
+  const choose = (option: keyof typeof HANDLE_LABELS) =>
+    updatePiece(
+      piece.id,
+      option === 'none'
+        ? { noHandle: true, handle: undefined }
+        : { noHandle: false, handle: option === 'handle' ? undefined : option },
+    )
+
   return (
-    <label className="checkbox">
-      <input
-        type="checkbox"
-        checked={!piece.noHandle}
-        onChange={(event) => updatePiece(piece.id, { noHandle: !event.target.checked })}
-      />
-      {piece.kind === 'door' && piece.double ? 'Handles (one per leaf)' : 'Handle or knob'}
-    </label>
+    <>
+      <span className="field-label">{piece.kind === 'door' && piece.double ? 'Opened with (each leaf)' : 'Opened with'}</span>
+      <div className="choice choice-column" role="radiogroup" aria-label="Opened with">
+        {options.map((option) => (
+          <label key={option} className="checkbox">
+            <input
+              type="radio"
+              name={`handle-${piece.id}`}
+              checked={value === option}
+              onChange={() => choose(option)}
+            />
+            {HANDLE_LABELS[option]}
+          </label>
+        ))}
+      </div>
+      {value === 'profile' && (
+        <p className="hint">
+          A grip along the top edge (or down a sliding panel's edge): the hardware list has the
+          profile cut to each front&apos;s length.
+        </p>
+      )}
+    </>
   )
 }
 
@@ -575,7 +612,7 @@ function DrawerOptions({ piece }: { piece: Piece }) {
         {len(side.height + bottom.height)} high.
       </p>
       {piece.close === 'push' ? (
-        <p className="hint">No handle: a push-to-open drawer doesn&apos;t need one.</p>
+        <p className="hint">Nothing to open it with: a push-to-open drawer doesn&apos;t need a handle.</p>
       ) : (
         <HandleField piece={piece} />
       )}

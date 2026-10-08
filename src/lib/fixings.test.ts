@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Box, Piece, PieceKind } from '../types'
 import { boxPanels } from './box'
 import { DEFAULT_THICKNESS } from './defaults'
-import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware, tippingUnits, antiTipBrackets } from './fixings'
+import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets } from './fixings'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -126,5 +126,40 @@ describe('anti-tip brackets', () => {
     ]
     expect(tippingUnits(loose)).toBe(1)
     expect(tippingUnits([...loose, ...loose.map((p) => ({ ...p, id: `${p.id}2`, wall: 'left' as const }))])).toBe(2)
+  })
+})
+
+describe('what doors and drawers are opened with', () => {
+  it('keeps each choice only where it can apply', () => {
+    expect(piece('a', 'door', { handle: 'knob' }).handle).toBe('knob')
+    expect(piece('b', 'door', { handle: 'push' }).handle).toBe('push')
+    // Nothing to open with: the choice is dropped. Push is for hinged doors only.
+    expect(piece('c', 'door', { handle: 'bar', noHandle: true })).not.toHaveProperty('handle')
+    expect(piece('d', 'drawer', { handle: 'push' })).not.toHaveProperty('handle')
+    expect(piece('e', 'door', { handle: 'push', sliding: 2 })).not.toHaveProperty('handle')
+    expect(piece('f', 'drawer', { handle: 'bar', close: 'push' })).not.toHaveProperty('handle')
+    expect(piece('g', 'shelf', { handle: 'bar' })).not.toHaveProperty('handle')
+    expect(piece('h', 'door', { handle: 'gold' as never })).not.toHaveProperty('handle')
+  })
+
+  it('counts each kind to buy: handles, bar handles, knobs, latches, and profile by length', () => {
+    const pieces = [
+      piece('a', 'door', { width: 600 }),
+      piece('b', 'door', { width: 603, double: true, handle: 'knob' }),
+      piece('c', 'drawer', { width: 564, height: 200, handle: 'bar' }),
+      piece('d', 'door', { handle: 'push' }),
+      piece('e', 'drawer', { width: 564, height: 200, handle: 'profile' }),
+      piece('f', 'door', { width: 600, handle: 'profile', double: true }),
+      piece('g', 'door', { noHandle: true }),
+    ]
+    const rows = openerHardware(pieces)
+    const quantity = (item: string) => rows.filter((row) => row.item === item).reduce((n, row) => n + row.quantity, 0)
+    expect(quantity('handles')).toBe(1)
+    expect(quantity('knobs')).toBe(2)
+    expect(quantity('bar-handles')).toBe(1)
+    expect(quantity('push-latches')).toBe(1)
+    // The drawer's front, and both leaves of the double door.
+    expect(rows.filter((row) => row.item === 'j-profile').map((row) => (row as { length: number }).length)).toEqual([564, 298.5, 298.5].map(Math.round))
+    expect(handleCount(pieces)).toBe(1 + 2 + 1)
   })
 })

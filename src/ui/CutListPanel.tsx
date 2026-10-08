@@ -223,6 +223,7 @@ export function CutListTables() {
       banded, with the length across{grainedBoards.length > 0 && '; lines show the grain'}.
       {banding.length > 0 && ' Allow extra banding for trimming.'}
       {hardware.some((row) => row.item === 'rod') && ' Rod lengths are what to cut them to.'}
+      {hardware.some((row) => row.item === 'j-profile') && ' J-profile lengths are what to cut it to.'}
     </p>
     </>
   )

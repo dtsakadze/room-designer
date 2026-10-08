@@ -52,6 +52,13 @@ export type BoardMaterials = Partial<Record<BoardKey, BoardMaterial>>
  */
 export type JointType = 'screws' | 'confirmat' | 'cam'
 
+/**
+ * What a door or drawer front is opened with, when it isn't the unspecified
+ * "handle or knob": a bar handle, a knob, a grip routed or fitted into the
+ * edge (J-profile), or a push-to-open latch (doors only).
+ */
+export type HandleType = 'bar' | 'knob' | 'profile' | 'push'
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 
@@ -105,6 +112,12 @@ export type Piece = {
   overlap?: number
   /** Doors and drawers only: has no handle or knob. Absent means it has one. */
   noHandle?: boolean
+  /**
+   * Doors and drawers only: what it's opened with. Absent means a handle or
+   * knob, not yet chosen. Ignored when `noHandle` is set; `push` is for doors
+   * (a drawer's is its runners, see `close`).
+   */
+  handle?: HandleType
   /**
    * Drawers only: runners that pull the drawer out all the way, rather than
    * standard ones that leave about a quarter of it inside. Absent means standard.

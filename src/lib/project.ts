@@ -1,4 +1,4 @@
-import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, JointType, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, Box, HandleType, JointType, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import {
   BOARDS,
@@ -25,7 +25,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 13
+export const FORMAT_VERSION = 14
 
 type Raw = Record<string, unknown>
 
@@ -111,6 +111,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // before, so only the version changes; the bump makes an older app refuse
   // such a save rather than drop the choice.
   12: (data) => ({ ...data, formatVersion: 13 }),
+  // v14 adds a door's or drawer's optional `handle` (`bar`, `knob`, `profile`
+  // or, for doors, `push`). Absent, it has a handle or knob as before, so only
+  // the version changes; the bump makes an older app refuse such a save
+  // rather than turn the choice back into a plain handle.
+  13: (data) => ({ ...data, formatVersion: 14 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -288,7 +293,11 @@ function validate(data: Raw): ProjectData | null {
       bands: Array.isArray(raw.bands) ? raw.bands.filter(isEdge) : undefined,
       grain: isDimension(raw.grain) ? raw.grain : undefined,
     }
-    const handle = { noHandle: raw.noHandle === true }
+    // Which handle types are allowed where is checked by `normalizePiece`.
+    const handle = {
+      noHandle: raw.noHandle === true,
+      handle: typeof raw.handle === 'string' ? (raw.handle as HandleType) : undefined,
+    }
     const z = typeof raw.z === 'number' ? raw.z : undefined
     const extras = { ...handle, fixed: raw.fixed === true, railAt, boxId, color, wall, z, ...door, ...drawer, ...finish }
     return [normalizePiece({ ...piece, ...extras }, thickness)]

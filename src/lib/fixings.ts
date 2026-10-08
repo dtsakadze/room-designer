@@ -1,4 +1,5 @@
 import type { JointType, Piece } from '../types'
+import { doorLeaves, slidingPanels } from './geometry'
 import { wallOf } from './room'
 
 /**
@@ -153,18 +154,66 @@ export function backFixings(pieces: Piece[]) {
     )
 }
 
+/** What a door or drawer front is opened with, as the hardware list tells them apart. */
+type Opener = 'handle' | 'bar' | 'knob' | 'profile' | 'push'
+
 /**
- * Whether a door or drawer has a handle or knob. Each has one unless it's
- * been taken off (`noHandle`), and a push-to-open drawer opens without one.
+ * What a door or drawer is opened with, or null for nothing: it's been taken
+ * off (`noHandle`), or it's a push-to-open drawer (its runners open it).
+ * Without a choice it's a handle or knob.
  */
-export const hasHandle = (piece: Piece) =>
-  (piece.kind === 'door' || piece.kind === 'drawer') &&
-  !piece.noHandle &&
-  !(piece.kind === 'drawer' && piece.close === 'push')
+function openerOf(piece: Piece): Opener | null {
+  if (piece.kind === 'door') return piece.noHandle ? null : (piece.handle ?? 'handle')
+  if (piece.kind === 'drawer') {
+    return piece.noHandle || piece.close === 'push' ? null : (piece.handle ?? 'handle')
+  }
+  return null
+}
+
+/** Whether a door or drawer has a handle or knob (of any kind), rather than a grip, a latch or nothing. */
+export const hasHandle = (piece: Piece) => {
+  const opener = openerOf(piece)
+  return opener === 'handle' || opener === 'bar' || opener === 'knob'
+}
+
+/** The fronts a door or drawer is made of, each opened by its own handle: a double door's leaves, sliding panels. */
+function fronts(piece: Piece): { width: number; height: number }[] {
+  if (piece.kind === 'door' && piece.sliding) return slidingPanels({ ...piece, sliding: piece.sliding })
+  if (piece.kind === 'door' && piece.double) return doorLeaves(piece, true)
+  return [piece]
+}
 
 /** Handles or knobs to buy: one per door leaf (two for a double door, one per panel for sliding ones) and per drawer that has one. */
 export function handleCount(pieces: Piece[]) {
-  return pieces
-    .filter(hasHandle)
-    .reduce((sum, piece) => sum + (piece.kind === 'door' ? (piece.sliding ?? (piece.double ? 2 : 1)) : 1), 0)
+  return pieces.filter(hasHandle).reduce((sum, piece) => sum + fronts(piece).length, 0)
+}
+
+type OpenerRow =
+  | { item: 'handles' | 'bar-handles' | 'knobs' | 'push-latches'; quantity: number }
+  | { item: 'j-profile'; length: number; quantity: number }
+
+/**
+ * What to buy to open doors and drawers, by what each is opened with: a
+ * handle or knob (not chosen), bar handles, knobs, push-to-open latches, and
+ * J-profile cut to length for each front (along its top edge, or down a
+ * sliding panel's edge).
+ */
+export function openerHardware(pieces: Piece[]): OpenerRow[] {
+  const counts = { handle: 0, bar: 0, knob: 0, push: 0 }
+  const profiles: number[] = []
+  for (const piece of pieces) {
+    const opener = openerOf(piece)
+    if (!opener) continue
+    const leaves = fronts(piece)
+    if (opener === 'profile') {
+      for (const leaf of leaves) profiles.push(Math.round(piece.sliding ? leaf.height : leaf.width))
+    } else counts[opener] += leaves.length
+  }
+  return [
+    { item: 'handles', quantity: counts.handle },
+    { item: 'bar-handles', quantity: counts.bar },
+    { item: 'knobs', quantity: counts.knob },
+    { item: 'push-latches', quantity: counts.push },
+    ...profiles.map((length): OpenerRow => ({ item: 'j-profile', length, quantity: 1 })),
+  ]
 }

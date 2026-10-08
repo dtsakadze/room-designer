@@ -4,6 +4,7 @@ import {
   DOOR_ANGLES,
   DOOR_LEAF_GAP,
   DOOR_OPEN_ANGLE,
+  HANDLE_TYPES,
   MAX_SLIDING_OVERLAP,
   PLINTH_RECESS,
   SLIDING_LANE_GAP,
@@ -62,7 +63,20 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
     delete normalized.openAngle
   }
   if (piece.kind !== 'door' || sliding || !piece.softClose) delete normalized.softClose
-  if ((piece.kind !== 'door' && piece.kind !== 'drawer') || !piece.noHandle) delete normalized.noHandle
+  const opens = piece.kind === 'door' || piece.kind === 'drawer'
+  if (!opens || !piece.noHandle) delete normalized.noHandle
+  // What it's opened with only matters when it has something to open it: push
+  // is for hinged doors (a drawer's is its runners, and sliding doors have none).
+  const pushable = piece.kind === 'door' && !piece.sliding
+  if (
+    !opens ||
+    piece.noHandle ||
+    !HANDLE_TYPES.includes(piece.handle!) ||
+    (piece.handle === 'push' && !pushable) ||
+    (piece.kind === 'drawer' && piece.close === 'push')
+  ) {
+    delete normalized.handle
+  }
   // Standard runners are the default, stored as no value.
   if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
   if (piece.kind !== 'drawer' || !piece.overlay) delete normalized.overlay

@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- What opens a door or drawer: select one and pick Opened with: Handle or knob (as before), Bar handle, Knob, J-profile grip, Push-to-open (hinged doors; a drawer's push-to-open is under its runners) or None. The hardware list counts each kind, and gives J-profile cut to the length of every front that has one. Nothing is drawn on the front.
+
 - Anti-tip brackets and wall anchors: the hardware list now has two anti-tip brackets for every unit taller than 700 mm (a box, or a carcass built from loose panels, counted by its top board), and a wall anchor with its screw for each bracket. Which anchors to buy depends on your wall.
 
 - Joints: choose how the carcass is put together under Settings → Boards → Joints: Screws (as before), Confirmat screws, or Cam locks and dowels. The hardware list counts what goes with it for the carcass joints and fixed shelves: confirmat screws, or cam locks, cam bolts and dowels (typical numbers, not exact). Nothing is drawn on the parts.
