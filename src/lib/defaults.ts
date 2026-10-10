@@ -210,9 +210,8 @@ export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'dou
 
 export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Panels', kinds: ['vertical', 'horizontal', 'back', 'plinth', 'rail'] },
-  { title: 'Fittings', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
-  { title: 'Fronts', kinds: ['door'] },
-  { title: 'Trim', kinds: ['cornice', 'filler'] },
+  { title: 'Inside', kinds: ['shelf', 'divider', 'rod', 'drawer'] },
+  { title: 'Fronts and trim', kinds: ['door', 'cornice', 'filler'] },
   // Offered as one button for each type of accessory, see `ACCESSORIES`.
   { title: 'Accessories', kinds: ['accessory'] },
 ]

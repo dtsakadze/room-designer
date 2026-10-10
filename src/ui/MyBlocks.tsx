@@ -16,15 +16,16 @@ export function MyBlocks() {
   const blocks = useMemo(() => stored.map(readBlock), [stored])
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [managingId, setManagingId] = useState<string | null>(null)
 
   if (blocks.length === 0) return null
 
   return (
-    <section className="section">
-      <h2>My blocks</h2>
-      <div className="stack">
+    <section className="add-group">
+      <h2>Your blocks</h2>
+      <ul className="block-list">
         {blocks.map((block) => (
-          <div key={block.id} className="block">
+          <li key={block.id} className="block">
             {renamingId === block.id ? (
               <EditableName
                 name={block.name}
@@ -40,7 +41,7 @@ export function MyBlocks() {
                 title="Insert into this project"
                 onClick={() => block.design && insertBlock(block.design)}
               >
-                {block.name}
+                <span className="block-name">{block.name}</span>
                 <span className="muted">
                   {block.problem === 'newer'
                     ? "can't open: saved by a newer version"
@@ -50,38 +51,60 @@ export function MyBlocks() {
                 </span>
               </button>
             )}
-            {confirmingId === block.id ? (
-              <div className="button-row">
-                <button
-                  type="button"
-                  className="danger-button"
-                  onClick={() => {
-                    setConfirmingId(null)
-                    deleteBlock(block.id)
-                  }}
-                >
-                  Delete for good
-                </button>
-                <button type="button" className="ghost-button" onClick={() => setConfirmingId(null)}>
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="block-actions">
-                {block.design && (
-                  <button type="button" className="ghost-button" onClick={() => setRenamingId(block.id)}>
-                    Rename
+            {/* Rename and Delete stay out of sight until asked for, so the list reads as add buttons. */}
+            <button
+              type="button"
+              className="icon-button block-more"
+              aria-label={`More for ${block.name}`}
+              aria-expanded={managingId === block.id}
+              onClick={() => {
+                setManagingId(managingId === block.id ? null : block.id)
+                setConfirmingId(null)
+              }}
+            >
+              ⋯
+            </button>
+            {managingId === block.id &&
+              (confirmingId === block.id ? (
+                <div className="button-row block-actions">
+                  <button
+                    type="button"
+                    className="danger-button"
+                    onClick={() => {
+                      setConfirmingId(null)
+                      setManagingId(null)
+                      deleteBlock(block.id)
+                    }}
+                  >
+                    Delete for good
                   </button>
-                )}
-                <button type="button" className="ghost-button" onClick={() => setConfirmingId(block.id)}>
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
+                  <button type="button" className="ghost-button" onClick={() => setConfirmingId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="block-actions">
+                  {block.design && (
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => {
+                        setRenamingId(block.id)
+                        setManagingId(null)
+                      }}
+                    >
+                      Rename
+                    </button>
+                  )}
+                  <button type="button" className="ghost-button" onClick={() => setConfirmingId(block.id)}>
+                    Delete
+                  </button>
+                  <span className="hint">Saved in this browser, for every project.</span>
+                </div>
+              ))}
+          </li>
         ))}
-        <p className="hint">Saved in this browser, for every project. Select parts and use Save as block.</p>
-      </div>
+      </ul>
     </section>
   )
 }

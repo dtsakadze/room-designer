@@ -1,7 +1,28 @@
 import { ACCESSORIES, PIECE_GROUPS, PIECE_LABELS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
+import type { AccessoryType } from '../types'
 import { MyBlocks } from './MyBlocks'
+import { type IconName, PartIcon } from './PartIcon'
+
+/** Accessory names short enough for a half-width button; the drawing's own short names are worded for the drawing. */
+const ACCESSORY_BUTTONS: Record<AccessoryType, string> = {
+  trouser: 'Trousers',
+  tie: 'Ties, belts',
+  basket: 'Basket',
+  'shoes-pullout': 'Shoe rack',
+  'shoes-angled': 'Shoe shelf',
+}
+
+/** One add button: a picture of the part and its name (accessories use a short one, the full name on hover). */
+function AddTile({ icon, label, title, onClick }: { icon: IconName; label: string; title: string; onClick: () => void }) {
+  return (
+    <button type="button" className="add-button add-tile" title={title} onClick={onClick}>
+      <PartIcon name={icon} />
+      <span>{label}</span>
+    </button>
+  )
+}
 
 /** The buttons that add parts, and a line saying what new parts start with. */
 export function ComponentPalette({ onNewPartSettings }: { onNewPartSettings: () => void }) {
@@ -14,51 +35,50 @@ export function ComponentPalette({ onNewPartSettings }: { onNewPartSettings: () 
 
   return (
     <>
-      <MyBlocks />
-      <section className="section">
-        <h2>Carcass</h2>
-        <button type="button" className="add-button box-button" onClick={addBox}>
+      {/* The usual start, so it leads, wider than the rest. */}
+      <button type="button" className="add-button box-button" title="A carcass: sides, top, bottom and back, sized as one" onClick={addBox}>
+        <PartIcon name="box" size={28} />
+        <span className="box-button-text">
           Box
-          <span className="muted">sides, top, bottom and back, sized as one</span>
-        </button>
-      </section>
+          <span className="muted">sides, top, bottom, back</span>
+        </span>
+      </button>
+      <MyBlocks />
       {PIECE_GROUPS.map((group) => (
-        <section key={group.title} className="section">
+        <section key={group.title} className="add-group">
           <h2>{group.title}</h2>
           <div className="add-grid">
-            {group.kinds.map((kind) =>
-              kind === 'accessory' ? (
-                // One button for each type, each starting at its own size.
-                ACCESSORIES.map((accessory) => (
-                  <button
-                    key={accessory.type}
-                    type="button"
-                    className="add-button"
-                    onClick={() => addPiece('accessory', accessoryDefaults(accessory.type))}
-                  >
-                    {accessory.label}
-                  </button>
-                ))
-              ) : (
-                <button
-                  key={kind}
-                  type="button"
-                  className="add-button"
-                  onClick={() => addPiece(kind)}
-                >
-                  {PIECE_LABELS[kind]}
-                </button>
-              ),
-            )}
-            {/* Sliding doors are a door with a panel count, so they sit with the other fronts. */}
-            {group.kinds.includes('door') && (
-              <button
-                type="button"
-                className="add-button"
-                onClick={() => addPiece('door', slidingDoorDefaults(thickness))}
-              >
-                Sliding doors
-              </button>
+            {group.kinds.flatMap((kind) =>
+              kind === 'accessory'
+                ? // One button for each type, each starting at its own size.
+                  ACCESSORIES.map((accessory) => (
+                    <AddTile
+                      key={accessory.type}
+                      icon={accessory.type}
+                      label={ACCESSORY_BUTTONS[accessory.type]}
+                      title={accessory.label}
+                      onClick={() => addPiece('accessory', accessoryDefaults(accessory.type))}
+                    />
+                  ))
+                : [
+                    <AddTile
+                      key={kind}
+                      icon={kind}
+                      label={PIECE_LABELS[kind]}
+                      title={PIECE_LABELS[kind]}
+                      onClick={() => addPiece(kind)}
+                    />,
+                    // Sliding doors are a door with a panel count, so they sit with the other fronts.
+                    kind === 'door' && (
+                      <AddTile
+                        key="sliding"
+                        icon="sliding"
+                        label="Sliding doors"
+                        title="Sliding doors"
+                        onClick={() => addPiece('door', slidingDoorDefaults(thickness))}
+                      />
+                    ),
+                  ],
             )}
           </div>
         </section>

@@ -88,7 +88,7 @@ body {
 }
 
 .sidebar {
-  width: 272px;
+  width: 284px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -157,8 +157,83 @@ body {
 
 .add-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* A group of add buttons under a small heading. */
+.add-group h2 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.add-button.add-tile {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 4px 5px 4px 4px;
+  font-size: 12.5px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.add-tile > span {
+  min-width: 0;
+}
+
+.part-icon {
+  flex: none;
+}
+
+.part-icon .carcass {
+  fill: none;
+  stroke: #b4bdca;
+  stroke-width: 1;
+  stroke-dasharray: 2 1.5;
+}
+
+.part-icon .on,
+.part-icon .on-line {
+  fill: #8a7a55;
+  stroke: #8a7a55;
+  stroke-width: 0;
+}
+
+.part-icon .on-line {
+  stroke-width: 1;
+}
+
+.part-icon path.on-line[fill='none'] {
+  fill: none;
+}
+
+.part-icon .on-light {
+  fill: #e6dcc3;
+}
+
+.part-icon .on-cut {
+  stroke: #f5f7fa;
+}
+
+.part-icon .on-cut-fill {
+  fill: #f5f7fa;
+}
+
+.add-tile:hover .part-icon .on,
+.add-tile:hover .part-icon .on-line,
+.box-button:hover .part-icon .on-line {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.add-tile:hover .part-icon path.on-line[fill='none'] {
+  fill: none;
 }
 
 button {
@@ -921,10 +996,15 @@ button kbd {
 .box-button {
   width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
   text-align: left;
+}
+
+.box-button-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .box-button .muted {
@@ -1465,23 +1545,64 @@ button kbd {
   font-size: 14px;
 }
 
-.block {
+.block-list {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
+}
+
+.block > .block-insert,
+.block > .editable-name-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .block-insert {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
   text-align: left;
 }
 
+.block-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block-insert .muted {
+  flex: none;
+  font-size: 12px;
+}
+
+.block .block-more {
+  margin-left: 0;
+  padding: 4px 6px;
+  font-size: 16px;
+}
+
 .block-actions {
+  flex-basis: 100%;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
+}
+
+.block-actions .hint {
+  margin: 0;
 }
 
 .block-actions .ghost-button {
