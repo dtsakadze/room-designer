@@ -369,3 +369,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 *Decision*: a rod has an optional `lift`. A rod on a lift is listed in the hardware list as one "Pull-down wardrobe lift" by rod length, instead of its two end supports and any centre supports (the lift holds the whole rod). The rod itself is still listed to cut. Nothing is drawn differently, and the lift's size range and weight limit are left to the maker. Saved as format v18.
 *Why*: a lift replaces the supports on the same rod, so it belongs on the rod, and it follows from the rod's length.
 *Instead of*: a separate part kind (it would need a rod inside it), and warning about a rod that is too low or high for a lift (the right height depends on the person and the lift).
+
+**A Dockerfile for one-command self-hosting** (2026-10-14)
+*Decision*: the repository has a `Dockerfile` (a Node build stage that runs `pnpm build`, then the `dist/` folder on nginx), `docker/nginx.conf` (`index.html` never cached, the hashed files in `assets/` cached for a year, gzip), a `docker-compose.yml` (`docker compose up -d` serves on port 8080) and a `.dockerignore` that leaves out `.env`, so a local `SITE_URL` never ends up in an image. `SITE_URL` can be given as a build argument. Nothing is published to a registry.
+*Why*: the app is static, so any web server works, but people who don't have Node or don't know which server to pick can run one command instead. Projects stay in each browser, so the container holds no data and needs no volume.
+*Instead of*: serving with `vite preview` in the container (a dev tool, and a much bigger image), and publishing an image on release (a later step if people ask; it needs a registry and a change to the release workflow).

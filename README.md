@@ -32,6 +32,16 @@ pnpm dev        # http://localhost:5173
 
 To try the production build locally: `pnpm build && pnpm preview` (http://localhost:4173).
 
+## Run it with Docker
+
+With Docker installed, one command builds the app and serves it on http://localhost:8080:
+
+```bash
+docker compose up -d
+```
+
+Or without Compose: `docker build -t boardcut . && docker run -d -p 8080:80 boardcut`. The image is the built app on nginx (about 60 MB), with no database or other service. To set the canonical address for a public copy, build with `--build-arg SITE_URL=https://example.com`. Projects live in each person's browser, not in the container (see "Where your data lives").
+
 ## Self-host
 
 The app is a plain static site. Build it and put the `dist/` folder on any static host:

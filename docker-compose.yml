@@ -1,0 +1,7 @@
+# docker compose up -d   ->   http://localhost:8080
+services:
+  boardcut:
+    build: .
+    ports:
+      - '8080:80'
+    restart: unless-stopped
