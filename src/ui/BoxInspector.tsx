@@ -6,6 +6,7 @@ import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
+import { OverhangNote } from './PieceInspector'
 import { SaveBlockButton } from './SaveBlockButton'
 import { ZField } from './ZField'
 import { wallOf } from '../lib/room'
@@ -126,6 +127,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
           Delete <kbd>{DELETE_SHORTCUT}</kbd>
         </button>
       </div>
+      <OverhangNote ids={panels.map((piece) => piece.id)} />
       <SaveBlockButton />
       <button type="button" className="ghost-button" onClick={() => separateBox(box.id)}>
         Separate panels

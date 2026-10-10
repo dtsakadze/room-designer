@@ -36,6 +36,8 @@ import { maxRodSpan, rodCentreSupports } from '../lib/spans'
 import { hasHandle } from '../lib/fixings'
 import { setBack } from '../lib/clearance'
 import { useClearanceWarnings } from './useClearanceWarnings'
+import { useRoomOverhangs } from './useRoomOverhangs'
+import type { Overhang } from '../lib/roomFit'
 import { useSpanWarnings } from './useSpanWarnings'
 
 export function PieceInspector() {
@@ -112,6 +114,7 @@ export function PieceInspector() {
       {piece.kind === 'accessory' && <AccessoryOptions piece={piece} />}
       <SpanNote piece={piece} />
       <ClearanceNote piece={piece} />
+      <OverhangNote ids={[piece.id]} />
       {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
       <FinishFields piece={piece} />
 
@@ -267,6 +270,27 @@ function AccessoryOptions({ piece }: { piece: Piece }) {
       </p>
     </>
   )
+}
+
+/**
+ * Says when a part (or a box, by its panels) sticks out past a wall of the
+ * room or its ceiling, and how far.
+ */
+export function OverhangNote({ ids }: { ids: string[] }) {
+  const overhangs = useRoomOverhangs()
+  const { len } = useUnits()
+  const worst = ids
+    .map((id) => overhangs.get(id))
+    .reduce<Overhang | undefined>((a, b) => (!a || (b && b.by > a.by) ? b : a), undefined)
+  if (!worst) return null
+  const where = {
+    left: 'past the left side of the room',
+    right: 'past the right side of the room',
+    back: 'past the back wall',
+    front: 'past the front end of the room',
+    ceiling: 'above the ceiling',
+  }[worst.past]
+  return <p className="hint hint-warn">{`Sticks out ${len(worst.by)} ${where}. Move or resize it, or change the room.`}</p>
 }
 
 /**

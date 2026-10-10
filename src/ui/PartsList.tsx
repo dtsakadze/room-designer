@@ -7,6 +7,7 @@ import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
 import { useSpanWarnings } from './useSpanWarnings'
 import { useClearanceWarnings } from './useClearanceWarnings'
+import { useRoomOverhangs } from './useRoomOverhangs'
 
 /**
  * Every part in the design, under its wall when there's more than one.
@@ -22,6 +23,7 @@ export function PartsList() {
   const clashes = useClashes()
   const spans = useSpanWarnings()
   const clearance = useClearanceWarnings()
+  const overhangs = useRoomOverhangs()
   const tightDrawers = new Set([...clearance.values()].map((warning) => warning.drawerId)).size
   const { num, unit } = useUnits()
 
@@ -37,7 +39,7 @@ export function PartsList() {
               'part-row',
               selectedIds.includes(piece.id) && 'part-row-selected',
               clashes.has(piece.id) && 'part-row-clash',
-              (spans.has(piece.id) || clearance.has(piece.id)) && 'part-row-warn',
+              (spans.has(piece.id) || clearance.has(piece.id) || overhangs.has(piece.id)) && 'part-row-warn',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -64,6 +66,12 @@ export function PartsList() {
           {spans.size === 1 ? '1 shelf spans' : `${spans.size} shelves span`} further than{' '}
           {spans.size === 1 ? 'it' : 'they'} safely can (shown in orange). Select one to see its
           limit.
+        </p>
+      )}
+      {overhangs.size > 0 && (
+        <p className="hint hint-warn">
+          {overhangs.size === 1 ? '1 part sticks' : `${overhangs.size} parts stick`} out past a wall
+          or the ceiling (shown in orange). Select one to see how far.
         </p>
       )}
       {tightDrawers > 0 && (

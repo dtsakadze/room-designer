@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- A warning when a part sticks out of the room: in an L- or U-shaped room, a part past either side, through the back wall (a unit on a side wall that runs into the corner), or past the front end of the side walls, or above the ceiling once you've set its height, gets an orange outline, is marked in the Parts list, and its Selected panel says how far and past what. Parts only touching a wall are fine.
+
 - Your own blocks: select a part, a box or several parts and click Save as block…, give it a name (for example "My drawer unit"), and it appears under Add → My blocks in every project. Click a block to insert it at the right of what's on the wall you're editing (one Undo takes it back), or Rename or Delete it there. Blocks are kept in this browser.
 
 - Resize with the keyboard: with a part selected in the Front view, ⌘ + arrow (Ctrl on Windows and Linux) resizes it by 10 mm: → wider, ← narrower, ↑ taller, ↓ shorter, with the left and bottom edges staying put. Add Shift for 100 mm. A panel of a box resizes the whole box. It's listed under Shortcuts.

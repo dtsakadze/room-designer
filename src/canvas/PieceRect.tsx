@@ -28,7 +28,7 @@ type PieceRectProps = {
   clashing: boolean
   /** The way grain lines run on this part's face in this view, or null for none. */
   grain: 'horizontal' | 'vertical' | null
-  /** A shelf that spans too far (see `spanWarnings`), or a drawer too close to its door (see `clearanceWarnings`). */
+  /** A shelf that spans too far (see `spanWarnings`), a drawer too close to its door (see `clearanceWarnings`), or a part past a wall (see `roomOverhangs`). */
   warned: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
