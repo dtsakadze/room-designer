@@ -28,8 +28,8 @@ type PieceRectProps = {
   clashing: boolean
   /** The way grain lines run on this part's face in this view, or null for none. */
   grain: 'horizontal' | 'vertical' | null
-  /** A shelf that spans further than it can safely (see `spanWarnings`). */
-  overSpan: boolean
+  /** A shelf that spans too far (see `spanWarnings`), or a drawer too close to its door (see `clearanceWarnings`). */
+  warned: boolean
   unit: number
   onPointerDown: (event: ReactPointerEvent<SVGRectElement>, piece: Piece) => void
   onHoverChange: (id: string | null) => void
@@ -50,7 +50,7 @@ export function PieceRect({
   screws,
   doorMarks,
   clashing,
-  overSpan,
+  warned,
   grain,
   unit,
   onPointerDown,
@@ -79,8 +79,8 @@ export function PieceRect({
         rx={rx}
         fill={fill}
         fillOpacity={hollow ? 0.35 : 1}
-        stroke={selected ? '#2563eb' : clashing ? CLASH : overSpan ? SPAN_WARNING : showHover ? '#60a5fa' : '#9c8f6d'}
-        strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : overSpan ? 2.4 : 1)}
+        stroke={selected ? '#2563eb' : clashing ? CLASH : warned ? SPAN_WARNING : showHover ? '#60a5fa' : '#9c8f6d'}
+        strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : warned ? 2.4 : 1)}
         // A door's own marks are dashed, so its outline stays solid.
         strokeDasharray={hollow && piece.kind !== 'door' ? `${unit * 8} ${unit * 6}` : undefined}
         style={{ cursor: editable ? 'move' : 'pointer' }}

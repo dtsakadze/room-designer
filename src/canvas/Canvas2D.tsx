@@ -10,6 +10,7 @@ import { EditButtons } from '../ui/EditButtons'
 import { ShortcutsPanel } from '../ui/ShortcutsPanel'
 import { useClashes } from '../ui/useClashes'
 import { useSpanWarnings } from '../ui/useSpanWarnings'
+import { useClearanceWarnings } from '../ui/useClearanceWarnings'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { MEASURE_SHORTCUT, hasModifier } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
@@ -163,6 +164,7 @@ export function Canvas2D() {
   const setActiveWall = useDesignStore((s) => s.setActiveWall)
   const clashes = useClashes()
   const spanWarnings = useSpanWarnings()
+  const clearance = useClearanceWarnings()
   const { len, unit: lengthUnit } = useUnits()
   const projectName = useProjectsStore(
     (s) => s.projects.find((project) => project.id === s.currentId)?.name ?? 'Boardcut',
@@ -743,7 +745,7 @@ export function Canvas2D() {
             }
             // Screws show where the shelf meets the sides: from the front or back.
             clashing={clashes.has(piece.id)}
-            overSpan={spanWarnings.has(piece.id)}
+            warned={spanWarnings.has(piece.id) || clearance.has(piece.id)}
             grain={grainDirection(piece, viewName, grainedBoards)}
             screws={!!piece.fixed && (viewName === 'front' || viewName === 'back')}
             // From behind, a door's hinges would show on the wrong side.

@@ -32,6 +32,9 @@ import { WALL_LABELS, wallOf } from '../lib/room'
 import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels, wallDepthStart } from '../lib/geometry'
 import { ZField } from './ZField'
 import { maxRodSpan, rodCentreSupports } from '../lib/spans'
+import { hasHandle } from '../lib/fixings'
+import { setBack } from '../lib/clearance'
+import { useClearanceWarnings } from './useClearanceWarnings'
 import { useSpanWarnings } from './useSpanWarnings'
 
 export function PieceInspector() {
@@ -107,6 +110,7 @@ export function PieceInspector() {
       {(piece.kind === 'filler' || piece.kind === 'cornice') && <TrimOptions piece={piece} />}
       {piece.kind === 'accessory' && <AccessoryOptions piece={piece} />}
       <SpanNote piece={piece} />
+      <ClearanceNote piece={piece} />
       {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
       <FinishFields piece={piece} />
 
@@ -245,6 +249,42 @@ function AccessoryOptions({ piece }: { piece: Piece }) {
           ? 'Bought as one fitting with its runners: the hardware list has it by width and depth. Size it to the opening, less the room the runners need on each side.'
           : 'Bought as one fitting: the hardware list has it by width and depth.'}
       </p>
+    </>
+  )
+}
+
+/**
+ * Says when a drawer sits too close behind its door, on the drawer and on the
+ * door, and sets the drawer back by what's missing from the drawer.
+ */
+function ClearanceNote({ piece }: { piece: Piece }) {
+  const warning = useClearanceWarnings().get(piece.id)
+  const drawer = useDesignStore((s) => s.pieces.find((candidate) => candidate.id === warning?.drawerId))
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const { len } = useUnits()
+  if (!warning || !drawer) return null
+  const gap =
+    warning.gap < 0
+      ? `front pokes ${len(-warning.gap)} through the door`
+      : `front is ${len(warning.gap)} behind the door`
+  const fix = setBack(drawer, warning)
+  return (
+    <>
+      <p className="hint hint-warn">
+        {piece.kind === 'drawer'
+          ? `Its ${gap}, and it needs ${len(warning.needed)} for the hinges${hasHandle(drawer) ? ' and the handle' : ''}.`
+          : `The drawer behind it is too close: its ${gap}, and it needs ${len(warning.needed)}. Select the drawer to fix it.`}
+      </p>
+      {piece.kind === 'drawer' && (
+        <>
+          <button type="button" className="ghost-button" onClick={() => updatePiece(piece.id, fix)}>
+            Set back behind the door
+          </button>
+          {fix.depth < piece.depth && (
+            <p className="hint">There isn&apos;t room: this also shortens the drawer to {len(fix.depth)}.</p>
+          )}
+        </>
+      )}
     </>
   )
 }

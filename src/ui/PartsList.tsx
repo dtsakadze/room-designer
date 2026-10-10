@@ -6,6 +6,7 @@ import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
 import { useSpanWarnings } from './useSpanWarnings'
+import { useClearanceWarnings } from './useClearanceWarnings'
 
 /**
  * Every part in the design, under its wall when there's more than one.
@@ -20,6 +21,8 @@ export function PartsList() {
   const room = useDesignStore((s) => s.room)
   const clashes = useClashes()
   const spans = useSpanWarnings()
+  const clearance = useClearanceWarnings()
+  const tightDrawers = new Set([...clearance.values()].map((warning) => warning.drawerId)).size
   const { num, unit } = useUnits()
 
   if (pieces.length === 0) return <p className="muted">No parts yet.</p>
@@ -34,7 +37,7 @@ export function PartsList() {
               'part-row',
               selectedIds.includes(piece.id) && 'part-row-selected',
               clashes.has(piece.id) && 'part-row-clash',
-              spans.has(piece.id) && 'part-row-warn',
+              (spans.has(piece.id) || clearance.has(piece.id)) && 'part-row-warn',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -61,6 +64,12 @@ export function PartsList() {
           {spans.size === 1 ? '1 shelf spans' : `${spans.size} shelves span`} further than{' '}
           {spans.size === 1 ? 'it' : 'they'} safely can (shown in orange). Select one to see its
           limit.
+        </p>
+      )}
+      {tightDrawers > 0 && (
+        <p className="hint hint-warn">
+          {tightDrawers === 1 ? '1 drawer sits' : `${tightDrawers} drawers sit`} too close behind a
+          door (shown in orange). Select one to set it back.
         </p>
       )}
       {clashes.size > 0 && (
