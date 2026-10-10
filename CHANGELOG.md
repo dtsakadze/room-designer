@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Tidier sidebar header: the project's name sits at the top with a File menu beside it (Projects, Open file, Save to file, Print), replacing the Projects button and the File section. "Saved" shows as one word next to the app name, the version and What's new moved to the bottom of the sidebar with a labelled GitHub link beside them, and Room now comes first, before Add. The warning that the browser may clear projects when disk space runs low is now in the File menu, next to Save to file, instead of always on screen.
+
 ## 1.11.0 — 2026-10-10
 
 - Cut list by wall: in an L- or U-shaped room, tick By wall at the top of the cut list to get a separate list for each wall (boards, edge banding and hardware), under the wall's name, so you can build and carry one run at a time. The CSV downloads then have a Wall column, and the printed cut list follows the same choice. The sheet layout still covers all the walls together, since sheets are cut whole. It's off to start, and only appears when the room has side walls.

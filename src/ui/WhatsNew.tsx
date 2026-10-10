@@ -64,13 +64,15 @@ export function VersionInfo() {
           </button>
         </div>
       )}
-      <p className="version-line">
-        v{__APP_VERSION__} ·{' '}
-        <button type="button" className="link-button" onClick={() => setOpen(true)}>
-          What's new
-        </button>
+      <div className="version-line">
+        <span>
+          v{__APP_VERSION__} ·{' '}
+          <button type="button" className="link-button" onClick={() => setOpen(true)}>
+            What's new
+          </button>
+        </span>
         <GitHubLink />
-      </p>
+      </div>
       {open && <WhatsNewPanel onClose={() => setOpen(false)} />}
     </>
   )

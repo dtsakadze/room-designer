@@ -71,7 +71,7 @@ Projects are stored in the browser's IndexedDB for the site's address, so:
 
 - Each browser, and each address the app is served from (domain and port), has its own separate projects. Moving the app to a new address starts empty.
 - Clearing site data in the browser deletes the projects.
-- Use **Save to file** to back up a project or move it to another browser or address, and **Open file…** to bring it back.
+- Use **File → Save to file** (next to the project's name) to back up a project or move it to another browser or address, and **File → Open file…** to bring it back.
 
 ## Docs
 

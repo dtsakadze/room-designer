@@ -5,7 +5,7 @@ import { CollapsibleSection } from './CollapsibleSection'
 import { HangingGuideSettings } from './HangingGuideSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PartsList } from './PartsList'
-import { ProjectFileButtons } from './ProjectFileButtons'
+import { ProjectMenu } from './ProjectMenu'
 import { type SaveStatus, useProjectsStore } from '../store/useProjectsStore'
 import { EditableName } from './EditableName'
 import { ProjectsPanel } from './ProjectsPanel'
@@ -16,16 +16,19 @@ import { VersionInfo } from './WhatsNew'
 import { PrintDialog } from './PrintDialog'
 import { hasModifier } from './shortcuts'
 
+// The everyday states are a word next to the app name; the problems get a
+// line of their own, since they need doing something about.
 const SAVE_LABELS: Record<SaveStatus, string> = {
   loading: 'Loading…',
   blocked: 'Updating storage: close other Boardcut tabs to continue',
   saving: 'Saving…',
-  saved: 'Saved in this browser',
+  saved: 'Saved',
   unavailable: "Can't save: browser storage is unavailable",
 }
 
 export function Sidebar() {
   const saveStatus = useProjectsStore((s) => s.saveStatus)
+  const saveProblem = saveStatus === 'unavailable' || saveStatus === 'blocked'
   const current = useProjectsStore((s) => s.projects.find((project) => project.id === s.currentId))
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [showProjects, setShowProjects] = useState(false)
@@ -53,40 +56,27 @@ export function Sidebar() {
       <header className="sidebar-header">
         <div className="app-title">
           <h1>Boardcut</h1>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => setShowProjects(true)}
-            disabled={saveStatus !== 'saved' && saveStatus !== 'saving'}
-          >
-            Projects
-          </button>
+          {!saveProblem && (
+            <span className="save-status" title="Saved in this browser">
+              {SAVE_LABELS[saveStatus]}
+            </span>
+          )}
         </div>
-        {current && (
-          <EditableName
-            key={current.id}
-            className="project-title"
-            name={current.name}
-            onRename={(name) => renameProject(current.id, name)}
-          />
-        )}
-        <p className="muted">{count} piece{count === 1 ? '' : 's'}</p>
-        <p
-          className={
-            saveStatus === 'unavailable' || saveStatus === 'blocked'
-              ? 'save-status save-status-error'
-              : 'save-status'
-          }
-        >
-          {SAVE_LABELS[saveStatus]}
-        </p>
-        <VersionInfo />
+        <div className="header-project">
+          {current && (
+            <EditableName
+              key={current.id}
+              className="project-title"
+              name={current.name}
+              onRename={(name) => renameProject(current.id, name)}
+            />
+          )}
+          <ProjectMenu onProjects={() => setShowProjects(true)} onPrint={() => setShowPrint(true)} />
+        </div>
+        {saveProblem && <p className="save-status save-status-error">{SAVE_LABELS[saveStatus]}</p>}
       </header>
 
       <div className="sidebar-body">
-        <CollapsibleSection id="add" title="Add" defaultOpen>
-          <ComponentPalette />
-        </CollapsibleSection>
         <CollapsibleSection
           id="room"
           title="Room"
@@ -94,6 +84,9 @@ export function Sidebar() {
           badge={layout === 'one' ? undefined : LAYOUT_LABELS[layout]}
         >
           <RoomSettings />
+        </CollapsibleSection>
+        <CollapsibleSection id="add" title="Add" defaultOpen>
+          <ComponentPalette />
         </CollapsibleSection>
         <CollapsibleSection
           id="parts"
@@ -112,10 +105,11 @@ export function Sidebar() {
           <BoardSettings />
           <HangingGuideSettings />
         </CollapsibleSection>
-        <CollapsibleSection id="file" title="File">
-          <ProjectFileButtons onPrint={() => setShowPrint(true)} />
-        </CollapsibleSection>
       </div>
+
+      <footer className="sidebar-footer">
+        <VersionInfo />
+      </footer>
 
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
       {showPrint && <PrintDialog onClose={() => setShowPrint(false)} />}

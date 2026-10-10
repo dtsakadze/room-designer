@@ -126,8 +126,13 @@ body {
 }
 
 .sidebar-footer {
-  margin-top: auto;
-  padding: 16px 0 20px;
+  margin: 0 -20px;
+  padding: 10px 20px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-footer .update-notice {
+  margin-top: 0;
 }
 
 .muted {
@@ -508,7 +513,7 @@ button kbd {
 }
 
 .save-status {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   font-size: 12px;
   color: var(--muted);
   opacity: 0.8;
@@ -549,10 +554,104 @@ button kbd {
   color: var(--muted);
 }
 
-.app-title .ghost-button {
+.app-title .save-status {
+  margin: 0;
+}
+
+/* The project's name, and the File menu beside it. */
+.header-project {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.header-project .editable-name,
+.header-project .editable-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-menu {
+  margin-left: auto;
+}
+
+.project-menu > .ghost-button {
   width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 10px;
   color: var(--text);
+}
+
+.menu-chevron {
+  width: 10px;
+  height: 10px;
+  color: var(--muted);
+}
+
+.project-menu-list {
+  position: absolute;
+  /* Under the whole row, as wide as the sidebar allows. */
+  top: calc(100% + 6px);
+  left: -4px;
+  right: -4px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(29, 36, 48, 0.12);
+}
+
+.project-menu-list button {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+}
+
+.project-menu-list button:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.project-menu-list button:disabled {
+  opacity: 0.45;
+}
+
+.project-menu-list .muted {
+  font-size: 12px;
+}
+
+.project-menu-note {
+  margin: 4px 0 0;
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--border);
+}
+
+/* A message after opening a file, under the project's name. */
+.header-message {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+}
+
+.header-message .icon-button {
+  font-size: 15px;
 }
 
 .editable-name {
@@ -586,7 +685,6 @@ button kbd {
 }
 
 .project-title {
-  margin-top: 8px;
   font-size: 17px;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -1052,6 +1150,10 @@ button kbd {
 }
 
 .version-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--muted);
@@ -1059,13 +1161,17 @@ button kbd {
 
 .github-link {
   display: inline-flex;
-  margin-left: 8px;
-  vertical-align: -2px;
-  color: var(--muted);
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
 }
 
 .github-link:hover {
-  color: var(--text);
+  border-color: var(--muted);
 }
 
 .update-notice {
