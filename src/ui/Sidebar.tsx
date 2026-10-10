@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { BoardSettings } from './BoardSettings'
 import { CollapsibleSection } from './CollapsibleSection'
-import { HangingGuideSettings } from './HangingGuideSettings'
 import { ComponentPalette } from './ComponentPalette'
 import { PartsList } from './PartsList'
 import { ProjectMenu } from './ProjectMenu'
@@ -14,6 +12,7 @@ import { LAYOUT_LABELS, layoutOf } from '../lib/room'
 import { useClashes } from './useClashes'
 import { VersionInfo } from './WhatsNew'
 import { PrintDialog } from './PrintDialog'
+import { SettingsDialog, type SettingsPage } from './SettingsDialog'
 import { hasModifier } from './shortcuts'
 
 // The everyday states are a word next to the app name; the problems get a
@@ -33,6 +32,8 @@ export function Sidebar() {
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [showProjects, setShowProjects] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
+  /** The settings page open, or 'last' for wherever they were left. */
+  const [settings, setSettings] = useState<SettingsPage | 'last' | null>(null)
 
   // ⌘P prints the drawings and cut list, rather than the browser printing the
   // screen. Unlike other shortcuts it works in text fields too, since there
@@ -72,6 +73,24 @@ export function Sidebar() {
             />
           )}
           <ProjectMenu onProjects={() => setShowProjects(true)} onPrint={() => setShowPrint(true)} />
+          <button
+            type="button"
+            className="ghost-button settings-button"
+            aria-label="Settings"
+            title="Settings: boards, look, construction, new parts, units"
+            onClick={() => setSettings('last')}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+              <path
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.3 4.3c.4-1.8 3-1.8 3.4 0a1.7 1.7 0 0 0 2.6 1.1c1.5-.9 3.3.8 2.4 2.4a1.7 1.7 0 0 0 1 2.5c1.9.5 1.9 3 0 3.5a1.7 1.7 0 0 0-1 2.5c.9 1.6-.9 3.3-2.4 2.4a1.7 1.7 0 0 0-2.6 1.1c-.4 1.8-3 1.8-3.4 0a1.7 1.7 0 0 0-2.6-1.1c-1.5.9-3.3-.8-2.4-2.4a1.7 1.7 0 0 0-1-2.5c-1.9-.5-1.9-3 0-3.5a1.7 1.7 0 0 0 1-2.5c-.9-1.6.9-3.3 2.4-2.4a1.7 1.7 0 0 0 2.6-1.1z M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0"
+              />
+            </svg>
+          </button>
         </div>
         {saveProblem && <p className="save-status save-status-error">{SAVE_LABELS[saveStatus]}</p>}
       </header>
@@ -86,7 +105,7 @@ export function Sidebar() {
           <RoomSettings />
         </CollapsibleSection>
         <CollapsibleSection id="add" title="Add" defaultOpen>
-          <ComponentPalette />
+          <ComponentPalette onNewPartSettings={() => setSettings('new-parts')} />
         </CollapsibleSection>
         <CollapsibleSection
           id="parts"
@@ -101,10 +120,6 @@ export function Sidebar() {
             Clear all
           </button>
         </CollapsibleSection>
-        <CollapsibleSection id="settings" title="Settings">
-          <BoardSettings />
-          <HangingGuideSettings />
-        </CollapsibleSection>
       </div>
 
       <footer className="sidebar-footer">
@@ -113,6 +128,9 @@ export function Sidebar() {
 
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
       {showPrint && <PrintDialog onClose={() => setShowPrint(false)} />}
+      {settings && (
+        <SettingsDialog page={settings === 'last' ? undefined : settings} onClose={() => setSettings(null)} />
+      )}
     </aside>
   )
 }

@@ -61,7 +61,7 @@ export function LookPicker() {
         )}
         <p className="hint">
           Sets the colour and edge banding of every board, and which have a grain. You can change
-          any of them below afterwards. Standard goes back to no colours and no grain, as a new project starts; Undo brings back the old look.
+          any of them under Boards afterwards. Standard goes back to no colours and no grain, as a new project starts; Undo brings back the old look.
         </p>
       </div>
     </section>

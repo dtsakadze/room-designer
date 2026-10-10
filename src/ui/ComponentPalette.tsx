@@ -1,30 +1,19 @@
 import { ACCESSORIES, PIECE_GROUPS, PIECE_LABELS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
-import { ColorField } from './ColorField'
+import { useUnits } from '../store/useSettingsStore'
 import { MyBlocks } from './MyBlocks'
 
-export function ComponentPalette() {
+/** The buttons that add parts, and a line saying what new parts start with. */
+export function ComponentPalette({ onNewPartSettings }: { onNewPartSettings: () => void }) {
   const addPiece = useDesignStore((s) => s.addPiece)
   const addBox = useDesignStore((s) => s.addBox)
   const thickness = useDesignStore((s) => s.thickness)
   const defaultColor = useDesignStore((s) => s.defaultColor)
-  const setDefaultColor = useDesignStore((s) => s.setDefaultColor)
+  const unitDepth = useDesignStore((s) => s.unitDepth)
+  const { len } = useUnits()
 
   return (
     <>
-      {/* Sits with the add buttons because it only affects what they add. */}
-      <section className="section">
-        <ColorField
-          label="New parts"
-          value={defaultColor}
-          fallback="#d8c9a3"
-          onChange={setDefaultColor}
-          onReset={() => setDefaultColor(null)}
-        />
-        <p className="hint">
-          Colour the parts below start with. It doesn't change parts already placed.
-        </p>
-      </section>
       <MyBlocks />
       <section className="section">
         <h2>Carcass</h2>
@@ -74,6 +63,17 @@ export function ComponentPalette() {
           </div>
         </section>
       ))}
+      {/* Set in Settings; shown here because it only affects what these buttons add. */}
+      <button type="button" className="new-parts-line" onClick={onNewPartSettings}>
+        <span className="muted">New parts:</span>
+        <span>{len(unitDepth)} deep,</span>
+        {defaultColor ? (
+          <span className="board-swatch" style={{ background: defaultColor }} aria-label="their own colour" />
+        ) : (
+          <span>board colour</span>
+        )}
+        <span className="link-button">Change</span>
+      </button>
     </>
   )
 }

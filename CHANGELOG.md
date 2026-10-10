@@ -5,6 +5,7 @@ What changed in each release, newest first. The app shows this file in its "What
 ## Unreleased
 
 - Tidier sidebar header: the project's name sits at the top with a File menu beside it (Projects, Open file, Save to file, Print), replacing the Projects button and the File section. "Saved" shows as one word next to the app name, the version and What's new moved to the bottom of the sidebar with a labelled GitHub link beside them, and Room now comes first, before Add. The warning that the browser may clear projects when disk space runs low is now in the File menu, next to Save to file, instead of always on screen.
+- Settings moved out of the sidebar into their own window: click the gear next to File. Pages on the left: Boards, Look, Construction (joints and shelf pins), New parts, and This browser (units and hanging guides). Each board is one line with its thickness and material; click it to see the rest. The colour and depth new parts start with are both under New parts, and a line under the Add buttons shows them, with a Change link.
 
 ## 1.11.0 — 2026-10-10
 
