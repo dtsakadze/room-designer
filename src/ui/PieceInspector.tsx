@@ -30,6 +30,7 @@ import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
 import { WALL_LABELS, wallOf } from '../lib/room'
 import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels, wallDepthStart } from '../lib/geometry'
+import { SaveBlockButton } from './SaveBlockButton'
 import { ZField } from './ZField'
 import { maxRodSpan, rodCentreSupports } from '../lib/spans'
 import { hasHandle } from '../lib/fixings'
@@ -206,6 +207,7 @@ export function PieceInspector() {
           Delete <kbd>{DELETE_SHORTCUT}</kbd>
         </button>
       </div>
+      <SaveBlockButton />
     </div>
   )
 }

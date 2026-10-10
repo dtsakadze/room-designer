@@ -910,3 +910,50 @@ describe('accessories', () => {
     expect(store().pieces[0]).toMatchObject({ accessory: 'basket', width: 500, height: 100 })
   })
 })
+
+describe('blocks', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('give the selected parts, whole boxes included, for saving; null with nothing selected', () => {
+    expect(store().selectionParts()).toBeNull()
+    store().addBox()
+    store().addPiece('shelf')
+    store().select(store().pieces.find((p) => p.boxId)!.id)
+    const parts = store().selectionParts()!
+    // A panel selects its whole box: five panels, one box, not the loose shelf.
+    expect(parts.boxes).toHaveLength(1)
+    expect(parts.pieces).toHaveLength(5)
+  })
+
+  it('are inserted to the right of what is there, with new ids, selected, as one undo step', () => {
+    store().addPiece('shelf')
+    store().addPiece('divider')
+    store().selectMany(store().pieces.map((p) => p.id))
+    const parts = store().selectionParts()!
+    store().loadProject(emptyProject())
+    store().addBox()
+    const before = store().pieces.length
+    const rightEdge = Math.max(...store().pieces.map((p) => p.x + p.width))
+    store().insertBlock(toProjectData(parts))
+    expect(store().pieces).toHaveLength(before + 2)
+    const added = store().pieces.slice(before)
+    expect(Math.min(...added.map((p) => p.x))).toBeGreaterThan(rightEdge)
+    expect(new Set(store().pieces.map((p) => p.id)).size).toBe(store().pieces.length)
+    expect(store().selectedIds).toEqual(added.map((p) => p.id))
+    store().undo()
+    expect(store().pieces).toHaveLength(before)
+  })
+
+  it('insert on the wall being edited, and nothing at all for an empty block', () => {
+    store().addPiece('shelf')
+    const block = toProjectData(store().selectionParts() ?? { pieces: store().pieces, boxes: [], thickness: DEFAULT_THICKNESS })
+    store().loadProject(emptyProject())
+    store().setRoom({ left: true })
+    store().setActiveWall('left')
+    store().insertBlock(block)
+    expect(store().pieces.every((p) => wallOf(p) === 'left')).toBe(true)
+    const count = store().pieces.length
+    store().insertBlock(emptyProject())
+    expect(store().pieces).toHaveLength(count)
+  })
+})

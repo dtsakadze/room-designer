@@ -111,6 +111,8 @@ type DesignState = {
   /** Something has been copied (here or in another tab), so paste can work. */
   canPaste: boolean
   /** Copies the selected parts (whole boxes, if any panel of one is selected). */
+  /** The selected parts, whole boxes included, as `toProjectData` takes them; null with none. */
+  selectionParts: () => { pieces: Piece[]; boxes: Box[]; thickness: Thickness } | null
   copySelection: () => void
   /**
    * Pastes the copied parts, from this project or another, to the right of
@@ -118,6 +120,8 @@ type DesignState = {
    * project's board thickness.
    */
   paste: () => void
+  /** Puts a saved block's parts on the wall being edited, clear of what's there, as one undo step. */
+  insertBlock: (design: ProjectData) => void
   /** Re-checks for copied parts, e.g. after another tab copied something. */
   refreshClipboard: () => void
   /** Deletes several parts at once, as one undo step. */
@@ -243,6 +247,50 @@ export const useDesignStore = create<DesignState>()(
      */
     const onHoles = (state: DesignState, piece: Piece, pieces = state.pieces): Piece =>
       isAdjustable(piece) ? { ...piece, y: snapToHoles(piece, pieces, state.holePitch) } : piece
+
+    /**
+     * Puts copied parts (a paste, or a saved block) on the wall being edited,
+     * as one undo step, and selects them. Nothing happens when there are none.
+     */
+    const placeCopied = (state: DesignState, copied: ProjectData) => {
+      const copiedBounds = contentBounds(copied.pieces)
+      if (!copiedBounds) return
+      record(state)
+      // On the wall being edited, clear of everything already on it, keeping
+      // the parts' layout and heights.
+      const bounds = wallBounds(state)
+      const dx = bounds ? bounds.maxX + PLACEMENT_GAP - copiedBounds.minX : 0
+      const pasted: string[] = []
+
+      for (const piece of copied.pieces.filter((candidate) => !candidate.boxId)) {
+        const { wall: _wall, ...rest } = piece
+        const moved = { ...rest, ...onActiveWall(state), id: nextId(), x: piece.x + dx }
+        const copy = normalizePiece(moved, state.thickness)
+        state.pieces.push(copy)
+        pasted.push(copy.id)
+      }
+      for (const box of copied.boxes) {
+        const id = nextId()
+        const { wall: _wall, ...rest } = box
+        const placed = normalizeBox(
+          { ...rest, ...onActiveWall(state), id, x: box.x + dx },
+          state.thickness,
+        )
+        state.boxes.push(placed)
+        state.pieces = rebuildBox(state.pieces, placed, state.thickness)
+        // A box's panels are rebuilt, so carry over their colours, banding
+        // and grain by role (panel ids are `<box id>:<role>`).
+        state.pieces = state.pieces.map((piece) => {
+          if (piece.boxId !== id) return piece
+          pasted.push(piece.id)
+          const source = copied.pieces.find((p) => p.id === piece.id.replace(id, box.id))
+          return source ? withPanelFinish(piece, source, state.thickness) : piece
+        })
+      }
+
+      state.selectedIds = pasted
+      state.selectedId = pasted.at(-1) ?? null
+    }
 
     /** Applies a change to a box and rebuilds its panels, if anything changed. */
     const changeBox = (state: DesignState, id: string, patch: Partial<Omit<Box, 'id'>>) => {
@@ -523,14 +571,20 @@ export const useDesignStore = create<DesignState>()(
           followSelection(state)
         }),
 
-      copySelection: () => {
+      selectionParts: () => {
         const state = get()
         const ids = withWholeBoxes(state, state.selectedIds)
-        if (ids.size === 0) return
+        if (ids.size === 0) return null
         const pieces = state.pieces.filter((piece) => ids.has(piece.id))
         const boxIds = new Set(pieces.map((piece) => piece.boxId))
         const boxes = state.boxes.filter((box) => boxIds.has(box.id))
-        writeClipboard({ pieces, boxes, thickness: state.thickness })
+        return { pieces, boxes, thickness: state.thickness }
+      },
+
+      copySelection: () => {
+        const parts = get().selectionParts()
+        if (!parts) return
+        writeClipboard(parts)
         set((draft) => {
           draft.canPaste = true
         })
@@ -539,43 +593,12 @@ export const useDesignStore = create<DesignState>()(
       paste: () =>
         set((state) => {
           const copied = readClipboard()
-          const copiedBounds = copied && contentBounds(copied.pieces)
-          if (!copied || !copiedBounds) return
-          record(state)
-          // On the wall being edited, clear of everything already on it, keeping
-          // the parts' layout and heights.
-          const bounds = wallBounds(state)
-          const dx = bounds ? bounds.maxX + PLACEMENT_GAP - copiedBounds.minX : 0
-          const pasted: string[] = []
+          if (copied) placeCopied(state, copied)
+        }),
 
-          for (const piece of copied.pieces.filter((candidate) => !candidate.boxId)) {
-            const { wall: _wall, ...rest } = piece
-            const moved = { ...rest, ...onActiveWall(state), id: nextId(), x: piece.x + dx }
-            const copy = normalizePiece(moved, state.thickness)
-            state.pieces.push(copy)
-            pasted.push(copy.id)
-          }
-          for (const box of copied.boxes) {
-            const id = nextId()
-            const { wall: _wall, ...rest } = box
-            const placed = normalizeBox(
-              { ...rest, ...onActiveWall(state), id, x: box.x + dx },
-              state.thickness,
-            )
-            state.boxes.push(placed)
-            state.pieces = rebuildBox(state.pieces, placed, state.thickness)
-            // A box's panels are rebuilt, so carry over their colours, banding
-            // and grain by role (panel ids are `<box id>:<role>`).
-            state.pieces = state.pieces.map((piece) => {
-              if (piece.boxId !== id) return piece
-              pasted.push(piece.id)
-              const source = copied.pieces.find((p) => p.id === piece.id.replace(id, box.id))
-              return source ? withPanelFinish(piece, source, state.thickness) : piece
-            })
-          }
-
-          state.selectedIds = pasted
-          state.selectedId = pasted.at(-1) ?? null
+      insertBlock: (design) =>
+        set((state) => {
+          placeCopied(state, design)
         }),
 
       refreshClipboard: () =>

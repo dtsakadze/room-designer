@@ -1,5 +1,6 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
+import { SaveBlockButton } from './SaveBlockButton'
 import { DELETE_SHORTCUT } from './shortcuts'
 
 /** What the inspector shows with several parts selected: colour them, or delete them. */
@@ -36,6 +37,7 @@ export function MultiInspector() {
           Reset colours to standard
         </button>
       )}
+      <SaveBlockButton />
       <button
         type="button"
         className="danger-button"

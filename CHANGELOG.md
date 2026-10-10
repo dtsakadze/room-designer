@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Your own blocks: select a part, a box or several parts and click Save as block…, give it a name (for example "My drawer unit"), and it appears under Add → My blocks in every project. Click a block to insert it at the right of what's on the wall you're editing (one Undo takes it back), or Rename or Delete it there. Blocks are kept in this browser.
+
 - Resize with the keyboard: with a part selected in the Front view, ⌘ + arrow (Ctrl on Windows and Linux) resizes it by 10 mm: → wider, ← narrower, ↑ taller, ↓ shorter, with the left and bottom edges staying put. Add Shift for 100 mm. A panel of a box resizes the whole box. It's listed under Shortcuts.
 
 - Templates: Projects → New project now asks what to start from: Blank, or a Two-door wardrobe, Sliding-door wardrobe, Bookshelf, Closet with drawers or Hall unit, each with a small preview. A template opens as a new project that you can change like any other, and nothing in it overlaps, sags or is too close to a door.

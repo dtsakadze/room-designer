@@ -1,6 +1,7 @@
 import { ACCESSORIES, PIECE_GROUPS, PIECE_LABELS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
+import { MyBlocks } from './MyBlocks'
 
 export function ComponentPalette() {
   const addPiece = useDesignStore((s) => s.addPiece)
@@ -24,6 +25,7 @@ export function ComponentPalette() {
           Colour the parts below start with. It doesn't change parts already placed.
         </p>
       </section>
+      <MyBlocks />
       <section className="section">
         <h2>Carcass</h2>
         <button type="button" className="add-button box-button" onClick={addBox}>

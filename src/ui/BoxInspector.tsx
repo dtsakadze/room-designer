@@ -6,6 +6,7 @@ import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
 import { WallField } from './WallField'
+import { SaveBlockButton } from './SaveBlockButton'
 import { ZField } from './ZField'
 import { wallOf } from '../lib/room'
 import { pieceLabel } from '../lib/defaults'
@@ -125,6 +126,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
           Delete <kbd>{DELETE_SHORTCUT}</kbd>
         </button>
       </div>
+      <SaveBlockButton />
       <button type="button" className="ghost-button" onClick={() => separateBox(box.id)}>
         Separate panels
       </button>
