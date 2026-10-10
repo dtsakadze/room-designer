@@ -1808,3 +1808,68 @@ button kbd {
 .new-parts-line .link-button {
   margin-left: auto;
 }
+
+/* One line per kind of problem at the top of Parts; the selected part's panel explains it. */
+.part-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.part-warning {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: #fdf6ec;
+  font-size: 12px;
+  color: #b45309;
+  text-align: left;
+}
+
+.part-warning:hover {
+  background: #fbedd8;
+}
+
+.part-warning-error {
+  background: #fcefef;
+  color: var(--danger);
+}
+
+.part-warning-error:hover {
+  background: #f9e0e0;
+}
+
+.part-warning-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-1px);
+}
+
+.part-warning .link-button {
+  margin-left: auto;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.clear-parts {
+  align-self: flex-end;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.clear-parts:hover {
+  color: var(--danger);
+}

@@ -124,33 +124,26 @@ export function RoomSettings() {
               onChange={(height) => setRoom({ height })}
             />
             <p className="hint">
-              Floor to ceiling, inside. A dashed line marks it in the front view, with the gap above
-              the highest part. Select a filler strip or cornice to make it reach the ceiling.
+              Drawn as a dashed line. A selected filler strip or cornice can reach up to it.
             </p>
           </>
         )}
 
         {layout === 'one' ? (
-          <p className="hint">
-            For a wardrobe along more than one wall: an L-shape uses the back wall and one side
-            wall, a U-shape all three.
-          </p>
+          <p className="hint">L-shape: the back wall and one side wall. U-shape: all three.</p>
         ) : (
           <>
             <NumberField
-              label="Room width"
+              label="Width (back wall)"
               value={room.width}
               onChange={(width) => setRoom({ width })}
             />
             <NumberField
-              label="Room depth"
+              label="Depth (side walls)"
               value={room.depth}
               onChange={(depth) => setRoom({ depth })}
             />
-            <p className="hint">
-              Inside sizes: the width runs along the back wall, the depth along the side walls.
-              Switch between walls above the drawing.
-            </p>
+            <p className="hint">Inside sizes. Switch walls above the drawing.</p>
           </>
         )}
       </div>

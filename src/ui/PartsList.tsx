@@ -9,6 +9,8 @@ import { useSpanWarnings } from './useSpanWarnings'
 import { useClearanceWarnings } from './useClearanceWarnings'
 import { useRoomOverhangs } from './useRoomOverhangs'
 
+type Warning = { text: string; ids: string[]; error?: boolean }
+
 /**
  * Every part in the design, under its wall when there's more than one.
  * Clicking one selects it (and shows its wall), which also works for parts
@@ -18,14 +20,15 @@ export function PartsList() {
   const pieces = useDesignStore((s) => s.pieces)
   const select = useDesignStore((s) => s.select)
   const toggleSelect = useDesignStore((s) => s.toggleSelect)
+  const clear = useDesignStore((s) => s.clear)
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const room = useDesignStore((s) => s.room)
   const clashes = useClashes()
   const spans = useSpanWarnings()
   const clearance = useClearanceWarnings()
   const overhangs = useRoomOverhangs()
-  const tightDrawers = new Set([...clearance.values()].map((warning) => warning.drawerId)).size
   const { num, unit } = useUnits()
+  const drawerIds = new Set([...clearance.values()].map((warning) => warning.drawerId))
 
   if (pieces.length === 0) return <p className="muted">No parts yet.</p>
 
@@ -59,32 +62,41 @@ export function PartsList() {
     </ul>
   )
 
+  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
+  const ids = (has: (id: string) => boolean) => pieces.filter((piece) => has(piece.id)).map((piece) => piece.id)
+  // Overlaps first: they're errors, the rest are advice.
+  const warnings: Warning[] = [
+    { error: true, text: plural(clashes.size, 'part overlaps another', 'parts overlap'), ids: ids((id) => clashes.has(id)) },
+    { text: `${plural(spans.size, 'shelf spans', 'shelves span')} too far`, ids: ids((id) => spans.has(id)) },
+    { text: `${plural(overhangs.size, 'part sticks', 'parts stick')} out past a wall or the ceiling`, ids: ids((id) => overhangs.has(id)) },
+    { text: `${plural(drawerIds.size, 'drawer is', 'drawers are')} too close behind a door`, ids: ids((id) => drawerIds.has(id)) },
+  ].filter((warning) => warning.ids.length > 0)
+
+  /** Selects the next part a warning is about, so its own panel explains it; clicking again moves on. */
+  const show = (warningIds: string[]) => {
+    const at = warningIds.indexOf(selectedIds.at(-1) ?? '')
+    select(warningIds[(at + 1) % warningIds.length])
+  }
+
   return (
     <>
-      {spans.size > 0 && (
-        <p className="hint hint-warn">
-          {spans.size === 1 ? '1 shelf spans' : `${spans.size} shelves span`} further than{' '}
-          {spans.size === 1 ? 'it' : 'they'} safely can (shown in orange). Select one to see its
-          limit.
-        </p>
-      )}
-      {overhangs.size > 0 && (
-        <p className="hint hint-warn">
-          {overhangs.size === 1 ? '1 part sticks' : `${overhangs.size} parts stick`} out past a wall
-          or the ceiling (shown in orange). Select one to see how far.
-        </p>
-      )}
-      {tightDrawers > 0 && (
-        <p className="hint hint-warn">
-          {tightDrawers === 1 ? '1 drawer sits' : `${tightDrawers} drawers sit`} too close behind a
-          door (shown in orange). Select one to set it back.
-        </p>
-      )}
-      {clashes.size > 0 && (
-        <p className="hint hint-error">
-          {clashes.size} parts overlap each other (shown in red). Move or resize them so they
-          only touch.
-        </p>
+      {warnings.length > 0 && (
+        <ul className="part-warnings">
+          {warnings.map((warning) => (
+            <li key={warning.text}>
+              <button
+                type="button"
+                className={warning.error ? 'part-warning part-warning-error' : 'part-warning'}
+                title={warning.ids.length > 1 ? 'Select the next one' : 'Select it'}
+                onClick={() => show(warning.ids)}
+              >
+                <span className="part-warning-dot" aria-hidden />
+                <span>{warning.text}</span>
+                <span className="link-button">Show</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
       {hasSideWalls(room)
         ? activeWalls(room).map((wall) => {
@@ -97,6 +109,10 @@ export function PartsList() {
             )
           })
         : list(pieces)}
+      {/* Undo brings them back, so it asks nothing, but it stays small and out of the way. */}
+      <button type="button" className="clear-parts" onClick={clear}>
+        Clear all parts
+      </button>
     </>
   )
 }

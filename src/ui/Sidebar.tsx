@@ -49,7 +49,6 @@ export function Sidebar() {
   }, [])
   const hasClashes = useClashes().size > 0
   const count = useDesignStore((s) => s.pieces.length)
-  const clear = useDesignStore((s) => s.clear)
   const layout = useDesignStore((s) => layoutOf(s.room))
 
   return (
@@ -116,9 +115,6 @@ export function Sidebar() {
           alert={hasClashes ? 'Some parts overlap' : undefined}
         >
           <PartsList />
-          <button type="button" className="ghost-button" onClick={clear} disabled={count === 0}>
-            Clear all
-          </button>
         </CollapsibleSection>
       </div>
 
