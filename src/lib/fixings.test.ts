@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Box, Piece, PieceKind } from '../types'
 import { boxPanels } from './box'
 import { DEFAULT_THICKNESS } from './defaults'
-import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets } from './fixings'
+import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets, feetNeeded } from './fixings'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -161,5 +161,47 @@ describe('what doors and drawers are opened with', () => {
     // The drawer's front, and both leaves of the double door.
     expect(rows.filter((row) => row.item === 'j-profile').map((row) => (row as { length: number }).length)).toEqual([564, 298.5, 298.5].map(Math.round))
     expect(handleCount(pieces)).toBe(1 + 2 + 1)
+  })
+})
+
+describe('adjustable feet', () => {
+  const raised = (y: number, patch: Partial<Box> = {}) => boxPanels({ ...box('between'), y, ...patch }, thickness)
+
+  it('go under a unit lifted off the floor, by the gap: a foot at each end of two rows, one more every 600 mm', () => {
+    // 1200 wide: three along each of two rows.
+    expect(feetNeeded(raised(100))).toEqual([{ height: 100, quantity: 6 }])
+    expect(feetNeeded(raised(100, { width: 600 }))).toEqual([{ height: 100, quantity: 4 }])
+    expect(feetNeeded(raised(100, { width: 1201 }))).toEqual([{ height: 100, quantity: 8 }])
+    expect(feetNeeded(boxPanels({ ...box('on'), y: 80 }, thickness))).toEqual([{ height: 80, quantity: 6 }])
+  })
+
+  it('need none on a unit that sits on the floor, or hangs higher than 300 mm up', () => {
+    expect(feetNeeded(raised(0))).toEqual([])
+    expect(feetNeeded(raised(300)).length).toBe(1)
+    expect(feetNeeded(raised(301))).toEqual([])
+  })
+
+  it('count each unit by its own gap, and a carcass built from loose panels once, by its bottom', () => {
+    const next = boxPanels({ ...box('between'), id: 'c', x: 700, y: 150, width: 600 }, thickness)
+    expect(feetNeeded([...raised(100), ...next])).toEqual([
+      { height: 100, quantity: 6 },
+      { height: 150, quantity: 4 },
+    ])
+    const loose = [
+      piece('l', 'vertical', { x: 0, y: 100, width: 18, height: 1800, depth: 580 }),
+      piece('r', 'vertical', { x: 582, y: 100, width: 18, height: 1800, depth: 580 }),
+      piece('bottom', 'horizontal', { x: 18, y: 100, width: 564, height: 18, depth: 580 }),
+      piece('middle', 'horizontal', { x: 18, y: 1000, width: 564, height: 18, depth: 580 }),
+      piece('top', 'horizontal', { x: 18, y: 1882, width: 564, height: 18, depth: 580 }),
+    ]
+    expect(feetNeeded(loose)).toEqual([{ height: 100, quantity: 4 }])
+  })
+
+  it('only count a unit’s own wall’s sides', () => {
+    const left = raised(100).map((p) => ({ ...p, wall: 'left' as const }))
+    expect(feetNeeded([...raised(100), ...left])).toEqual([
+      { height: 100, quantity: 6 },
+      { height: 100, quantity: 6 },
+    ])
   })
 })

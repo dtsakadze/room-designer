@@ -141,6 +141,37 @@ export function tippingUnits(pieces: Piece[]) {
   ).length
 }
 
+/** A unit with its bottom higher than this, in mm, is hung on the wall, not standing on feet. */
+const MAX_FOOT_GAP = 300
+
+/** Feet stand about this far apart along a unit's width, in mm: one at each end and one every so often between. */
+const FOOT_SPACING = 600
+
+/**
+ * The adjustable feet each floor-standing unit needs: a unit is found by its
+ * bottom board (a board across the unit, level with the foot of the sides it's
+ * joined to), and stands on feet when it's lifted off the floor by up to
+ * `MAX_FOOT_GAP`; the gap is the feet's height. A unit sitting straight on the
+ * floor needs none, and neither does one hung higher up. Two rows, front and
+ * back, with a foot at each end of the unit and one every `FOOT_SPACING`.
+ */
+export function feetNeeded(pieces: Piece[]): { height: number; quantity: number }[] {
+  const uprights = pieces.filter(isUpright)
+  return pieces.flatMap((across) => {
+    if (across.kind !== 'horizontal') return []
+    const sides = uprights.filter(
+      (upright) =>
+        wallOf(upright) === wallOf(across) && joined(across, upright) && across.y <= upright.y + TOUCH,
+    )
+    const gap = Math.round(across.y)
+    if (sides.length === 0 || gap <= TOUCH || gap > MAX_FOOT_GAP) return []
+    const width =
+      Math.max(across.x + across.width, ...sides.map((s) => s.x + s.width)) -
+      Math.min(across.x, ...sides.map((s) => s.x))
+    return [{ height: gap, quantity: 2 * (Math.ceil(width / FOOT_SPACING) + 1) }]
+  })
+}
+
 /** Brackets, and so wall anchors, for a design: two for every unit that could tip. */
 export const antiTipBrackets = (pieces: Piece[]) => tippingUnits(pieces) * BRACKETS_PER_UNIT
 

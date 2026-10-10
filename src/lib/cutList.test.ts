@@ -255,3 +255,18 @@ describe('hardware for handles', () => {
     )
   })
 })
+
+describe('adjustable feet in the hardware list', () => {
+  it('lists feet by height, grouped, and only for units off the floor', () => {
+    const unit = (y: number, x = 0): Piece[] => [
+      piece('vertical', { x, y, width: 18, height: 2000, depth: 580 }),
+      piece('vertical', { x: x + 582, y, width: 18, height: 2000, depth: 580 }),
+      piece('horizontal', { x: x + 18, y, width: 564, height: 18, depth: 580 }),
+    ]
+    const feet = (pieces: Piece[]) => hardwareList(pieces, thickness).filter((row) => row.item === 'feet')
+    expect(feet([...unit(100), ...unit(100, 700)])).toEqual([{ item: 'feet', height: 100, quantity: 8 }])
+    expect(feet(unit(0))).toEqual([])
+    const [row] = feet(unit(100))
+    expect(describeHardware(row, (mm) => `${mm}`).name).toBe('Adjustable feet, 100 high')
+  })
+})
