@@ -270,3 +270,27 @@ describe('adjustable feet in the hardware list', () => {
     expect(describeHardware(row, (mm) => `${mm}`).name).toBe('Adjustable feet, 100 high')
   })
 })
+
+describe('pull-down lift in the hardware list', () => {
+  it('replaces a rod’s supports with one lift, by rod length', () => {
+    const list = hardwareList(
+      [piece('rod', { width: 1000, height: 25, lift: true }), piece('rod', { width: 1000, height: 25 })],
+      thickness,
+    )
+    expect(list.filter((row) => row.item === 'rod-lift' || row.item === 'rod-supports')).toEqual([
+      { item: 'rod-supports', diameter: 25, quantity: 2 },
+      { item: 'rod-lift', length: 1000, quantity: 1 },
+    ])
+    expect(describeHardware({ item: 'rod-lift', length: 1000, quantity: 1 }, (mm) => `${mm}`).name).toBe(
+      'Pull-down wardrobe lift, for a 1000 rod',
+    )
+    // A long rod on a lift needs no centre supports.
+    const long = hardwareList([piece('rod', { width: 2500, height: 25, lift: true })], thickness)
+    expect(long.some((row) => row.item === 'rod-centre-supports')).toBe(false)
+  })
+
+  it('is only for rods', () => {
+    expect(piece('shelf', { lift: true })).not.toHaveProperty('lift')
+    expect(piece('rod', { lift: false })).not.toHaveProperty('lift')
+  })
+})

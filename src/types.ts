@@ -135,6 +135,8 @@ export type Piece = {
    * own. Absent means a board door.
    */
   pane?: PaneType
+  /** Rods only: hung from a pull-down lift instead of end supports. Absent means a fixed rod. */
+  lift?: boolean
   /** Accessories only: which kind it is (a pull-out trouser rack, a wire basket, a shoe rack, …). */
   accessory?: AccessoryType
   /** Doors and drawers only: has no handle or knob. Absent means it has one. */

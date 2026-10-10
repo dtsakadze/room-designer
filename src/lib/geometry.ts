@@ -105,6 +105,8 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   if (!piece.grain || !faces.includes(piece.grain) || piece.grain === autoGrain(piece.kind)) {
     delete normalized.grain
   }
+  // Only rods can have a lift, and "no lift" is stored as no flag at all.
+  if (piece.kind !== 'rod' || !piece.lift) delete normalized.lift
   // An accessory is always one of the known kinds; anything else is a basket.
   if (piece.kind === 'accessory') {
     normalized.accessory = ACCESSORY_TYPES.includes(piece.accessory!) ? piece.accessory : 'basket'

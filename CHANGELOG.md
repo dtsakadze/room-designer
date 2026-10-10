@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Pull-down lifts: select a hanging rod and tick Pull-down lift for a rail too high to reach. The hardware list then has a lift for that rod (by its length) instead of the two end supports.
+
 - Drawers behind doors: a drawer that sits too close behind a door (less than 20 mm for the hinges, plus 25 mm for a handle or knob on the drawer; 5 mm behind sliding doors) gets an orange outline, is marked in the Parts list, and the Selected panel of the drawer and of the door says how much room is missing. On the drawer, Set back behind the door moves it back by exactly that much, and shortens it if there isn't room.
 
 - Adjustable feet: the hardware list now has adjustable feet for every unit lifted off the floor, by the height of the gap under it: two rows, front and back, with a foot at each end and one every 600 mm (4 for a 600 mm wide unit, 6 for a 1200 mm one). A unit standing straight on the floor, or hung more than 300 mm up, gets none.

@@ -26,7 +26,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  *
  * Never edit an existing step: saves in that version are out there.
  */
-export const FORMAT_VERSION = 17
+export const FORMAT_VERSION = 18
 
 type Raw = Record<string, unknown>
 
@@ -131,6 +131,10 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // changes; the bump makes an older app refuse such a save rather than drop
   // them.
   16: (data) => ({ ...data, formatVersion: 17 }),
+  // v18 adds a rod's optional `lift` (hung from a pull-down lift). Absent, it's
+  // a fixed rod as before, so only the version changes; the bump makes an
+  // older app refuse such a save rather than turn the lift back into supports.
+  17: (data) => ({ ...data, formatVersion: 18 }),
 }
 
 /** Why a save couldn't be opened. */
@@ -300,6 +304,7 @@ function validate(data: Raw): ProjectData | null {
       openAngle: typeof raw.openAngle === 'number' ? raw.openAngle : undefined,
       softClose: raw.softClose === true,
       // Checked against the panel counts and overlaps allowed by `normalizePiece`.
+      lift: raw.lift === true,
       accessory: typeof raw.accessory === 'string' ? (raw.accessory as AccessoryType) : undefined,
       pane: raw.pane === 'glass' || raw.pane === 'mirror' ? (raw.pane as PaneType) : undefined,
       sliding: typeof raw.sliding === 'number' ? raw.sliding : undefined,

@@ -126,6 +126,20 @@ export function PieceInspector() {
             value={piece.height}
             onChange={(height) => updatePiece(piece.id, { height })}
           />
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={!!piece.lift}
+              onChange={(event) => updatePiece(piece.id, { lift: event.target.checked })}
+            />
+            Pull-down lift, for a rail too high to reach
+          </label>
+          {piece.lift && (
+            <p className="hint">
+              The hardware list has a lift for this rod instead of end supports. Check the lift's
+              size range and weight limit with the maker.
+            </p>
+          )}
         </>
       ) : (
         <>

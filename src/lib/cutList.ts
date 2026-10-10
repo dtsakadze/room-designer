@@ -251,6 +251,7 @@ export type HardwareRow =
   | { item: 'hinges'; fit: HingeFit; angle: number; softClose: boolean; quantity: number }
   | { item: 'rod'; diameter: number; length: number; quantity: number }
   | { item: 'rod-supports'; diameter: number; quantity: number }
+  | { item: 'rod-lift'; length: number; quantity: number }
   | { item: 'rod-centre-supports'; diameter: number; quantity: number }
   | { item: 'track'; position: 'top' | 'bottom'; length: number; quantity: number }
   | { item: 'accessories'; accessory: AccessoryType; width: number; depth: number; quantity: number }
@@ -282,7 +283,7 @@ const SUPPORTS_PER_ROD = 2
  * What to buy besides boards, identical items counted together: a pair of
  * runners per drawer (by type and length), each door leaf's hinges (by kind,
  * see `doorHinges`), each hanging rod (by diameter and the length to cut it
- * to), its end supports (and centre supports when it's too long to span unsupported), four pins per adjustable shelf and four screws per
+ * to), its end supports (and centre supports when it's too long to span unsupported), or a pull-down lift instead of them, four pins per adjustable shelf and four screws per
  * fixed one, the screws, confirmat screws or cam locks, bolts and dowels joining the
  * carcass the nails fixing its backs, adjustable feet for units lifted off the floor, and the anti-tip brackets and wall anchors for
  * units over 700 mm (see `fixings.ts`), and what opens each door leaf and drawer (handles, knobs, J-profile cut to
@@ -348,9 +349,14 @@ export function hardwareList(
     } else if (piece.kind === 'rod') {
       // A rod's height is its diameter and its width its length.
       add({ item: 'rod', diameter: piece.height, length: piece.width, quantity: 1 })
-      add({ item: 'rod-supports', diameter: piece.height, quantity: SUPPORTS_PER_ROD })
-      const centre = rodCentreSupports(piece)
-      if (centre > 0) add({ item: 'rod-centre-supports', diameter: piece.height, quantity: centre })
+      if (piece.lift) {
+        // The lift holds the rod at both ends, so it has no supports of its own.
+        add({ item: 'rod-lift', length: Math.round(piece.width), quantity: 1 })
+      } else {
+        add({ item: 'rod-supports', diameter: piece.height, quantity: SUPPORTS_PER_ROD })
+        const centre = rodCentreSupports(piece)
+        if (centre > 0) add({ item: 'rod-centre-supports', diameter: piece.height, quantity: centre })
+      }
     } else if (isAdjustable(piece)) {
       add({ item: 'shelf-pins', quantity: PINS_PER_SHELF })
     }
@@ -373,6 +379,7 @@ export function hardwareList(
     'rod',
     'rod-supports',
     'rod-centre-supports',
+    'rod-lift',
     'track',
     'panes',
     'accessories',
@@ -437,6 +444,8 @@ export function describeHardware(row: HardwareRow, len: (mm: number) => string) 
       return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
     case 'rod-supports':
       return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
+    case 'rod-lift':
+      return { name: `Pull-down wardrobe lift, for a ${len(row.length)} rod`, count: `${row.quantity}`, ...each }
     case 'rod-centre-supports':
       return { name: `Rod centre support brackets, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
     case 'accessories':

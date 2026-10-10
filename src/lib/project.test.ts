@@ -122,6 +122,17 @@ describe('readProject', () => {
     expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
   })
 
+  it('keeps a rod’s pull-down lift, and only on rods', () => {
+    const result = readProject(fixture('v18-lift'))
+    if (!result.ok) throw new Error("v18-lift didn't open")
+    expect(result.project.pieces.find((piece) => piece.id === 'high-rod')?.lift).toBe(true)
+    const bad = fixture('v18-lift') as { pieces: { id: string; kind: string; lift?: unknown }[] }
+    bad.pieces.push({ id: 'shelf-lift', kind: 'shelf', lift: true, x: 0, y: 0, width: 500, height: 18, depth: 400 } as never)
+    const cleaned = readProject(bad)
+    if (!cleaned.ok) throw new Error("the edited save didn't open")
+    expect(cleaned.project.pieces.find((piece) => piece.id === 'shelf-lift')).not.toHaveProperty('lift')
+  })
+
   it('keeps accessories with their type, and turns an unknown type into a basket', () => {
     const result = readProject(fixture('v17-accessories'))
     if (!result.ok) throw new Error("v17-accessories didn't open")
@@ -460,7 +471,7 @@ describe('readProject', () => {
     expect(save).toEqual(before)
   })
 
-  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes', 'v16-sheets', 'v17-accessories'])('reads back what it writes (%s)', (name) => {
+  it.each(['v1-full', 'v3-room', 'v4-doors', 'v4-drawers', 'v4-drawer-fronts', 'v5-boards', 'v6-finish', 'v7-hinges', 'v8-colors', 'v9-sliding', 'v10-trim', 'v11-depth', 'v12-materials', 'v13-joints', 'v14-handles', 'v15-panes', 'v16-sheets', 'v17-accessories', 'v18-lift'])('reads back what it writes (%s)', (name) => {
     const first = readProject(fixture(name))
     if (!first.ok) throw new Error(`${name} didn't open`)
     const saved = JSON.parse(JSON.stringify(toProjectData(first.project, first.project.name)))
