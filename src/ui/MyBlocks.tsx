@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { readBlock } from '../lib/blocks'
 import { useBlocksStore } from '../store/useBlocksStore'
 import { useDesignStore } from '../store/useDesignStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { EditableName } from './EditableName'
 
 /**
@@ -39,7 +40,11 @@ export function MyBlocks() {
                 className="add-button block-insert"
                 disabled={!block.design}
                 title="Insert into this project"
-                onClick={() => block.design && insertBlock(block.design)}
+                onClick={() => {
+                  if (!block.design) return
+                  insertBlock(block.design)
+                  useLayoutStore.getState().setSidebarOpen(false)
+                }}
               >
                 <span className="block-name">{block.name}</span>
                 <span className="muted">

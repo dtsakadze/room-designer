@@ -92,10 +92,6 @@ React 19 + Vite + TypeScript, Zustand (immer) for state, and plain SVG for the d
 - **Saving** (`src/lib/project.ts`, `src/lib/storage.ts`): autosaves and files share one JSON format with a `formatVersion`. Everything loaded is validated and normalised, so a hand-edited or older file can't break the app. Storage sits behind a small `ProjectStorage` interface, so a cloud backend could be added later.
 - **`NumberField`** is a text input, not `type="number"`: number inputs report a half-typed "-" as an empty value, which made negative X coordinates impossible to enter.
 
-## Not done yet
-
-Front-to-back positions for parts (for now every part sits flush against the back), corner units and a door wall for rooms, editing in the side and top views, snapping to other panels, hinges and handles in the hardware list, CSV/PDF export, and a mobile layout.
-
 ## Releases and licence
 
 Versions follow `MAJOR.MINOR.PATCH`; what changed in each is in [CHANGELOG.md](CHANGELOG.md), which the app also shows under "What's new". Boardcut is open source under the [MIT licence](LICENSE).

@@ -2,6 +2,7 @@ import { pieceLabel } from '../lib/defaults'
 import { WALL_LABELS, activeWalls, hasSideWalls, wallOf } from '../lib/room'
 import type { Piece } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
@@ -48,7 +49,13 @@ export function PartsList() {
               .join(' ')}
             aria-pressed={selectedIds.includes(piece.id)}
             // ⌘/Ctrl-click adds to the selection, like on the canvas.
-            onClick={(event) => (hasModifier(event) ? toggleSelect(piece.id) : select(piece.id))}
+            onClick={(event) => {
+              if (hasModifier(event)) toggleSelect(piece.id)
+              else {
+                select(piece.id)
+                useLayoutStore.getState().setSidebarOpen(false)
+              }
+            }}
           >
             <span>{pieceLabel(piece)}</span>
             <span className="part-size">
@@ -76,6 +83,7 @@ export function PartsList() {
   const show = (warningIds: string[]) => {
     const at = warningIds.indexOf(selectedIds.at(-1) ?? '')
     select(warningIds[(at + 1) % warningIds.length])
+    useLayoutStore.getState().setSidebarOpen(false)
   }
 
   return (

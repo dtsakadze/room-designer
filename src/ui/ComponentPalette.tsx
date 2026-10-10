@@ -1,5 +1,6 @@
 import { ACCESSORIES, PIECE_GROUPS, PIECE_LABELS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { useUnits } from '../store/useSettingsStore'
 import type { AccessoryType } from '../types'
 import { MyBlocks } from './MyBlocks'
@@ -14,10 +15,13 @@ const ACCESSORY_BUTTONS: Record<AccessoryType, string> = {
   'shoes-angled': 'Shoe shelf',
 }
 
+/** On a small screen, closes the sidebar so the part just added shows. */
+const closeDrawer = () => useLayoutStore.getState().setSidebarOpen(false)
+
 /** One add button: a picture of the part and its name (accessories use a short one, the full name on hover). */
 function AddTile({ icon, label, title, onClick }: { icon: IconName; label: string; title: string; onClick: () => void }) {
   return (
-    <button type="button" className="add-button add-tile" title={title} onClick={onClick}>
+    <button type="button" className="add-button add-tile" title={title} onClick={() => { onClick(); closeDrawer() }}>
       <PartIcon name={icon} />
       <span>{label}</span>
     </button>
@@ -36,7 +40,7 @@ export function ComponentPalette({ onNewPartSettings }: { onNewPartSettings: () 
   return (
     <>
       {/* The usual start, so it leads, wider than the rest. */}
-      <button type="button" className="add-button box-button" title="A carcass: sides, top, bottom and back, sized as one" onClick={addBox}>
+      <button type="button" className="add-button box-button" title="A carcass: sides, top, bottom and back, sized as one" onClick={() => { addBox(); closeDrawer() }}>
         <PartIcon name="box" size={28} />
         <span className="box-button-text">
           Box

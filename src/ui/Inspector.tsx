@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { MultiInspector } from './MultiInspector'
 import { PieceInspector } from './PieceInspector'
 
@@ -9,6 +11,9 @@ import { PieceInspector } from './PieceInspector'
 export function Inspector() {
   const selectedId = useDesignStore((s) => s.selectedId)
   const selectedIds = useDesignStore((s) => s.selectedIds)
+
+  // A newly selected part shows its panel in full, even if the last one was folded.
+  useEffect(() => useLayoutStore.getState().setInspectorFolded(false), [selectedId])
 
   return (
     <aside className="inspector" aria-label="Selected">

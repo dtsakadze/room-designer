@@ -2244,3 +2244,313 @@ button kbd {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/*
+ * Small screens. Up to 1100 px (phones, tablets, a narrow window) the
+ * drawing gets the whole screen: the sidebar is a drawer opened with ☰, and
+ * the Selected panel slides in from the right while something is selected.
+ * On a phone held upright (640 px and less) the Selected panel is a sheet
+ * along the bottom instead, which can fold down to its header.
+ */
+/* Under `.app`, so they win over the button styles they sit next to. */
+.app .compact-only,
+.app .fold-only,
+.drawer-backdrop,
+.rotate-hint {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .app .compact-only {
+    display: inline-flex;
+  }
+
+  /* Slid out by its position, not a transform: a transform would trap the
+     dialogs it opens (Settings, Projects, Print) inside the closed drawer. */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: calc(-1 * min(300px, 88vw) - 40px);
+    z-index: 40;
+    width: min(300px, 88vw);
+    visibility: hidden;
+    transition: left 0.2s ease, visibility 0.2s;
+  }
+
+  .app.sidebar-open .sidebar {
+    left: 0;
+    visibility: visible;
+    box-shadow: 0 0 40px rgba(29, 36, 48, 0.25);
+  }
+
+  /* A dialog opened from the closed sidebar (⌘P prints) still shows. */
+  .sidebar .overlay {
+    visibility: visible;
+  }
+
+  .app.sidebar-open .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: rgba(29, 36, 48, 0.25);
+  }
+
+  .app-title h1 {
+    margin-right: auto;
+  }
+
+  .app-title .sidebar-close {
+    margin: 0 4px 0 -6px;
+    font-size: 24px;
+  }
+
+  .inspector {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    width: min(300px, 90vw);
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+  }
+
+  .app.has-selection .inspector {
+    transform: none;
+    box-shadow: -8px 0 30px rgba(29, 36, 48, 0.12);
+  }
+
+  /* With the Selected panel open, the tools keep clear of it: the views go
+     under the edit tools, the bottom tools move left of the panel. */
+  .app.has-selection .canvas-tools {
+    right: min(316px, 90vw);
+  }
+
+  .app.has-selection .viewport > .view-switcher:not(.wall-switcher) {
+    top: 54px;
+    left: 10px;
+    right: auto;
+  }
+
+  .app.has-selection .wall-switcher {
+    top: 98px;
+  }
+
+  /* No keyboard to speak of: the shortcuts would only take room. */
+  .history-tools kbd,
+  .canvas-tools kbd {
+    display: none;
+  }
+
+  .history-tools {
+    top: 10px;
+    left: 10px;
+    gap: 6px;
+  }
+
+  .history-tools .ghost-button {
+    padding: 7px 10px;
+  }
+
+  .history-tools .menu-button {
+    padding: 6px 8px;
+    color: var(--text);
+  }
+
+  .view-switcher {
+    top: 10px;
+    right: 10px;
+  }
+
+  .wall-switcher {
+    top: 56px;
+    left: 10px;
+    right: auto;
+  }
+
+  /* Wraps rather than scrolls: a scrolling row would cut off the Export menu. */
+  .canvas-tools {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    flex-wrap: wrap-reverse;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .canvas-tools .ghost-button {
+    flex: none;
+    padding: 7px 11px;
+    white-space: nowrap;
+  }
+
+  .viewport-hint {
+    bottom: 60px;
+    max-width: calc(100% - 32px);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .overlay {
+    padding: 4vh 12px 12px;
+  }
+
+  .projects-panel {
+    max-height: calc(100% - 4vh - 12px);
+  }
+}
+
+/* Not enough width for the edit and view tools side by side: views go on a second row. */
+@media (max-width: 760px) {
+  /* A project's buttons go under its name, which otherwise gets squeezed out. */
+  .project-row {
+    flex-wrap: wrap;
+  }
+
+  .project-info {
+    flex-basis: calc(100% - 84px);
+  }
+
+  .project-actions {
+    width: 100%;
+    padding-left: 72px;
+  }
+
+  .view-switcher {
+    top: 54px;
+    left: 10px;
+    right: auto;
+    max-width: calc(100% - 20px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .view-switcher .ghost-button {
+    flex: none;
+    padding: 5px 8px;
+    font-size: 12.5px;
+  }
+
+  .wall-switcher {
+    top: 98px;
+  }
+
+  .cut-list.cut-list-view {
+    inset: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .cut-list-view-header,
+  .cut-list-view-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .cut-list-view .cut-list-main {
+    overflow-x: auto;
+  }
+
+  .cut-list-view .sheet-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A phone held upright: the Selected panel is a sheet along the bottom. */
+@media (max-width: 640px) and (orientation: portrait) {
+  .app .fold-only {
+    display: inline-flex;
+  }
+
+  .inspector {
+    top: auto;
+    left: 0;
+    width: auto;
+    max-height: 58%;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    transform: translateY(100%);
+  }
+
+  .app.has-selection .inspector {
+    box-shadow: 0 -8px 30px rgba(29, 36, 48, 0.14);
+  }
+
+  .app.inspector-folded .inspector-body {
+    display: none;
+  }
+
+  .app.inspector-folded .inspector-header {
+    border-bottom: 0;
+  }
+
+  .inspector-header {
+    padding: 10px 10px 8px 16px;
+  }
+
+  .inspector-body {
+    padding: 12px 16px 20px;
+  }
+
+  /* The sheet covers the bottom tools; folded, they sit just above it. */
+  .app.has-selection .canvas-tools {
+    right: 10px;
+  }
+
+  .app.has-selection.inspector-folded .canvas-tools {
+    bottom: 62px;
+  }
+
+  .rotate-hint {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 60px;
+    /* Over the drawing, under the cut list and every panel. */
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px 10px 12px;
+    border: 1px solid #c7d7fb;
+    border-radius: 10px;
+    background: #eef3fd;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .rotate-hint svg {
+    flex: none;
+    color: var(--accent);
+  }
+
+  .app.has-selection .rotate-hint,
+  .app.sidebar-open .rotate-hint {
+    display: none;
+  }
+}
+
+/* A phone on its side: little height, so tighter toolbars and a narrower panel. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .inspector {
+    width: min(280px, 45vw);
+  }
+
+  .app.has-selection .canvas-tools {
+    right: calc(min(280px, 45vw) + 12px);
+  }
+
+  .viewport-hint {
+    display: none;
+  }
+}
+
+/* A touch phone has no keyboard, so the list of keyboard shortcuts only takes room. */
+@media (max-width: 760px) and (pointer: coarse) {
+  .shortcuts-button {
+    display: none;
+  }
+}

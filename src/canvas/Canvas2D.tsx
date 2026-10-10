@@ -105,10 +105,42 @@ type Gesture =
       handle: Handle
       origin: Rect
     }
+  | {
+      /** Two fingers on a touch screen: zoom by their spread, pan by their middle. */
+      mode: 'pinch'
+      inverse: DOMMatrix
+      startView: ViewBox
+      /** The design point between the fingers when they went down. */
+      startMid: { x: number; y: number }
+      startDistance: number
+    }
+
+/**
+ * Pointer capture throws when the pointer is already gone (a finger lifted
+ * between the event and the call, or a touch the browser cancelled), which
+ * would crash a drag; the gesture works without it, just less reliably.
+ */
+function capture(svg: SVGSVGElement, pointerId: number) {
+  try {
+    svg.setPointerCapture(pointerId)
+  } catch {
+    // The pointer is gone: nothing to capture.
+  }
+}
+
+function release(svg: SVGSVGElement | null, pointerId: number) {
+  try {
+    svg?.releasePointerCapture(pointerId)
+  } catch {
+    // Already released.
+  }
+}
 
 export function Canvas2D() {
   const svgRef = useRef<SVGSVGElement>(null)
   const gesture = useRef<Gesture | null>(null)
+  /** Where each finger touching the canvas is, in screen pixels, for pinch zoom. */
+  const touches = useRef(new Map<number, { x: number; y: number }>())
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
   // The cut list and the shortcuts float in the same corner, so one at a time.
   const [panel, setPanel] = useState<'cut-list' | 'shortcuts' | null>(null)
@@ -275,7 +307,35 @@ export function Canvas2D() {
       moved: false,
     }
     setHoveredId(null)
-    svg.setPointerCapture(event.pointerId)
+    capture(svg, event.pointerId)
+  }
+
+  /**
+   * A second finger turns whatever the first started (a pan, a drag) into a
+   * pinch. Runs in the capture phase, before a part under the finger claims it.
+   */
+  const trackTouch = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (event.pointerType !== 'touch') return
+    touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (touches.current.size !== 2) return
+    const svg = svgRef.current
+    const inverse = svg && screenToSvgMatrix(svg)
+    if (!svg || !inverse) return
+    event.stopPropagation()
+    const active = gesture.current
+    // A drag the first finger started keeps what it did, as one undo step.
+    if (active?.mode === 'resize' || (active?.mode === 'piece' && active.editable)) endBatch()
+    setMarquee(null)
+    setCentred(null)
+    const [a, b] = [...touches.current.values()]
+    gesture.current = {
+      mode: 'pinch',
+      inverse,
+      startView: view,
+      startMid: svgPoint(inverse, (a.x + b.x) / 2, (a.y + b.y) / 2),
+      startDistance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+    }
+    capture(svg, event.pointerId)
   }
 
   /** Dragging empty space pans the view, and pressing it clears the selection. */
@@ -297,7 +357,7 @@ export function Canvas2D() {
       startView: view,
     }
     setHoveredId(null)
-    svg.setPointerCapture(event.pointerId)
+    capture(svg, event.pointerId)
   }
 
   /**
@@ -349,7 +409,7 @@ export function Canvas2D() {
     // The whole drag undoes as one step.
     if (isFront) beginBatch()
     setHoveredId(null)
-    svg.setPointerCapture(event.pointerId)
+    capture(svg, event.pointerId)
   }
 
   const beginResize = (
@@ -374,13 +434,35 @@ export function Canvas2D() {
     }
     beginBatch()
     setHoveredId(null)
-    svg.setPointerCapture(event.pointerId)
+    capture(svg, event.pointerId)
   }
 
   const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (touches.current.has(event.pointerId)) {
+      touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    }
     const active = gesture.current
     const svg = svgRef.current
     if (!active || !svg) return
+
+    if (active.mode === 'pinch') {
+      if (touches.current.size < 2) return
+      const [a, b] = [...touches.current.values()]
+      const { startView, startMid } = active
+      const w = clamp(
+        (startView.w * active.startDistance) / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+        MIN_VIEW_WIDTH,
+        MAX_VIEW_WIDTH,
+      )
+      const h = startView.h * (w / startView.w)
+      // Where the fingers' middle is now, as a share of the view they started on:
+      // the design point that was between them stays between them.
+      const mid = svgPoint(active.inverse, (a.x + b.x) / 2, (a.y + b.y) / 2)
+      const fx = (mid.x - startView.x) / startView.w
+      const fy = (mid.y - startView.y) / startView.h
+      setView({ w, h, x: startMid.x - fx * w, y: startMid.y - fy * h })
+      return
+    }
     const point = svgPoint(active.inverse, event.clientX, event.clientY)
 
     if (active.mode === 'marquee') {
@@ -449,8 +531,15 @@ export function Canvas2D() {
   }
 
   const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
+    touches.current.delete(event.pointerId)
     const active = gesture.current
     if (!active) return
+    if (active.mode === 'pinch') {
+      // Lifting one finger ends the pinch; the other doesn't start a pan.
+      gesture.current = null
+      release(svgRef.current, event.pointerId)
+      return
+    }
     if (active.mode === 'marquee') {
       if (active.moved) {
         // Everything the rectangle touches, in design coordinates (y up).
@@ -481,7 +570,7 @@ export function Canvas2D() {
       select(next)
     }
     gesture.current = null
-    svgRef.current?.releasePointerCapture(event.pointerId)
+    release(svgRef.current, event.pointerId)
   }
 
   // Wheel must be a non-passive native listener so the gesture can be claimed.
@@ -722,6 +811,7 @@ export function Canvas2D() {
         style={viewName === '3d' ? { display: 'none' } : undefined}
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         preserveAspectRatio="xMidYMid meet"
+        onPointerDownCapture={trackTouch}
         onPointerDown={beginBackground}
         // The right button pans, so its menu would only get in the way.
         onContextMenu={(event) => event.preventDefault()}
@@ -932,7 +1022,7 @@ export function Canvas2D() {
         </button>
         <button
           type="button"
-          className="ghost-button"
+          className="ghost-button shortcuts-button"
           aria-pressed={panel === 'shortcuts'}
           onClick={() => togglePanel('shortcuts')}
         >

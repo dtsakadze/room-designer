@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { CollapsibleSection } from './CollapsibleSection'
 import { ComponentPalette } from './ComponentPalette'
 import { PartsList } from './PartsList'
@@ -60,6 +61,14 @@ export function Sidebar() {
     <aside className="sidebar">
       <header className="sidebar-header">
         <div className="app-title">
+          <button
+            type="button"
+            className="icon-button sidebar-close compact-only"
+            aria-label="Close the sidebar"
+            onClick={() => useLayoutStore.getState().setSidebarOpen(false)}
+          >
+            ×
+          </button>
           <h1>Boardcut</h1>
           {!saveProblem && (
             <span className="save-status" title="Saved in this browser">
