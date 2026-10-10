@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { serviceWorkerSource } from './src/lib/serviceWorker.ts'
 
 // The app shows its own version, read from package.json at build time.
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
@@ -63,6 +64,23 @@ function seo(siteUrl: string | null): Plugin {
   }
 }
 
+// Writes the service worker that lets the app open offline and be installed,
+// with every file of the build for it to save. Not in the dev server, where
+// the files change all the time.
+function pwa(): Plugin {
+  return {
+    name: 'pwa',
+    apply: 'build',
+    generateBundle(_, bundle) {
+      const own = ['./', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
+      const built = Object.keys(bundle).filter(
+        (name) => name !== 'index.html' && !name.endsWith('.map') && !['robots.txt', 'sitemap.xml'].includes(name),
+      )
+      this.emitFile({ type: 'asset', fileName: 'sw.js', source: serviceWorkerSource([...own, ...built], Date.now()) })
+    },
+  }
+}
+
 // `version` is read once, when the config loads, and Vite doesn't reload the
 // config when package.json changes, so a release left the dev server showing the
 // old version until it was restarted by hand.
@@ -104,7 +122,7 @@ function releasedChangelogs(): Record<string, string> {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), restartOnVersionChange(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
+  plugins: [react(), restartOnVersionChange(), pwa(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
   define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative asset paths, so the build works from any folder on any host
   base: './',

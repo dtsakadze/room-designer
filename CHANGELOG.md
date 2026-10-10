@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Install it and use it offline: after the first visit Boardcut saves itself on your device, so it opens without a connection, and your browser can install it as an app (Chrome and Edge show an install button in the address bar; on an iPhone use Share, then Add to Home Screen). A new version is picked up the next time you open it with a connection, and your projects stay as they were.
+
 ## 1.10.0 — 2026-10-10
 
 - Pull-down lifts: select a hanging rod and tick Pull-down lift for a rail too high to reach. The hardware list then has a lift for that rod (by its length) instead of the two end supports.

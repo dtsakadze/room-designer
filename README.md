@@ -58,6 +58,10 @@ pnpm build      # outputs dist/
 - Search engines: the build always includes a `robots.txt`. Set `SITE_URL` when building (`SITE_URL=https://example.com pnpm build`, or in a `.env` file) to also add a canonical link, `og:url` and a `sitemap.xml` for that address. Leave it unset on a copy you don't want to present as the main site.
 - Caching: files in `dist/assets/` have content hashes in their names and can be cached forever. Serve `index.html` with `Cache-Control: no-cache` so people get updates.
 
+## Install and offline use
+
+After the first visit the built app saves itself in the browser (a service worker, written at build time), so it opens offline, and browsers that can install web apps offer to install it. The page is always fetched from the network first, so a new version arrives as soon as there's a connection. It only runs in a production build, over `https://` or `http://localhost`, not in `pnpm dev`. To clear it, remove the site's data in the browser.
+
 ## Where your data lives
 
 Projects are stored in the browser's IndexedDB for the site's address, so:
