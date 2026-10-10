@@ -17,3 +17,6 @@ export const PRINT_SHORTCUT = IS_MAC ? '⌘P' : 'Ctrl+P'
 export const MEASURE_SHORTCUT = 'M'
 /** Held while clicking a part to add it to (or take it out of) the selection. */
 export const MULTI_SELECT_KEY = IS_MAC ? '⌘' : 'Ctrl'
+
+/** Fired on the window to open the print dialog from outside the sidebar, which owns it. */
+export const PRINT_EVENT = 'room-designer:print'

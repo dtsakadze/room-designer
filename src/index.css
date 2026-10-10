@@ -2134,3 +2134,113 @@ button kbd {
   margin-top: 4px;
   font-size: 12px;
 }
+
+/* The cut list as a full view over the drawing, above its toolbars. */
+.cut-list.cut-list-view {
+  inset: 12px;
+  z-index: 6;
+  width: auto;
+  max-height: none;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(29, 36, 48, 0.14);
+}
+
+.cut-list-view-header {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px 16px 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cut-list-view-title h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--text);
+}
+
+.cut-list-view-title .muted {
+  margin-top: 2px;
+}
+
+.cut-list-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cut-list-view-actions .ghost-button {
+  width: auto;
+  padding: 6px 12px;
+  color: var(--text);
+}
+
+.cut-list-view-actions .icon-button {
+  margin-left: 4px;
+  font-size: 22px;
+}
+
+.cut-list-view-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 24px;
+}
+
+/* Boards on the left, banding and hardware beside them when there's room. */
+.cut-list-view .cut-list-run {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 12px 28px;
+  align-items: start;
+}
+
+.cut-list-view .cut-list-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cut-list-view .cut-list-side h3:first-child {
+  margin-top: 0;
+}
+
+.cut-list-view thead th {
+  position: sticky;
+  top: -16px;
+  z-index: 1;
+  padding-top: 6px;
+  background: var(--panel);
+}
+
+.cut-list-view .wall-heading {
+  margin: 18px 0 8px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--text);
+}
+
+.cut-list-view .sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .cut-list-view .cut-list-run {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -36,6 +36,7 @@ export function SheetLayouts({ layouts, boardNames }: { layouts: BoardLayout[]; 
                 Use a bigger sheet or buy these cut to size.
               </p>
             )}
+            <div className="sheet-grid">
             {sheets.map((sheet, index) => {
               // Text sized to the sheet, so it reads the same however big the sheet is.
               const text = setup.length / 70
@@ -80,6 +81,7 @@ export function SheetLayouts({ layouts, boardNames }: { layouts: BoardLayout[]; 
                 </svg>
               )
             })}
+            </div>
           </div>
         )
       })}

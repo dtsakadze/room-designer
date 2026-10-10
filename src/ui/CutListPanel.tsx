@@ -16,18 +16,26 @@ import { downloadFile, fileBase } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
+import { PRINT_EVENT, PRINT_SHORTCUT } from './shortcuts'
 import { hasSideWalls, wallRuns } from '../lib/room'
 import type { BoardKey, Piece } from '../types'
 
-/** The boards to cut, grouped and counted, floating over the canvas. */
+/**
+ * The cut list as a full view over the drawing: totals at the top, the boards
+ * as the main table with banding and hardware beside it, and the sheet
+ * layouts drawn large below. Escape or × goes back to the drawing.
+ */
 export function CutListPanel({ onClose }: { onClose: () => void }) {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
+  const boardSheets = useDesignStore((s) => s.boardSheets)
+  const joints = useDesignStore((s) => s.joints)
   const groups = cutList(pieces, thickness, grainedBoards)
   const sideWalls = useDesignStore((s) => hasSideWalls(s.room))
   const byWall = useSettingsStore((s) => s.cutListByWall)
   const setByWall = useSettingsStore((s) => s.setCutListByWall)
+  const { len } = useUnits()
 
   // Escape closes it, unless a dialog over it (Projects, …) takes the key.
   useEffect(() => {
@@ -39,32 +47,67 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
-  const total = groups
-    .flatMap((group) => group.rows)
-    .reduce((sum, row) => sum + row.quantity, 0)
+
+  const rows = groups.flatMap((group) => group.rows)
+  const total = rows.reduce((sum, row) => sum + row.quantity, 0)
+  const banding = bandingTotals(groups).reduce((sum, board) => sum + board.length, 0)
+  const sheets = layoutSheets(rows, boardSheets).reduce((sum, layout) => sum + layout.sheets.length, 0)
+  const hardware = hardwareList(pieces, thickness, joints).length
+  const totals = [
+    `${total} board${total === 1 ? '' : 's'} to cut`,
+    sheets > 0 && `${sheets} sheet${sheets === 1 ? '' : 's'}`,
+    banding > 0 && `${len(banding)} edge banding`,
+    hardware > 0 && `${hardware} hardware item${hardware === 1 ? '' : 's'}`,
+  ].filter(Boolean)
 
   return (
     // A dialog, so Escape closes it rather than deselecting (see the canvas's keys).
-    <div className="cut-list" role="dialog" aria-label="Cut list">
-      <header className="cut-list-header">
-        <h2>Cut list</h2>
-        <span className="muted">
-          {total} board{total === 1 ? '' : 's'}
-        </span>
-        <button type="button" className="icon-button" aria-label="Close cut list" onClick={onClose}>
-          ×
-        </button>
+    <div className="cut-list cut-list-view" role="dialog" aria-label="Cut list">
+      <header className="cut-list-view-header">
+        <div className="cut-list-view-title">
+          <h2>Cut list</h2>
+          <p className="muted">{totals.join(' · ')}</p>
+        </div>
+        <div className="cut-list-view-actions">
+          {sideWalls && (
+            <span className="unit-switch" role="radiogroup" aria-label="List">
+              {[
+                ['Whole room', false],
+                ['By wall', true],
+              ].map(([text, value]) => (
+                <button
+                  key={String(text)}
+                  type="button"
+                  role="radio"
+                  aria-checked={byWall === value}
+                  title={value ? 'A list for each wall of the room, to build one run at a time' : undefined}
+                  onClick={() => setByWall(value as boolean)}
+                >
+                  {String(text)}
+                </button>
+              ))}
+            </span>
+          )}
+          {groups.length > 0 && <CsvButtons />}
+          <button
+            type="button"
+            className="ghost-button"
+            disabled={pieces.length === 0}
+            title={`Print drawings and the cut list, or save them as a PDF (${PRINT_SHORTCUT})`}
+            // The print dialog belongs to the sidebar, which also opens it on ⌘P.
+            onClick={() => window.dispatchEvent(new Event(PRINT_EVENT))}
+          >
+            Print…
+          </button>
+          <button type="button" className="icon-button" aria-label="Close cut list" title="Back to the drawing (Esc)" onClick={onClose}>
+            ×
+          </button>
+        </div>
       </header>
 
-      {sideWalls && (
-        <label className="checkbox">
-          <input type="checkbox" checked={byWall} onChange={(event) => setByWall(event.target.checked)} />
-          By wall: a list for each wall of the room
-        </label>
-      )}
-
-      <CutListTables />
-      {groups.length > 0 && <CsvButtons />}
+      <div className="cut-list-view-body">
+        <CutListTables />
+      </div>
     </div>
   )
 }
@@ -112,17 +155,17 @@ function CsvButtons() {
 
   return (
     <div className="csv-buttons">
-      <span className="muted">Download CSV:</span>
-      <button type="button" className="ghost-button" onClick={downloadCutList}>
-        Cut list
+      <button type="button" className="ghost-button" title="Download the cut list as CSV, for a spreadsheet or a board shop" onClick={downloadCutList}>
+        Cut list CSV
       </button>
       <button
         type="button"
         className="ghost-button"
+        title="Download the hardware list as CSV"
         disabled={hardware.length === 0}
         onClick={downloadHardware}
       >
-        Hardware
+        Hardware CSV
       </button>
     </div>
   )
@@ -194,7 +237,8 @@ function CutListRun({ pieces }: { pieces: Piece[] }) {
   const { num, len } = useUnits()
 
   return (
-    <>
+    <div className="cut-list-run">
+    <div className="cut-list-main">
     {groups.length > 0 && (
       <table>
         <thead>
@@ -245,7 +289,9 @@ function CutListRun({ pieces }: { pieces: Piece[] }) {
         ))}
       </table>
     )}
+    </div>
 
+    <div className="cut-list-side">
     {banding.length > 0 && (
       <>
         <h3>Edge banding</h3>
@@ -292,8 +338,8 @@ function CutListRun({ pieces }: { pieces: Piece[] }) {
         </table>
       </>
     )}
-
-    </>
+    </div>
+    </div>
   )
 }
 

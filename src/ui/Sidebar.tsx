@@ -13,7 +13,7 @@ import { useClashes } from './useClashes'
 import { VersionInfo } from './WhatsNew'
 import { PrintDialog } from './PrintDialog'
 import { SettingsDialog, type SettingsPage } from './SettingsDialog'
-import { hasModifier } from './shortcuts'
+import { PRINT_EVENT, hasModifier } from './shortcuts'
 
 // The everyday states are a word next to the app name; the problems get a
 // line of their own, since they need doing something about.
@@ -44,8 +44,13 @@ export function Sidebar() {
       event.preventDefault()
       setShowPrint(true)
     }
+    const onPrint = () => setShowPrint(true)
     window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener(PRINT_EVENT, onPrint)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener(PRINT_EVENT, onPrint)
+    }
   }, [])
   const hasClashes = useClashes().size > 0
   const count = useDesignStore((s) => s.pieces.length)
