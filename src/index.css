@@ -1214,19 +1214,157 @@ button kbd {
 .inspector {
   width: 280px;
   flex: none;
-  padding: 20px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--panel);
   border-left: 1px solid var(--border);
 }
 
-.inspector h2 {
-  margin: 0 0 12px;
+/* Stays put while the fields below scroll, so the actions are always in reach. */
+.inspector-header {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.inspector-title-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.inspector-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-action {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+}
+
+.inspector-action:hover,
+.inspector-action[aria-expanded='true'] {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.inspector-action-danger:hover {
+  background: #fdf2f2;
+  color: var(--danger);
+}
+
+.inspector-save-block {
+  display: flex;
+  gap: 6px;
+}
+
+.inspector-save-block .add-button {
+  padding: 6px 10px;
+}
+
+.inspector-save-block + .hint,
+.inspector-header > .hint {
+  margin: 0;
+}
+
+.inspector-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 20px 20px;
+}
+
+.inspector-empty-title {
+  margin: 0 0 4px;
   font-size: 11px;
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
+}
+
+/* A titled block of fields in the Selected panel, e.g. Size or Position. */
+.field-group-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-group-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.field-group-title h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.field-group-title .link-button:disabled {
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Up to three compact fields side by side. */
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.field.field-compact {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.field-compact .field-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-compact .field-input {
+  padding: 0;
+}
+
+.field-compact .field-input input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 7px;
+}
+
+.field-compact input[readonly] {
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 6px;
 }
 
 .version-line {
@@ -1872,4 +2010,127 @@ button kbd {
 
 .clear-parts:hover {
   color: var(--danger);
+}
+
+/* Problems at the top of the Selected panel stand out from the hints below. */
+.inspector-body > .hint-warn,
+.inspector-body > .hint-error {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #fdf6ec;
+}
+
+.inspector-body > .hint-error {
+  background: #fcefef;
+}
+
+/* Foldable groups in the Selected panel: a little tighter than the sidebar's. */
+.inspector-body .collapsible-header {
+  padding: 10px 0 8px;
+}
+
+.inspector-body .collapsible-body {
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.inspector-body .collapsible-badge .board-swatch {
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.option-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.option-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.info-tip {
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #c6d0de;
+  border-radius: 50%;
+  background: none;
+  font: italic 600 10px/1 Georgia, serif;
+  color: var(--muted);
+}
+
+.info-tip:hover,
+.info-tip[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.option-info {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.option-select {
+  max-width: 150px;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.facts {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.facts li::before {
+  content: '·';
+  margin-right: 6px;
+}
+
+.fit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-color: #c7d7fb;
+  background: #eef3fd;
+  color: var(--accent);
+  font-weight: 550;
+}
+
+.fit-button:hover:not(:disabled) {
+  background: #e1eafc;
+  border-color: var(--accent);
+}
+
+.fit-button:disabled {
+  background: #f5f7fa;
+  border-color: var(--border);
+  color: var(--muted);
+  font-weight: 400;
+  opacity: 1;
+}
+
+.finish-panel {
+  margin-top: 4px;
+  font-size: 12px;
 }

@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { BOARD } from '../lib/defaults'
 import { EDGE_LABELS, GRAIN_LABELS, bandsOf, boardEdges, faceDimensions, grainOf } from '../lib/edges'
 import { useDesignStore } from '../store/useDesignStore'
 import type { Piece } from '../types'
+import { InfoTip } from './InspectorFields'
+
+const BANDING_INFO = 'Starts with the edges that show; tick what this part needs.'
 
 /**
  * A part's edge banding and, on a board with grain, the way the grain runs.
@@ -11,6 +15,7 @@ import type { Piece } from '../types'
 export function FinishFields({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
+  const [info, setInfo] = useState(false)
   const board = BOARD[piece.kind]
   const isDrawer = piece.kind === 'drawer'
   // Glass and mirror aren't board, so there's no banding or grain.
@@ -26,7 +31,11 @@ export function FinishFields({ piece }: { piece: Piece }) {
     <>
       {bands && (
         <div className="finish">
-          <span className="field-label">Edge banding</span>
+          <span className="field-label option-label">
+            Edge banding
+            <InfoTip text={BANDING_INFO} open={info} onToggle={() => setInfo(!info)} />
+          </span>
+          {info && <p className="hint option-info">{BANDING_INFO}</p>}
           <div className="finish-edges">
             {boardEdges(axis).map((edge) => (
               <label key={edge} className="checkbox">
@@ -45,7 +54,6 @@ export function FinishFields({ piece }: { piece: Piece }) {
               </label>
             ))}
           </div>
-          <p className="hint">Starts with the edges that show; tick what this part needs.</p>
         </div>
       )}
       {grained && (

@@ -1,9 +1,8 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
-import { SaveBlockButton } from './SaveBlockButton'
-import { DELETE_SHORTCUT } from './shortcuts'
+import { InspectorHeader } from './InspectorHeader'
 
-/** What the inspector shows with several parts selected: colour them, or delete them. */
+/** What the inspector shows with several parts selected: colour them, save them as a block, or delete them. */
 export function MultiInspector() {
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const pieces = useDesignStore((s) => s.pieces)
@@ -17,35 +16,28 @@ export function MultiInspector() {
   const anyColored = selected.some((piece) => piece.color)
 
   return (
-    <div className="stack">
-      <p className="muted">{selected.length} parts selected</p>
-      <ColorField
-        key={selectedIds.join()}
-        label="Parts colour"
-        value={shared}
-        fallback="#d8c9a3"
-        onChange={(color) => setPieceColors(selectedIds, color)}
-        onReset={() => setPieceColors(selectedIds, null)}
-        resetLabel="Reset all"
-      />
-      {anyColored && !shared && (
-        <button
-          type="button"
-          className="ghost-button"
-          onClick={() => setPieceColors(selectedIds, null)}
-        >
-          Reset colours to standard
-        </button>
-      )}
-      <SaveBlockButton />
-      <button
-        type="button"
-        className="danger-button"
-        onClick={() => removePieces(selectedIds)}
-        title={`Delete (${DELETE_SHORTCUT})`}
-      >
-        Delete {selected.length} parts <kbd>{DELETE_SHORTCUT}</kbd>
-      </button>
-    </div>
+    <>
+      <InspectorHeader title={`${selected.length} parts`} onDelete={() => removePieces(selectedIds)} />
+      <div className="inspector-body">
+        <ColorField
+          key={selectedIds.join()}
+          label="Parts colour"
+          value={shared}
+          fallback="#d8c9a3"
+          onChange={(color) => setPieceColors(selectedIds, color)}
+          onReset={() => setPieceColors(selectedIds, null)}
+          resetLabel="Reset all"
+        />
+        {anyColored && !shared && (
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setPieceColors(selectedIds, null)}
+          >
+            Reset colours to standard
+          </button>
+        )}
+      </div>
+    </>
   )
 }

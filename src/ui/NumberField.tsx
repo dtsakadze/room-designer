@@ -10,6 +10,10 @@ type NumberFieldProps = {
   /** Gets the typed length back in millimetres. */
   onChange: (mm: number) => void
   readOnly?: boolean
+  /** Label above a narrow box, no unit, for three to a row; the unit goes in the row's heading. */
+  compact?: boolean
+  /** Explains the field on hover, e.g. why it can't be edited. */
+  title?: string
 }
 
 /**
@@ -28,6 +32,8 @@ export function NumberField({
   value,
   onChange,
   readOnly = false,
+  compact = false,
+  title,
 }: NumberFieldProps) {
   const unit = useSettingsStore((s) => s.unit)
   const [text, setText] = useState(() => formatNumber(value, unit))
@@ -60,7 +66,7 @@ export function NumberField({
   }
 
   return (
-    <label className="field">
+    <label className={compact ? 'field field-compact' : 'field'} title={title}>
       <span className="field-label">{label}</span>
       <span className="field-input">
         <input
@@ -88,7 +94,7 @@ export function NumberField({
             step(event.key === 'ArrowUp' ? 1 : -1, event.shiftKey)
           }}
         />
-        <span className="field-unit">{UNITS[unit].label}</span>
+        {!compact && <span className="field-unit">{UNITS[unit].label}</span>}
       </span>
     </label>
   )

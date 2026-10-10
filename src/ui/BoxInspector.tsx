@@ -1,14 +1,14 @@
 import { useDesignStore } from '../store/useDesignStore'
+import { useUnitLabel } from '../store/useSettingsStore'
 import type { Box } from '../types'
 import { faceColor } from '../canvas/colors'
 import { ColorField } from './ColorField'
 import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
-import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
-import { WallField } from './WallField'
+import { InspectorHeader } from './InspectorHeader'
+import { ChoiceRow, FieldGroup, PositionFields } from './InspectorFields'
+import { CollapsibleSection } from './CollapsibleSection'
 import { OverhangNote } from './PieceInspector'
-import { SaveBlockButton } from './SaveBlockButton'
-import { ZField } from './ZField'
 import { wallOf } from '../lib/room'
 import { pieceLabel } from '../lib/defaults'
 
@@ -30,110 +30,89 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
   const colors = new Set(panels.map((piece) => piece.color ?? null))
   const shared = colors.size === 1 ? [...colors][0] : null
   const panel = panels.find((piece) => piece.id === panelId)
+  const unit = useUnitLabel()
 
   return (
-    <div className="stack">
-      <p className="muted">Box (sides, top, bottom, back)</p>
+    <>
+      <InspectorHeader
+        title="Box"
+        onDuplicate={() => duplicatePiece(panelId)}
+        onDelete={() => removePiece(panelId)}
+      />
+      <div className="inspector-body">
+        <OverhangNote ids={panels.map((piece) => piece.id)} />
 
-      <ColorField
-        key={box.id}
-        label="Part colour"
-        value={shared}
-        fallback={faceColor({ kind: 'vertical' }, { boardColors })}
-        emptyLabel={boardColors.body ? 'Board colour' : 'Standard'}
-        onChange={(color) => setPieceColors([panelId], color)}
-        onReset={() => setPieceColors([panelId], null)}
-      />
-
-      <NumberField
-        label="Width"
-        value={box.width}
-        onChange={(width) => updateBox(box.id, { width })}
-      />
-      <NumberField
-        label="Height"
-        value={box.height}
-        onChange={(height) => updateBox(box.id, { height })}
-      />
-      <NumberField
-        label="Depth"
-        value={box.depth}
-        onChange={(depth) => updateBox(box.id, { depth })}
-      />
-      <p className="hint">Outside sizes; the depth includes the back panel.</p>
-
-      <div className="stack" role="radiogroup" aria-label="Top and bottom">
-        {(
-          [
-            ['between', 'Top & bottom between the sides'],
-            ['on', 'Top & bottom on top of the sides'],
-          ] as const
-        ).map(([joint, label]) => (
-          <label key={joint} className="checkbox">
-            <input
-              type="radio"
-              name={`joint-${box.id}`}
-              checked={box.joint === joint}
-              onChange={() => updateBox(box.id, { joint })}
+        <FieldGroup title={`Outside size (${unit})`}>
+          <div className="field-row">
+            <NumberField compact label="Width" value={box.width} onChange={(width) => updateBox(box.id, { width })} />
+            <NumberField compact label="Height" value={box.height} onChange={(height) => updateBox(box.id, { height })} />
+            <NumberField
+              compact
+              label="Depth"
+              title="Includes the back panel."
+              value={box.depth}
+              onChange={(depth) => updateBox(box.id, { depth })}
             />
-            {label}
-          </label>
-        ))}
-      </div>
+          </div>
+        </FieldGroup>
 
-      {panel && (
-        <>
-          <hr className="rule" />
-          <p className="muted">This panel: {PANEL_NAMES[panel.id.slice(box.id.length + 1)] ?? pieceLabel(panel)}</p>
-          <FinishFields piece={panel} />
-        </>
-      )}
+        <PositionFields
+          wall={wallOf(box)}
+          onWall={(wall) => updateBox(box.id, { wall })}
+          x={box.x}
+          y={box.y}
+          z={box.z ?? 0}
+          zCustom={box.z !== undefined}
+          onX={(x) => updateBox(box.id, { x })}
+          onY={(y) => updateBox(box.id, { y })}
+          onZ={(z) => updateBox(box.id, { z })}
+          onZReset={() => updateBox(box.id, { z: undefined })}
+        />
 
-      <hr className="rule" />
+        <CollapsibleSection id="inspector-box" title="Box" defaultOpen>
+          <ChoiceRow
+            label="Top, bottom"
+            info="Between the sides: the sides run the full height. On the sides: the top and bottom run the full width, over the sides' ends."
+            value={box.joint}
+            options={[
+              { value: 'between', text: 'Between sides' },
+              { value: 'on', text: 'On sides' },
+            ]}
+            onChange={(joint) => updateBox(box.id, { joint })}
+          />
+          <button
+            type="button"
+            className="ghost-button"
+            title="Turns the box into loose panels you can edit one by one."
+            onClick={() => separateBox(box.id)}
+          >
+            Separate panels
+          </button>
+        </CollapsibleSection>
 
-      <WallField wall={wallOf(box)} onChange={(wall) => updateBox(box.id, { wall })} />
-      <NumberField
-        label="X (from centre)"
-        value={box.x}
-        onChange={(x) => updateBox(box.id, { x })}
-      />
-      <NumberField
-        label="Y (off floor)"
-        value={box.y}
-        onChange={(y) => updateBox(box.id, { y })}
-      />
-      <ZField
-        value={box.z ?? 0}
-        custom={box.z !== undefined}
-        onChange={(z) => updateBox(box.id, { z })}
-        onReset={() => updateBox(box.id, { z: undefined })}
-      />
-
-      <div className="button-row">
-        <button
-          type="button"
-          className="add-button"
-          onClick={() => duplicatePiece(panelId)}
-          title={`Duplicate (${DUPLICATE_SHORTCUT})`}
+        <CollapsibleSection
+          id="inspector-finish"
+          title="Finish"
+          badge={<span className="board-swatch" style={{ background: shared ?? faceColor({ kind: 'vertical' }, { boardColors }) }} aria-hidden />}
         >
-          Duplicate <kbd>{DUPLICATE_SHORTCUT}</kbd>
-        </button>
-        <button
-          type="button"
-          className="danger-button"
-          onClick={() => removePiece(panelId)}
-          title={`Delete (${DELETE_SHORTCUT})`}
-        >
-          Delete <kbd>{DELETE_SHORTCUT}</kbd>
-        </button>
+          <ColorField
+            key={box.id}
+            label="Colour"
+            value={shared}
+            fallback={faceColor({ kind: 'vertical' }, { boardColors })}
+            emptyLabel={boardColors.body ? 'Board colour' : 'Standard'}
+            onChange={(color) => setPieceColors([panelId], color)}
+            onReset={() => setPieceColors([panelId], null)}
+          />
+          {panel && (
+            <>
+              <p className="muted finish-panel">This panel: {PANEL_NAMES[panel.id.slice(box.id.length + 1)] ?? pieceLabel(panel)}</p>
+              <FinishFields piece={panel} />
+            </>
+          )}
+        </CollapsibleSection>
       </div>
-      <OverhangNote ids={panels.map((piece) => piece.id)} />
-      <SaveBlockButton />
-      <button type="button" className="ghost-button" onClick={() => separateBox(box.id)}>
-        Separate panels
-      </button>
-      <p className="hint">Separating turns the box into loose panels you can edit one by one.</p>
-    </div>
+    </>
   )
 }
 

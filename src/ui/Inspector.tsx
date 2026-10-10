@@ -12,16 +12,19 @@ export function Inspector() {
 
   return (
     <aside className="inspector" aria-label="Selected">
-      <h2>Selected</h2>
+      {/* Keyed by the selection, so a message like "Saved as block" doesn't carry over. */}
       {selectedIds.length > 1 ? (
-        <MultiInspector />
+        <MultiInspector key={selectedIds.join()} />
       ) : selectedId ? (
-        <PieceInspector />
+        <PieceInspector key={selectedId} />
       ) : (
-        <p className="muted">
-          Select a part to change its size, position or colour. Drag it to move it, and drag the
-          blue handles to resize it. Every keyboard shortcut is under Shortcuts, bottom right.
-        </p>
+        <div className="inspector-body">
+          <h2 className="inspector-empty-title">Selected</h2>
+          <p className="muted">
+            Select a part to change its size, position or colour. Drag it to move it, and drag the
+            blue handles to resize it. Every keyboard shortcut is under Shortcuts, bottom right.
+          </p>
+        </div>
       )}
     </aside>
   )

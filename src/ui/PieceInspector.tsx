@@ -18,20 +18,19 @@ import {
 import { HINGE_FIT_LABELS, doorHinges } from '../lib/hinges'
 import { swingConflicts } from '../lib/swing'
 import { drawerParts, runnerLength } from '../lib/drawer'
-import { useUnits } from '../store/useSettingsStore'
-import type { Piece } from '../types'
+import { useUnitLabel, useUnits } from '../store/useSettingsStore'
+import type { Piece, PieceKind } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
 import { boardOf, faceColor } from '../canvas/colors'
 import { BoxInspector } from './BoxInspector'
+import { CollapsibleSection } from './CollapsibleSection'
 import { ColorField } from './ColorField'
 import { FinishFields } from './FinishFields'
 import { NumberField } from './NumberField'
-import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
-import { WallField } from './WallField'
+import { InspectorHeader } from './InspectorHeader'
+import { ChoiceRow, Facts, FieldGroup, PositionFields, SelectRow } from './InspectorFields'
 import { WALL_LABELS, wallOf } from '../lib/room'
 import { FITS_BETWEEN_SIDES, fitBetweenSides, slidingPanels, wallDepthStart } from '../lib/geometry'
-import { SaveBlockButton } from './SaveBlockButton'
-import { ZField } from './ZField'
 import { maxRodSpan, rodCentreSupports } from '../lib/spans'
 import { hasHandle } from '../lib/fixings'
 import { setBack } from '../lib/clearance'
@@ -40,6 +39,23 @@ import { useRoomOverhangs } from './useRoomOverhangs'
 import type { Overhang } from '../lib/roomFit'
 import { useSpanWarnings } from './useSpanWarnings'
 
+/** The title of a part's own options, for the kinds that have any. */
+const OPTION_TITLES: Partial<Record<PieceKind, string>> = {
+  shelf: 'Shelf',
+  rail: 'Rail',
+  rod: 'Rod',
+  door: 'Door',
+  drawer: 'Drawer',
+  filler: 'Filler strip',
+  cornice: 'Cornice',
+  accessory: 'Accessory',
+}
+
+/**
+ * The Selected panel for one part: problems first, then size and position
+ * (what's changed most), then the part's own options, then its finish
+ * (colour, edge banding, grain), folded since it's usually set once.
+ */
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
   const selectedId = useDesignStore((s) => s.selectedId)
@@ -51,6 +67,7 @@ export function PieceInspector() {
   const boardColors = useDesignStore((s) => s.boardColors)
   const fitPiece = useDesignStore((s) => s.fitBetweenSides)
   const thickness = useDesignStore((s) => s.thickness)
+  const unit = useUnitLabel()
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
@@ -64,179 +81,208 @@ export function PieceInspector() {
   const isRod = piece.kind === 'rod'
   // A glass or mirror door isn't board: no thickness from the project, colour or banding.
   const board = piece.pane ? undefined : BOARD[piece.kind]
+  const optionsTitle = piece.kind === 'door' && piece.sliding ? 'Sliding doors' : OPTION_TITLES[piece.kind]
+  const color = piece.color ?? faceColor({ ...piece, color: undefined }, { boardColors })
 
   return (
-    <div className="stack">
-      <p className="muted">{pieceLabel(piece)}</p>
+    <>
+      <InspectorHeader
+        title={pieceLabel(piece)}
+        onDuplicate={() => duplicatePiece(piece.id)}
+        onDelete={() => removePiece(piece.id)}
+      />
+      <div className="inspector-body">
+        {/* Problems first, so they're seen before anything else. */}
+        <SpanNote piece={piece} />
+        <ClearanceNote piece={piece} />
+        <OverhangNote ids={[piece.id]} />
+        {piece.kind === 'door' && !piece.sliding && <SwingWarning door={piece} />}
+        {piece.kind === 'drawer' && <RunnerWarning piece={piece} />}
 
-      {!piece.pane && <ColorField
-        // A fresh picker per part, so it always opens on this part's colour and
-        // a picker left open can't recolour the next part selected.
-        key={piece.id}
-        label="Part colour"
-        value={piece.color ?? null}
-        // Without a colour of its own, a part shows its board's.
-        fallback={faceColor({ ...piece, color: undefined }, { boardColors })}
-        emptyLabel={boardOfPiece && boardColors[boardOfPiece] ? 'Board colour' : 'Standard'}
-        onChange={(color) => setPieceColors([piece.id], color)}
-        onReset={() => setPieceColors([piece.id], null)}
-      />}
-
-      {piece.kind === 'shelf' && (
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={!!piece.fixed}
-            onChange={(event) => updatePiece(piece.id, { fixed: event.target.checked })}
-          />
-          Fixed: screwed to the sides, keeps them straight
-        </label>
-      )}
-
-      {piece.kind === 'rail' && (
-        <div className="choice" role="radiogroup" aria-label="Rail position">
-          {(['front', 'back'] as const).map((at) => (
-            <label key={at} className="checkbox">
-              <input
-                type="radio"
-                name={`rail-${piece.id}`}
-                checked={(piece.railAt ?? 'front') === at}
-                onChange={() => updatePiece(piece.id, { railAt: at })}
-              />
-              {at === 'front' ? 'Front of the unit' : 'Back of the unit'}
-            </label>
-          ))}
-        </div>
-      )}
-
-      {piece.kind === 'door' && <DoorOptions piece={piece} />}
-      {(piece.kind === 'filler' || piece.kind === 'cornice') && <TrimOptions piece={piece} />}
-      {piece.kind === 'accessory' && <AccessoryOptions piece={piece} />}
-      <SpanNote piece={piece} />
-      <ClearanceNote piece={piece} />
-      <OverhangNote ids={[piece.id]} />
-      {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
-      <FinishFields piece={piece} />
-
-      {isRod ? (
-        <>
-          <NumberField
-            label="Length"
-            value={piece.width}
-            onChange={(width) => updatePiece(piece.id, { width })}
-          />
-          <NumberField
-            label="Diameter"
-            value={piece.height}
-            onChange={(height) => updatePiece(piece.id, { height })}
-          />
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={!!piece.lift}
-              onChange={(event) => updatePiece(piece.id, { lift: event.target.checked })}
-            />
-            Pull-down lift, for a rail too high to reach
-          </label>
-          {piece.lift && (
-            <p className="hint">
-              The hardware list has a lift for this rod instead of end supports. Check the lift's
-              size range and weight limit with the maker.
-            </p>
-          )}
-        </>
-      ) : (
-        <>
-          {DIMENSIONS.map(({ key, label }) => {
-            // A board's thickness comes from the project, so it's shown, not edited.
-            const isThickness = board?.axis === key || (!!piece.pane && key === 'depth')
-            return (
+        <FieldGroup title={`Size (${unit})`}>
+          {isRod ? (
+            <div className="field-row">
               <NumberField
-                key={key}
-                label={isThickness ? `${label} (thickness)` : label}
-                value={piece[key]}
-                readOnly={isThickness}
-                onChange={(value) => updatePiece(piece.id, { [key]: value })}
+                compact
+                label="Length"
+                value={piece.width}
+                onChange={(width) => updatePiece(piece.id, { width })}
               />
-            )
-          })}
-          <p className="hint">Depth isn't drawn in this view; see the side, top and 3D views.</p>
-          {board && (
-            <p className="hint">Thickness is set for the whole project under Boards.</p>
+              <NumberField
+                compact
+                label="Diameter"
+                value={piece.height}
+                onChange={(height) => updatePiece(piece.id, { height })}
+              />
+            </div>
+          ) : (
+            <div className="field-row">
+              {DIMENSIONS.map(({ key, label }) => {
+                // A board's thickness comes from the project, so it's shown, not edited.
+                const isThickness = board?.axis === key || (!!piece.pane && key === 'depth')
+                return (
+                  <NumberField
+                    key={key}
+                    compact
+                    label={isThickness ? 'Thickness' : label}
+                    title={
+                      isThickness
+                        ? piece.pane
+                          ? `Glass and mirror panes are ${PANE_THICKNESS} mm thick.`
+                          : 'Set for the whole project in Settings → Boards.'
+                        : key === 'depth'
+                          ? 'Not drawn in the front view; see the side, top and 3D views.'
+                          : undefined
+                    }
+                    value={piece[key]}
+                    readOnly={isThickness}
+                    onChange={(value) => updatePiece(piece.id, { [key]: value })}
+                  />
+                )
+              })}
+            </div>
           )}
-          {piece.pane && <p className="hint">Glass and mirror panes are {PANE_THICKNESS} mm thick.</p>}
-        </>
-      )}
+          {FITS_BETWEEN_SIDES.includes(piece.kind) && (
+            <FitButton piece={piece} pieces={pieces} onFit={() => fitPiece(piece.id)} />
+          )}
+        </FieldGroup>
 
-      {FITS_BETWEEN_SIDES.includes(piece.kind) && (
-        <FitButton piece={piece} pieces={pieces} onFit={() => fitPiece(piece.id)} />
-      )}
+        <PositionFields
+          wall={wallOf(piece)}
+          onWall={(wall) => updatePiece(piece.id, { wall })}
+          x={piece.x}
+          y={piece.y}
+          z={wallDepthStart(pieces, thickness)(piece)}
+          zCustom={piece.z !== undefined}
+          onX={(x) => updatePiece(piece.id, { x })}
+          onY={(y) => updatePiece(piece.id, { y })}
+          onZ={(z) => updatePiece(piece.id, { z })}
+          onZReset={() => updatePiece(piece.id, { z: undefined })}
+        />
 
-      <hr className="rule" />
+        {optionsTitle && (
+          <CollapsibleSection id={`inspector-${piece.kind}`} title={optionsTitle} defaultOpen>
+            {piece.kind === 'shelf' && (
+              <ChoiceRow
+                label="Type"
+                info="Adjustable shelves rest on pins and can move up or down. Fixed ones are screwed to the sides, which keeps them straight."
+                value={piece.fixed ? 'fixed' : 'adjustable'}
+                options={[
+                  { value: 'adjustable', text: 'Adjustable' },
+                  { value: 'fixed', text: 'Fixed' },
+                ]}
+                onChange={(value) => updatePiece(piece.id, { fixed: value === 'fixed' })}
+              />
+            )}
+            {piece.kind === 'rail' && (
+              <ChoiceRow
+                label="Sits at"
+                value={piece.railAt ?? 'front'}
+                options={[
+                  { value: 'front', text: 'Front' },
+                  { value: 'back', text: 'Back' },
+                ]}
+                onChange={(railAt) => updatePiece(piece.id, { railAt })}
+              />
+            )}
+            {isRod && <RodOptions piece={piece} />}
+            {piece.kind === 'door' && <DoorOptions piece={piece} />}
+            {(piece.kind === 'filler' || piece.kind === 'cornice') && <TrimOptions piece={piece} />}
+            {piece.kind === 'accessory' && <AccessoryOptions piece={piece} />}
+            {piece.kind === 'drawer' && <DrawerOptions piece={piece} />}
+          </CollapsibleSection>
+        )}
 
-      <WallField wall={wallOf(piece)} onChange={(wall) => updatePiece(piece.id, { wall })} />
-      <NumberField
-        label="X (from centre)"
-        value={piece.x}
-        onChange={(x) => updatePiece(piece.id, { x })}
-      />
-      <NumberField
-        label="Y (off floor)"
-        value={piece.y}
-        onChange={(y) => updatePiece(piece.id, { y })}
-      />
-      <ZField
-        value={wallDepthStart(pieces, thickness)(piece)}
-        custom={piece.z !== undefined}
-        onChange={(z) => updatePiece(piece.id, { z })}
-        onReset={() => updatePiece(piece.id, { z: undefined })}
-      />
-
-      <div className="button-row">
-        <button
-          type="button"
-          className="add-button"
-          onClick={() => duplicatePiece(piece.id)}
-          title={`Duplicate (${DUPLICATE_SHORTCUT})`}
-        >
-          Duplicate <kbd>{DUPLICATE_SHORTCUT}</kbd>
-        </button>
-        <button
-          type="button"
-          className="danger-button"
-          onClick={() => removePiece(piece.id)}
-          title={`Delete (${DELETE_SHORTCUT})`}
-        >
-          Delete <kbd>{DELETE_SHORTCUT}</kbd>
-        </button>
+        {!piece.pane && (
+          <CollapsibleSection
+            id="inspector-finish"
+            title="Finish"
+            badge={<span className="board-swatch" style={{ background: color }} aria-hidden />}
+          >
+            <ColorField
+              // A fresh picker per part, so it always opens on this part's colour and
+              // a picker left open can't recolour the next part selected.
+              key={piece.id}
+              label="Colour"
+              value={piece.color ?? null}
+              // Without a colour of its own, a part shows its board's.
+              fallback={faceColor({ ...piece, color: undefined }, { boardColors })}
+              emptyLabel={boardOfPiece && boardColors[boardOfPiece] ? 'Board colour' : 'Standard'}
+              onChange={(next) => setPieceColors([piece.id], next)}
+              onReset={() => setPieceColors([piece.id], null)}
+            />
+            <FinishFields piece={piece} />
+          </CollapsibleSection>
+        )}
       </div>
-      <SaveBlockButton />
-    </div>
+    </>
   )
 }
 
 /**
  * Fills the gap between the side panels or dividers either side of the part,
- * to the mm. Says why it can't when there's no panel on one side, and that
- * it already fits when it does.
+ * to the mm. A full-width button under the size, since it's one of the most
+ * useful things to do with a shelf or drawer; when it can't, or already
+ * fits, it says so in its label.
  */
 function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; onFit: () => void }) {
   const fit = fitBetweenSides(piece, pieces)
   const fits = !!fit && fit.x === piece.x && fit.width === piece.width
   return (
-    <>
-      <button type="button" className="ghost-button" disabled={!fit || fits} onClick={onFit}>
-        Fit between sides
-      </button>
-      <p className="hint">
-        {!fit
+    <button
+      type="button"
+      className="add-button fit-button"
+      disabled={!fit || fits}
+      title={
+        !fit
           ? 'Needs a side panel or divider on both sides, at this height.'
           : fits
             ? 'Fits exactly between the sides.'
             : piece.kind === 'drawer' && piece.overlay
               ? 'Sets the width and X so the front covers both sides.'
-              : 'Sets the width and X to fill the gap between the sides.'}
-      </p>
+              : 'Sets the width and X to fill the gap between the sides.'
+      }
+      onClick={onFit}
+    >
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+        <path
+          d="M3 5v14 M21 5v14 M7 12h10 M10 9l-3 3 3 3 M14 9l3 3-3 3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {!fit ? 'Fit between sides: no sides here' : fits ? 'Fits between the sides' : 'Fit between sides'}
+    </button>
+  )
+}
+
+/** A hanging rod: the centre supports a long one gets, and the pull-down lift for a high one. */
+function RodOptions({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  const { len } = useUnits()
+  const centre = rodCentreSupports(piece)
+  return (
+    <>
+      <ChoiceRow
+        label="Pull-down lift"
+        info="For a rail too high to reach. The hardware list has a lift for this rod instead of end supports. Check the lift's size range and weight limit with the maker."
+        value={piece.lift ? 'yes' : 'no'}
+        options={[
+          { value: 'no', text: 'No' },
+          { value: 'yes', text: 'Yes' },
+        ]}
+        onChange={(value) => updatePiece(piece.id, { lift: value === 'yes' })}
+      />
+      {/* Not a warning: the hardware list already counts the brackets that fix it. */}
+      <Facts
+        lines={[
+          centre > 0 &&
+            `Longer than the ${len(maxRodSpan(piece.height))} a rod this thick carries: ${centre === 1 ? '1 centre support' : `${centre} centre supports`} in the hardware list`,
+        ]}
+      />
     </>
   )
 }
@@ -249,26 +295,17 @@ function AccessoryOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const kind = ACCESSORIES.find((accessory) => accessory.type === piece.accessory)
   return (
-    <>
-      <div className="choice choice-column" role="radiogroup" aria-label="Accessory">
-        {ACCESSORIES.map((accessory) => (
-          <label key={accessory.type} className="checkbox">
-            <input
-              type="radio"
-              name={`accessory-${piece.id}`}
-              checked={piece.accessory === accessory.type}
-              onChange={() => updatePiece(piece.id, { accessory: accessory.type })}
-            />
-            {accessory.label}
-          </label>
-        ))}
-      </div>
-      <p className="hint">
-        {kind?.pullOut
+    <SelectRow
+      label="Type"
+      info={
+        kind?.pullOut
           ? 'Bought as one fitting with its runners: the hardware list has it by width and depth. Size it to the opening, less the room the runners need on each side.'
-          : 'Bought as one fitting: the hardware list has it by width and depth.'}
-      </p>
-    </>
+          : 'Bought as one fitting: the hardware list has it by width and depth.'
+      }
+      value={piece.accessory ?? ACCESSORIES[0].type}
+      options={ACCESSORIES.map((accessory) => ({ value: accessory.type, text: accessory.label }))}
+      onChange={(accessory) => updatePiece(piece.id, { accessory })}
+    />
   )
 }
 
@@ -329,28 +366,28 @@ function ClearanceNote({ piece }: { piece: Piece }) {
   )
 }
 
-/**
- * Says when a shelf spans further than it can safely between its supports,
- * and what the limit is; for a rod, how many centre supports it gets.
- */
+/** Says when a shelf spans further than it can safely between its supports, and what the limit is. */
 function SpanNote({ piece }: { piece: Piece }) {
   const warning = useSpanWarnings().get(piece.id)
   const material = useDesignStore((s) => s.boardMaterials.body ?? 'chipboard')
   const { len } = useUnits()
-  if (piece.kind === 'rod') {
-    // Not a warning: the hardware list already counts the brackets that fix it.
-    const centre = rodCentreSupports(piece)
-    if (centre === 0) return null
-    return (
-      <p className="hint">
-        {`Spans ${len(piece.width)}, more than the ${len(maxRodSpan(piece.height))} a rod this thick carries. ${centre === 1 ? 'One centre support bracket is' : `${centre} centre support brackets are`} in the hardware list.`}
-      </p>
-    )
-  }
-  if (!warning) return null
+  if (piece.kind === 'rod' || !warning) return null
   return (
     <p className="hint hint-warn">
       {`Spans ${len(warning.span)}, more than ${len(warning.max)}: ${MATERIAL_LABELS[material].toLowerCase()} this thick sags under a load. Add a divider, use a thicker or stiffer board (Settings → Boards), or make the bay narrower.`}
+    </p>
+  )
+}
+
+/** Says when a drawer is too shallow for the shortest runners. */
+function RunnerWarning({ piece }: { piece: Piece }) {
+  const thickness = useDesignStore((s) => s.thickness)
+  const { len } = useUnits()
+  if (runnerLength(piece, thickness) !== null) return null
+  return (
+    <p className="hint hint-error">
+      Too shallow for runners: the shortest is {len(RUNNER_LENGTHS[0])}, plus {len(thickness.front)} for
+      the front. Make the drawer deeper.
     </p>
   )
 }
@@ -364,13 +401,8 @@ function TrimOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const ceiling = useDesignStore((s) => s.room.height)
   const { len } = useUnits()
-  const noun = piece.kind === 'filler' ? 'filler strip' : 'cornice'
   if (ceiling === undefined) {
-    return (
-      <p className="hint">
-        {`Size the ${noun} to the gap it closes. Switch on the ceiling in Sidebar → Room to see how far it is from the ceiling.`}
-      </p>
-    )
+    return <Facts lines={['Switch on the ceiling under Room to see how far it is from it.']} />
   }
   const gap = ceiling - (piece.y + piece.height)
   return (
@@ -379,19 +411,22 @@ function TrimOptions({ piece }: { piece: Piece }) {
         type="button"
         className="ghost-button"
         disabled={gap === 0}
+        title={piece.kind === 'filler' ? 'Makes it taller or shorter to reach the ceiling.' : 'Moves it to touch the ceiling.'}
         onClick={() =>
           updatePiece(piece.id, piece.kind === 'filler' ? { height: ceiling - piece.y } : { y: ceiling - piece.height })
         }
       >
         Up to the ceiling
       </button>
-      <p className="hint">
-        {gap === 0
-          ? 'Its top touches the ceiling.'
-          : gap > 0
-            ? `Its top is ${len(gap)} below the ceiling. ${piece.kind === 'filler' ? 'Makes it taller to reach' : 'Moves it up to touch'} the ceiling.`
-            : `Its top is ${len(-gap)} above the ceiling. ${piece.kind === 'filler' ? 'Makes it shorter to fit' : 'Moves it down to touch'} below it.`}
-      </p>
+      <Facts
+        lines={[
+          gap === 0
+            ? 'Its top touches the ceiling'
+            : gap > 0
+              ? `Its top is ${len(gap)} below the ceiling`
+              : `Its top is ${len(-gap)} above the ceiling`,
+        ]}
+      />
     </>
   )
 }
@@ -410,103 +445,84 @@ function DoorOptions({ piece }: { piece: Piece }) {
   return piece.sliding ? <SlidingOptions piece={piece} /> : <HingedOptions piece={piece} />
 }
 
+function TypeRow({ piece }: { piece: Piece }) {
+  const updatePiece = useDesignStore((s) => s.updatePiece)
+  return (
+    <ChoiceRow
+      label="Type"
+      value={piece.sliding ? 'sliding' : 'hinged'}
+      options={[
+        { value: 'hinged', text: 'Hinged' },
+        { value: 'sliding', text: 'Sliding' },
+      ]}
+      onChange={(value) =>
+        updatePiece(piece.id, value === 'sliding' ? { sliding: SLIDING_PANELS[0], double: false } : { sliding: undefined })
+      }
+    />
+  )
+}
+
 function HingedOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
   const hinges = doorHinges(pieces, thickness).filter((leaf) => leaf.doorId === piece.id)
-  const choices: { label: string; value: string; options: [string, string, DoorPatch][] }[] = [
-    {
-      label: 'Type',
-      value: 'hinged',
-      options: [
-        ['hinged', 'Hinged', {}],
-        ['sliding', 'Sliding', { sliding: SLIDING_PANELS[0], double: false }],
-      ],
-    },
-    panelChoice(piece),
-    {
-      label: 'Door',
-      value: piece.double ? 'double' : 'single',
-      options: [
-        ['single', 'Single', { double: false }],
-        ['double', 'Double', { double: true }],
-      ],
-    },
-    // A double door is hinged on both outer sides.
-    ...(piece.double
-      ? []
-      : [
-          {
-            label: 'Hinges',
-            value: piece.hinge ?? 'left',
-            options: [
-              ['left', 'Left', { hinge: 'left' }],
-              ['right', 'Right', { hinge: 'right' }],
-            ] as [string, string, DoorPatch][],
-          },
-        ]),
-    {
-      label: 'Fit',
-      value: piece.inset ? 'inset' : 'overlay',
-      options: [
-        ['overlay', 'Overlay', { inset: false }],
-        ['inset', 'Inset', { inset: true }],
-      ],
-    },
-    {
-      label: 'Opens',
-      value: String(piece.openAngle ?? DOOR_OPEN_ANGLE),
-      options: DOOR_ANGLES.map((angle): [string, string, DoorPatch] => [
-        String(angle),
-        `${angle}°`,
-        { openAngle: angle },
-      ]),
-    },
-  ]
 
   return (
     <>
-      {choices.map((choice) => (
-        <div key={choice.label} className="field">
-          <span className="field-label">{choice.label}</span>
-          <span className="unit-switch" role="radiogroup" aria-label={choice.label}>
-            {choice.options.map(([value, text, patch]) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={choice.value === value}
-                onClick={() => updatePiece(piece.id, patch)}
-              >
-                {text}
-              </button>
-            ))}
-          </span>
-        </div>
-      ))}
-      <p className="hint">
-        {piece.inset
-          ? 'Inset: sits inside the opening, flush with the front. Size it to the opening, less a small gap all round so it can swing.'
-          : 'Overlay: sits in front of the unit, covering its edges. Size it to the front it covers.'}
-        {piece.double && ' The width is both leaves together.'}
-      </p>
-      <label className="checkbox">
-        <input
-          type="checkbox"
-          checked={!!piece.softClose}
-          onChange={(event) => updatePiece(piece.id, { softClose: event.target.checked })}
+      <TypeRow piece={piece} />
+      <PanelRow piece={piece} />
+      <ChoiceRow
+        label="Leaves"
+        value={piece.double ? 'double' : 'single'}
+        options={[
+          { value: 'single', text: 'Single' },
+          { value: 'double', text: 'Double' },
+        ]}
+        onChange={(value) => updatePiece(piece.id, { double: value === 'double' })}
+      />
+      {/* A double door is hinged on both outer sides. */}
+      {!piece.double && (
+        <ChoiceRow
+          label="Hinged on"
+          value={piece.hinge ?? 'left'}
+          options={[
+            { value: 'left', text: 'Left' },
+            { value: 'right', text: 'Right' },
+          ]}
+          onChange={(hinge) => updatePiece(piece.id, { hinge })}
         />
-        Soft-close hinges
-      </label>
-      <HandleField piece={piece} />
-      {hinges.length > 0 && (
-        <p className="hint">
-          {hingeText(hinges)}. Wide-angle hinges (155°, 170°) let the door open further, clear of
-          what&apos;s next to it.
-        </p>
       )}
-      <SwingWarning door={piece} />
+      <ChoiceRow
+        label="Fit"
+        info="Overlay: sits in front of the unit, covering its edges. Size it to the front it covers. Inset: sits inside the opening, flush with the front. Size it to the opening, less a small gap all round so it can swing."
+        value={piece.inset ? 'inset' : 'overlay'}
+        options={[
+          { value: 'overlay', text: 'Overlay' },
+          { value: 'inset', text: 'Inset' },
+        ]}
+        onChange={(value) => updatePiece(piece.id, { inset: value === 'inset' })}
+      />
+      <ChoiceRow
+        label="Opens"
+        info="Wide-angle hinges (155°, 170°) let the door open further, clear of what's next to it."
+        value={String(piece.openAngle ?? DOOR_OPEN_ANGLE)}
+        options={DOOR_ANGLES.map((angle) => ({ value: String(angle), text: `${angle}°` }))}
+        onChange={(value) => updatePiece(piece.id, { openAngle: Number(value) as Piece['openAngle'] })}
+      />
+      <ChoiceRow
+        label="Soft-close"
+        value={piece.softClose ? 'yes' : 'no'}
+        options={[
+          { value: 'no', text: 'No' },
+          { value: 'yes', text: 'Yes' },
+        ]}
+        onChange={(value) => updatePiece(piece.id, { softClose: value === 'yes' })}
+      />
+      <HandleRow piece={piece} />
+      <Facts
+        lines={[hinges.length > 0 && hingeText(hinges), piece.double && 'The width is both leaves together']}
+      />
     </>
   )
 }
@@ -523,55 +539,32 @@ function SlidingOptions({ piece }: { piece: Piece }) {
 
   return (
     <>
-      <div className="field">
-        <span className="field-label">Type</span>
-        <span className="unit-switch" role="radiogroup" aria-label="Type">
-          {['Hinged', 'Sliding'].map((text) => (
-            <button
-              key={text}
-              type="button"
-              role="radio"
-              aria-checked={text === 'Sliding'}
-              onClick={() => text === 'Hinged' && updatePiece(piece.id, { sliding: undefined })}
-            >
-              {text}
-            </button>
-          ))}
-        </span>
-      </div>
-      <div className="field">
-        <span className="field-label">Panels</span>
-        <span className="unit-switch" role="radiogroup" aria-label="Panels">
-          {SLIDING_PANELS.map((count) => (
-            <button
-              key={count}
-              type="button"
-              role="radio"
-              aria-checked={piece.sliding === count}
-              onClick={() => updatePiece(piece.id, { sliding: count })}
-            >
-              {count}
-            </button>
-          ))}
-        </span>
-      </div>
-      <PanelField piece={piece} />
+      <TypeRow piece={piece} />
+      <ChoiceRow
+        label="Panels"
+        info="Width and height are the whole set, tracks included. Z is where the back lane starts; the front lane is one panel thickness and a small gap in front of it."
+        value={String(piece.sliding)}
+        options={SLIDING_PANELS.map((count) => ({ value: String(count), text: String(count) }))}
+        onChange={(value) => updatePiece(piece.id, { sliding: Number(value) as Piece['sliding'] })}
+      />
+      <PanelRow piece={piece} />
       <NumberField
         label="Overlap"
         value={piece.overlap ?? SLIDING_OVERLAP}
         onChange={(overlap) => updatePiece(piece.id, { overlap })}
       />
-      <p className="hint">
-        Width and height are the whole set, tracks included. Each panel is {len(panels[0].width)} wide
-        and {len(panels[0].height)} high (the {len(SLIDING_TRACK_HEIGHT)} tracks top and bottom take
-        the rest). The cut list has the panels and the two tracks. Z is where the back lane starts; the front lane is one panel thickness and a small gap in front of it.
-      </p>
-      <HandleField piece={piece} />
+      <HandleRow piece={piece} />
+      <Facts
+        lines={[
+          `Each panel ${len(panels[0].width)} × ${len(panels[0].height)}`,
+          `Tracks ${len(SLIDING_TRACK_HEIGHT)} top and bottom, in the cut list`,
+        ]}
+      />
     </>
   )
 }
 
-/** What the door runs into as it opens to 110°, if anything (only in a room with side walls). */
+/** What the door runs into as it opens, if anything (only in a room with side walls). */
 function SwingWarning({ door }: { door: Piece }) {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
@@ -602,7 +595,7 @@ const listed = (items: string[]) =>
  * for a hinged door a push-to-open latch. A drawer's push-to-open is its
  * runners'.
  */
-function HandleField({ piece }: { piece: Piece }) {
+function HandleRow({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const options: (keyof typeof HANDLE_LABELS)[] = [
     'handle',
@@ -622,74 +615,39 @@ function HandleField({ piece }: { piece: Piece }) {
     )
 
   return (
-    <>
-      <span className="field-label">{piece.kind === 'door' && piece.double ? 'Opened with (each leaf)' : 'Opened with'}</span>
-      <div className="choice choice-column" role="radiogroup" aria-label="Opened with">
-        {options.map((option) => (
-          <label key={option} className="checkbox">
-            <input
-              type="radio"
-              name={`handle-${piece.id}`}
-              checked={value === option}
-              onChange={() => choose(option)}
-            />
-            {HANDLE_LABELS[option]}
-          </label>
-        ))}
-      </div>
-      {value === 'profile' && (
-        <p className="hint">
-          A grip along the top edge (or down a sliding panel's edge): the hardware list has the
-          profile cut to each front&apos;s length.
-        </p>
-      )}
-    </>
+    <SelectRow
+      label={piece.kind === 'door' && piece.double ? 'Handle, each' : 'Handle'}
+      info={
+        value === 'profile'
+          ? "A grip along the top edge (or down a sliding panel's edge): the hardware list has the profile cut to each front's length."
+          : undefined
+      }
+      value={value}
+      options={options.map((option) => ({ value: option, text: HANDLE_LABELS[option] }))}
+      onChange={choose}
+    />
   )
 }
 
-type DoorPatch = Pick<Piece, 'double' | 'hinge' | 'inset' | 'openAngle' | 'sliding' | 'overlap' | 'pane'>
-
 /** What the door's panels are made of: board, glass or a mirror. */
-const PANELS = [
-  ['board', 'Board', { pane: undefined }],
-  ['glass', PANE_LABELS.glass, { pane: 'glass' }],
-  ['mirror', PANE_LABELS.mirror, { pane: 'mirror' }],
-] as const
-
-const panelChoice = (piece: Piece) => ({
-  label: 'Panel',
-  value: piece.pane ?? 'board',
-  options: PANELS.map(([value, text, patch]): [string, string, DoorPatch] => [value, text, patch]),
-})
-
-function PanelField({ piece }: { piece: Piece }) {
+function PanelRow({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
-  const choice = panelChoice(piece)
   return (
-    <>
-      <div className="field">
-        <span className="field-label">{choice.label}</span>
-        <span className="unit-switch" role="radiogroup" aria-label={choice.label}>
-          {choice.options.map(([value, text, patch]) => (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={choice.value === value}
-              onClick={() => updatePiece(piece.id, patch)}
-            >
-              {text}
-            </button>
-          ))}
-        </span>
-      </div>
-      {piece.pane && (
-        <p className="hint">
-          {PANE_LABELS[piece.pane]} panes are {PANE_THICKNESS} mm thick and bought to size: they're
-          in the hardware list, not the cut list, and have no colour or edge banding.
-        </p>
-      )}
-    </>
+    <ChoiceRow
+      label="Panel"
+      info={
+        piece.pane
+          ? `${PANE_LABELS[piece.pane]} panes are ${PANE_THICKNESS} mm thick and bought to size: they're in the hardware list, not the cut list, and have no colour or edge banding.`
+          : undefined
+      }
+      value={piece.pane ?? 'board'}
+      options={[
+        { value: 'board', text: 'Board' },
+        { value: 'glass', text: PANE_LABELS.glass },
+        { value: 'mirror', text: PANE_LABELS.mirror },
+      ]}
+      onChange={(value) => updatePiece(piece.id, { pane: value === 'board' ? undefined : value })}
+    />
   )
 }
 
@@ -705,92 +663,50 @@ function DrawerOptions({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const thickness = useDesignStore((s) => s.thickness)
   const { len } = useUnits()
-  const extension = piece.extension ?? 'standard'
   const runner = runnerLength(piece, thickness)
   const parts = drawerParts(piece, thickness)
   const front = parts.find((part) => part.role === 'front')!
   const side = parts.find((part) => part.role === 'side')!
   const bottom = parts.find((part) => part.role === 'bottom')!
-  const choices = [
-    {
-      label: 'Fit',
-      value: piece.overlay ? 'overlay' : 'inset',
-      options: [
-        { value: 'inset', text: 'Inset', patch: { overlay: false } },
-        { value: 'overlay', text: 'Overlay', patch: { overlay: true } },
-      ],
-    },
-    {
-      label: 'Runners',
-      value: extension,
-      options: (['standard', 'full'] as const).map((value) => ({
-        value,
-        text: EXTENSION_LABELS[value],
-        patch: { extension: value },
-      })),
-    },
-    {
-      label: 'Closing',
-      value: piece.close ?? 'ordinary',
-      options: (['ordinary', 'soft', 'push'] as const).map((value) => ({
-        value,
-        text: CLOSE_LABELS[value],
-        // Ordinary is stored as no value.
-        patch: { close: value === 'ordinary' ? undefined : value },
-      })),
-    },
-  ]
 
   return (
     <>
-      {choices.map((choice) => (
-        <div key={choice.label} className="field">
-          <span className="field-label">{choice.label}</span>
-          <span className="unit-switch" role="radiogroup" aria-label={choice.label}>
-            {choice.options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={choice.value === option.value}
-                onClick={() => updatePiece(piece.id, option.patch)}
-              >
-                {option.text}
-              </button>
-            ))}
-          </span>
-        </div>
-      ))}
-      <p className="hint">
-        {piece.overlay
-          ? `Overlay: the front covers the unit's edges. Size the drawer to its front, the opening plus ${len(thickness.body)} all round.`
-          : 'Inset: the front sits inside the opening, flush with the unit. Size the drawer to its opening.'}{' '}
-        The front is {len(front.width)} × {len(front.height)}, leaving a small gap all round.
-      </p>
-      <p className="hint">
-        {extension === 'full'
-          ? 'Full extension: the drawer pulls out all the way.'
-          : 'Standard: the drawer pulls out about three quarters of the way.'}{' '}
-        The box is {len(bottom.width)} wide, leaving room for the runners each side, and{' '}
-        {len(side.height + bottom.height)} high.
-      </p>
-      {piece.close === 'push' ? (
-        <p className="hint">Nothing to open it with: a push-to-open drawer doesn&apos;t need a handle.</p>
-      ) : (
-        <HandleField piece={piece} />
-      )}
-      {runner === null ? (
-        <p className="hint hint-error">
-          Too shallow for runners: the shortest is {len(RUNNER_LENGTHS[0])}, plus{' '}
-          {len(thickness.front)} for the front. Make the drawer deeper.
-        </p>
-      ) : (
-        <p className="hint">
-          A pair of {len(runner)} runners; the box is as long.
-          {piece.close === 'soft' && ' Soft-close: the drawer pulls itself shut gently.'}
-          {piece.close === 'push' && ' Push-to-open: push the front to open it, so it needs no handle.'}
-        </p>
-      )}
+      <ChoiceRow
+        label="Fit"
+        info={`Inset: the front sits inside the opening, flush with the unit. Size the drawer to its opening. Overlay: the front covers the unit's edges. Size the drawer to its front, the opening plus ${len(thickness.body)} all round.`}
+        value={piece.overlay ? 'overlay' : 'inset'}
+        options={[
+          { value: 'inset', text: 'Inset' },
+          { value: 'overlay', text: 'Overlay' },
+        ]}
+        onChange={(value) => updatePiece(piece.id, { overlay: value === 'overlay' })}
+      />
+      <ChoiceRow
+        label="Runners"
+        info="Standard runners let the drawer out about three quarters of the way; full extension, all the way."
+        value={piece.extension ?? 'standard'}
+        options={(['standard', 'full'] as const).map((value) => ({
+          value,
+          text: value === 'full' ? 'Full' : EXTENSION_LABELS[value],
+        }))}
+        onChange={(extension) => updatePiece(piece.id, { extension })}
+      />
+      <SelectRow
+        label="Closing"
+        info="Soft-close: the drawer pulls itself shut gently. Push-to-open: push the front to open it, so it needs no handle."
+        value={piece.close ?? 'ordinary'}
+        options={(['ordinary', 'soft', 'push'] as const).map((value) => ({ value, text: CLOSE_LABELS[value] }))}
+        // Ordinary is stored as no value.
+        onChange={(value) => updatePiece(piece.id, { close: value === 'ordinary' ? undefined : value })}
+      />
+      {piece.close !== 'push' && <HandleRow piece={piece} />}
+      <Facts
+        lines={[
+          `Front ${len(front.width)} × ${len(front.height)}, a small gap all round`,
+          `Box ${len(bottom.width)} wide, ${len(side.height + bottom.height)} high`,
+          runner !== null && `A pair of ${len(runner)} runners; the box is as long`,
+        ]}
+      />
     </>
   )
 }

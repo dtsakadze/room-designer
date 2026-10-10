@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { HANGING_GUIDES, type HangingGuide, MAX_HANGING_GUIDES } from '../lib/defaults'
-import { type Unit, formatLength, formatNumber, isUnit } from '../lib/units'
+import { type Unit, UNITS, formatLength, formatNumber, isUnit } from '../lib/units'
 
 const UNIT_KEY = 'room-designer:unit'
 const SHOW_DOORS_KEY = 'room-designer:show-doors'
@@ -135,4 +135,9 @@ export function useUnits() {
     num: (mm: number) => formatNumber(mm, unit),
     len: (mm: number) => formatLength(mm, unit),
   }
+}
+
+/** The unit's short name ("mm"), for the title of a group of fields that leave it out. */
+export function useUnitLabel() {
+  return UNITS[useSettingsStore((s) => s.unit)].label
 }
