@@ -6,6 +6,7 @@ const UNIT_KEY = 'room-designer:unit'
 const SHOW_DOORS_KEY = 'room-designer:show-doors'
 const SHOW_GUIDES_KEY = 'room-designer:show-hanging-guides'
 const GUIDES_KEY = 'room-designer:hanging-guides'
+const BY_WALL_KEY = 'room-designer:cut-list-by-wall'
 
 /**
  * Preferences of the person using the app, not of a project: kept in
@@ -17,6 +18,9 @@ type SettingsState = {
   /** Doors drawn in every view; off to get at the inside of the unit. */
   showDoors: boolean
   setShowDoors: (show: boolean) => void
+  /** The cut list in a room with side walls: one list for each wall, or all together. */
+  cutListByWall: boolean
+  setCutListByWall: (byWall: boolean) => void
   /** Dashed lines under a selected hanging rod; off to keep the drawing clear. */
   showHangingGuides: boolean
   setShowHangingGuides: (show: boolean) => void
@@ -58,6 +62,15 @@ function storedGuides(): HangingGuide[] {
   }
 }
 
+function storedBoolean(key: string, otherwise: boolean) {
+  try {
+    const stored = localStorage.getItem(key)
+    return stored === null ? otherwise : stored === 'true'
+  } catch {
+    return otherwise
+  }
+}
+
 function storedShowGuides() {
   try {
     return localStorage.getItem(SHOW_GUIDES_KEY) !== 'false'
@@ -84,6 +97,15 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
       // Still applies for this visit.
     }
     set({ showDoors })
+  },
+  cutListByWall: storedBoolean(BY_WALL_KEY, false),
+  setCutListByWall: (cutListByWall) => {
+    try {
+      localStorage.setItem(BY_WALL_KEY, String(cutListByWall))
+    } catch {
+      // Still applies for this visit.
+    }
+    set({ cutListByWall })
   },
   showHangingGuides: storedShowGuides(),
   setShowHangingGuides: (showHangingGuides) => {

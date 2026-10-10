@@ -1384,3 +1384,15 @@ button kbd {
   padding: 3px 9px;
   font-size: 12px;
 }
+
+.wall-heading {
+  margin: 14px 0 4px;
+  padding-bottom: 3px;
+  border-bottom: 2px solid var(--border);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.wall-run:first-of-type .wall-heading {
+  margin-top: 4px;
+}

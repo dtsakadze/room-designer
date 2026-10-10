@@ -54,4 +54,14 @@ describe('settings', () => {
     const { useSettingsStore } = await import('./useSettingsStore')
     expect(useSettingsStore.getState().hangingGuides.map((g) => g.length)).toEqual([1000, 1700])
   })
+
+  it('remembers whether the cut list is by wall, off to start', async () => {
+    const first = await import('./useSettingsStore')
+    expect(first.useSettingsStore.getState().cutListByWall).toBe(false)
+    first.useSettingsStore.getState().setCutListByWall(true)
+    vi.resetModules()
+    const next = await import('./useSettingsStore')
+    expect(next.useSettingsStore.getState().cutListByWall).toBe(true)
+    expect(stored.get('room-designer:cut-list-by-wall')).toBe('true')
+  })
 })

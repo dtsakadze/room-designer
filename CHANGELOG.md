@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Cut list by wall: in an L- or U-shaped room, tick By wall at the top of the cut list to get a separate list for each wall (boards, edge banding and hardware), under the wall's name, so you can build and carry one run at a time. The CSV downloads then have a Wall column, and the printed cut list follows the same choice. The sheet layout still covers all the walls together, since sheets are cut whole. It's off to start, and only appears when the room has side walls.
+
 - A warning when a part sticks out of the room: in an L- or U-shaped room, a part past either side, through the back wall (a unit on a side wall that runs into the corner), or past the front end of the side walls, or above the ceiling once you've set its height, gets an orange outline, is marked in the Parts list, and its Selected panel says how far and past what. Parts only touching a wall are fine.
 
 - Your own blocks: select a part, a box or several parts and click Save as block…, give it a name (for example "My drawer unit"), and it appears under Add → My blocks in every project. Click a block to insert it at the right of what's on the wall you're editing (one Undo takes it back), or Rename or Delete it there. Blocks are kept in this browser.

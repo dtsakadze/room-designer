@@ -11,11 +11,13 @@ import { boardName } from '../lib/defaults'
 import { layoutSheets } from '../lib/sheets'
 import { SheetLayouts } from './SheetLayouts'
 import { UNITS } from '../lib/units'
-import { cutListCsv, hardwareCsv } from '../lib/csv'
+import { cutListCsv, cutListCsvByWall, hardwareCsv, hardwareCsvByWall } from '../lib/csv'
 import { downloadFile, fileBase } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
 import { useProjectsStore } from '../store/useProjectsStore'
-import { useUnits } from '../store/useSettingsStore'
+import { useSettingsStore, useUnits } from '../store/useSettingsStore'
+import { hasSideWalls, wallRuns } from '../lib/room'
+import type { BoardKey, Piece } from '../types'
 
 /** The boards to cut, grouped and counted, floating over the canvas. */
 export function CutListPanel({ onClose }: { onClose: () => void }) {
@@ -23,6 +25,9 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
   const thickness = useDesignStore((s) => s.thickness)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const groups = cutList(pieces, thickness, grainedBoards)
+  const sideWalls = useDesignStore((s) => hasSideWalls(s.room))
+  const byWall = useSettingsStore((s) => s.cutListByWall)
+  const setByWall = useSettingsStore((s) => s.setCutListByWall)
 
   // Escape closes it, unless a dialog over it (Projects, …) takes the key.
   useEffect(() => {
@@ -51,6 +56,13 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
         </button>
       </header>
 
+      {sideWalls && (
+        <label className="checkbox">
+          <input type="checkbox" checked={byWall} onChange={(event) => setByWall(event.target.checked)} />
+          By wall: a list for each wall of the room
+        </label>
+      )}
+
       <CutListTables />
       {groups.length > 0 && <CsvButtons />}
     </div>
@@ -64,6 +76,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
 function CsvButtons() {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
+  const room = useDesignStore((s) => s.room)
   const boardNames = useDesignStore((s) => s.boardNames)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const project = useProjectsStore(
@@ -72,16 +85,29 @@ function CsvButtons() {
   const { num, len, unit } = useUnits()
   const base = fileBase(project) || 'boardcut'
   const joints = useDesignStore((s) => s.joints)
+  const byWall = useSettingsStore((s) => s.cutListByWall) && hasSideWalls(room)
+  const runs = wallRuns(pieces, room)
   const hardware = hardwareList(pieces, thickness, joints)
 
   const downloadCutList = () => {
-    const groups = cutList(pieces, thickness, grainedBoards)
-    const csv = cutListCsv(groups, {
-      num,
-      unit: UNITS[unit].label,
-      boardName: (board) => boardName(board, boardNames),
-    })
+    const format = { num, unit: UNITS[unit].label, boardName: (board: BoardKey) => boardName(board, boardNames) }
+    const csv = byWall
+      ? cutListCsvByWall(
+          runs.map((run) => ({ label: run.label, groups: cutList(run.pieces, thickness, grainedBoards) })),
+          format,
+        )
+      : cutListCsv(cutList(pieces, thickness, grainedBoards), format)
     downloadFile(csv, `${base} cut list.csv`, 'text/csv')
+  }
+
+  const downloadHardware = () => {
+    const csv = byWall
+      ? hardwareCsvByWall(
+          runs.map((run) => ({ label: run.label, rows: hardwareList(run.pieces, thickness, joints) })),
+          len,
+        )
+      : hardwareCsv(hardware, len)
+    downloadFile(csv, `${base} hardware.csv`, 'text/csv')
   }
 
   return (
@@ -94,7 +120,7 @@ function CsvButtons() {
         type="button"
         className="ghost-button"
         disabled={hardware.length === 0}
-        onClick={() => downloadFile(hardwareCsv(hardware, len), `${base} hardware.csv`, 'text/csv')}
+        onClick={downloadHardware}
       >
         Hardware
       </button>
@@ -104,30 +130,72 @@ function CsvButtons() {
 
 /**
  * The cut list itself: the boards by section, how much edge banding each
- * board needs, and the hardware, with a note on how to read them. Shown in
- * the floating panel and on printed pages.
+ * board needs, and the hardware, with a note on how to read them. In a room
+ * with side walls it can be one list for each wall. Shown in the floating
+ * panel and on printed pages.
  */
 export function CutListTables() {
   const pieces = useDesignStore((s) => s.pieces)
   const thickness = useDesignStore((s) => s.thickness)
+  const room = useDesignStore((s) => s.room)
   const boardNames = useDesignStore((s) => s.boardNames)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
+  const boardSheets = useDesignStore((s) => s.boardSheets)
+  const byWall = useSettingsStore((s) => s.cutListByWall) && hasSideWalls(room)
   const groups = cutList(pieces, thickness, grainedBoards)
-  const banding = bandingTotals(groups)
   const joints = useDesignStore((s) => s.joints)
   const hardware = hardwareList(pieces, thickness, joints)
-  const boardSheets = useDesignStore((s) => s.boardSheets)
+  // Sheets are cut from whole boards, so the layout covers every wall's parts together.
   const layouts = layoutSheets(
     groups.flatMap((group) => group.rows),
     boardSheets,
   )
-  const { num, len, unit } = useUnits()
+  const { unit } = useUnits()
+  const banding = bandingTotals(groups)
 
   return (
     <>
-    {groups.length === 0 ? (
-      <p className="muted">No boards yet. Add panels or shelves to see what to cut.</p>
-    ) : (
+      {groups.length === 0 && (
+        <p className="muted">No boards yet. Add panels or shelves to see what to cut.</p>
+      )}
+      {byWall ? (
+        wallRuns(pieces, room).map((run) => (
+          <section key={run.wall} className="wall-run">
+            <h3 className="wall-heading">{run.label}</h3>
+            <CutListRun pieces={run.pieces} />
+          </section>
+        ))
+      ) : (
+        <CutListRun pieces={pieces} />
+      )}
+
+      <SheetLayouts layouts={layouts} boardNames={boardNames} />
+
+      <p className="hint">
+        All sizes in {UNITS[unit].label}, finished: edge banding included. Edges: thick sides are
+        banded, with the length across{grainedBoards.length > 0 && '; lines show the grain'}.
+        {banding.length > 0 && ' Allow extra banding for trimming.'}
+        {hardware.some((row) => row.item === 'rod') && ' Rod lengths are what to cut them to.'}
+        {hardware.some((row) => row.item === 'j-profile') && ' J-profile lengths are what to cut it to.'}
+      </p>
+    </>
+  )
+}
+
+/** The boards, edge banding and hardware for these parts: the whole design, or one wall's. */
+function CutListRun({ pieces }: { pieces: Piece[] }) {
+  const thickness = useDesignStore((s) => s.thickness)
+  const boardNames = useDesignStore((s) => s.boardNames)
+  const grainedBoards = useDesignStore((s) => s.grainedBoards)
+  const joints = useDesignStore((s) => s.joints)
+  const groups = cutList(pieces, thickness, grainedBoards)
+  const banding = bandingTotals(groups)
+  const hardware = hardwareList(pieces, thickness, joints)
+  const { num, len } = useUnits()
+
+  return (
+    <>
+    {groups.length > 0 && (
       <table>
         <thead>
           <tr>
@@ -200,8 +268,6 @@ export function CutListTables() {
       </>
     )}
 
-    <SheetLayouts layouts={layouts} boardNames={boardNames} />
-
     {hardware.length > 0 && (
       <>
         <h3>Hardware</h3>
@@ -227,13 +293,6 @@ export function CutListTables() {
       </>
     )}
 
-    <p className="hint">
-      All sizes in {UNITS[unit].label}, finished: edge banding included. Edges: thick sides are
-      banded, with the length across{grainedBoards.length > 0 && '; lines show the grain'}.
-      {banding.length > 0 && ' Allow extra banding for trimming.'}
-      {hardware.some((row) => row.item === 'rod') && ' Rod lengths are what to cut them to.'}
-      {hardware.some((row) => row.item === 'j-profile') && ' J-profile lengths are what to cut it to.'}
-    </p>
     </>
   )
 }

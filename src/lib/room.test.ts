@@ -14,6 +14,7 @@ import {
   unfold,
   wallLength,
   wallOf,
+  wallRuns,
 } from './room'
 
 const room: Room = { left: true, right: true, width: 2000, depth: 1600 }
@@ -127,5 +128,26 @@ describe('room basics', () => {
     expect(wallOf({ wall: 'right' })).toBe('right')
     expect(['left', 'right'].every(isSideWall)).toBe(true)
     expect(['back', 'front', undefined].some(isSideWall)).toBe(false)
+  })
+})
+
+describe('wallRuns', () => {
+  const part = (id: string, wall?: 'left' | 'right') =>
+    ({ id, kind: 'shelf', x: 0, y: 0, width: 100, height: 18, depth: 100, ...(wall ? { wall } : {}) }) as Piece
+  const room = (left: boolean, right: boolean) => ({ left, right, width: 2400, depth: 1800 })
+
+  it('lists each wall that has parts, in plan order, with its name and its own parts', () => {
+    const runs = wallRuns([part('a', 'right'), part('b'), part('c', 'left'), part('d')], room(true, true))
+    expect(runs.map((r) => [r.wall, r.label, r.pieces.map((p) => p.id)])).toEqual([
+      ['left', 'Left wall', ['c']],
+      ['back', 'Back wall', ['b', 'd']],
+      ['right', 'Right wall', ['a']],
+    ])
+  })
+
+  it('leaves out walls with nothing on them, and gives one run for a one-wall project', () => {
+    expect(wallRuns([part('a')], room(true, true)).map((r) => r.wall)).toEqual(['back'])
+    expect(wallRuns([part('a', 'left')], room(true, false)).map((r) => r.wall)).toEqual(['left'])
+    expect(wallRuns([], room(false, false))).toEqual([])
   })
 })

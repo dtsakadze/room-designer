@@ -24,26 +24,21 @@ type CutListFormat = {
   boardName: (board: BoardKey) => string
 }
 
-/**
- * The cut list as CSV rows, one per row of the panel: which section or drawer
- * it's in, the part, how many, its size, its board, whether the grain runs
- * along its length, and how many of its edges along the length and along the
- * width are banded.
- */
-export function cutListCsv(groups: CutListGroup[], { num, unit, boardName }: CutListFormat) {
-  const header = [
-    'Section',
-    'Part',
-    'Quantity',
-    `Length (${unit})`,
-    `Width (${unit})`,
-    `Thickness (${unit})`,
-    'Board',
-    'Grain along length',
-    'Banded length edges',
-    'Banded width edges',
-  ]
-  const rows = groups.flatMap((group) => {
+const CUT_LIST_HEADER = (unit: string) => [
+  'Section',
+  'Part',
+  'Quantity',
+  `Length (${unit})`,
+  `Width (${unit})`,
+  `Thickness (${unit})`,
+  'Board',
+  'Grain along length',
+  'Banded length edges',
+  'Banded width edges',
+]
+
+function cutListRows(groups: CutListGroup[], { num, boardName }: CutListFormat) {
+  return groups.flatMap((group) => {
     const section = group.drawers
       ? `${group.drawers.count === 1 ? 'Drawer' : `${group.drawers.count} drawers`}, front ${num(group.drawers.width)} × ${num(group.drawers.height)}`
       : (CUT_LIST_SECTIONS.find((candidate) => candidate.id === group.section)?.title ?? '')
@@ -60,7 +55,24 @@ export function cutListCsv(groups: CutListGroup[], { num, unit, boardName }: Cut
       row.bands.width,
     ])
   })
-  return toCsv([header, ...rows])
+}
+
+/**
+ * The cut list as CSV rows, one per row of the panel: which section or drawer
+ * it's in, the part, how many, its size, its board, whether the grain runs
+ * along its length, and how many of its edges along the length and along the
+ * width are banded.
+ */
+export function cutListCsv(groups: CutListGroup[], format: CutListFormat) {
+  return toCsv([CUT_LIST_HEADER(format.unit), ...cutListRows(groups, format)])
+}
+
+/** The cut list of a room with several walls, with the wall each row is for as its first column. */
+export function cutListCsvByWall(runs: { label: string; groups: CutListGroup[] }[], format: CutListFormat) {
+  return toCsv([
+    ['Wall', ...CUT_LIST_HEADER(format.unit)],
+    ...runs.flatMap((run) => cutListRows(run.groups, format).map((row) => [run.label, ...row])),
+  ])
 }
 
 /** The hardware list as CSV rows: what to buy, how many, and in what (pairs or pieces). */
@@ -71,5 +83,18 @@ export function hardwareCsv(rows: HardwareRow[], len: (mm: number) => string) {
       const { name, unit } = describeHardware(row, len)
       return [name, row.quantity, unit]
     }),
+  ])
+}
+
+/** The hardware list of a room with several walls, with the wall as the first column. */
+export function hardwareCsvByWall(runs: { label: string; rows: HardwareRow[] }[], len: (mm: number) => string) {
+  return toCsv([
+    ['Wall', 'Item', 'Quantity', 'Unit'],
+    ...runs.flatMap((run) =>
+      run.rows.map((row) => {
+        const { name, unit } = describeHardware(row, len)
+        return [run.label, name, row.quantity, unit]
+      }),
+    ),
   ])
 }

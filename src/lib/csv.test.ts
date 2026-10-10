@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
-import { cutListCsv, hardwareCsv, toCsv } from './csv'
+import { cutListCsv, cutListCsvByWall, hardwareCsv, hardwareCsvByWall, toCsv } from './csv'
 import { cutList, hardwareList } from './cutList'
 import { DEFAULT_THICKNESS, boardName } from './defaults'
 import { normalizePiece } from './geometry'
@@ -48,5 +48,45 @@ describe('CSV', () => {
       '"Drawer runners, standard, 500 mm",1,pairs',
       'Handles or knobs,1,pcs',
     ])
+  })
+})
+
+describe('CSV by wall', () => {
+  const format = {
+    num: (mm: number) => formatNumber(mm, 'mm'),
+    unit: 'mm',
+    boardName: (board: Parameters<typeof boardName>[0]) => boardName(board, {}),
+  }
+  const back = [piece('a', 'shelf', { width: 564 }), piece('b', 'shelf', { width: 564 })]
+  const left = [piece('c', 'vertical', { width: 18, wall: 'left' })]
+
+  it('puts the wall first on every cut list row, and keeps the walls apart', () => {
+    const csv = cutListCsvByWall(
+      [
+        { label: 'Back wall', groups: cutList(back, thickness) },
+        { label: 'Left wall', groups: cutList(left, thickness) },
+      ],
+      format,
+    )
+    const rows = lines(csv).map((line) => line.split(','))
+    expect(rows[0].slice(0, 3)).toEqual(['Wall', 'Section', 'Part'])
+    expect(rows.slice(1).map((row) => [row[0], row[2], row[3]])).toEqual([
+      ['Back wall', 'Adjustable shelf', '2'],
+      ['Left wall', 'Side panel', '1'],
+    ])
+  })
+
+  it('puts the wall first on every hardware row', () => {
+    const csv = hardwareCsvByWall(
+      [
+        { label: 'Back wall', rows: hardwareList([piece('r', 'rod', { width: 1000, height: 25 })], thickness) },
+        { label: 'Left wall', rows: hardwareList([piece('r2', 'rod', { width: 800, height: 25, wall: 'left' })], thickness) },
+      ],
+      (mm) => `${mm}`,
+    )
+    const rows = lines(csv).map((line) => line.split(','))
+    expect(rows[0]).toEqual(['Wall', 'Item', 'Quantity', 'Unit'])
+    expect(rows.filter((row) => row[0] === 'Left wall').length).toBeGreaterThan(0)
+    expect(rows.slice(1).every((row) => ['Back wall', 'Left wall'].includes(row[0]))).toBe(true)
   })
 })

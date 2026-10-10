@@ -52,6 +52,17 @@ export const wallOf = (item: { wall?: SideWall }): Wall => item.wall ?? 'back'
 /** The walls in use, in plan order. The back wall always is. */
 export const activeWalls = (room: Room) => WALLS.filter((wall) => wall === 'back' || room[wall])
 
+/**
+ * The parts of each wall that has any, in plan order, with the wall's name:
+ * what to build and carry one run at a time. Walls with nothing on them are
+ * left out.
+ */
+export function wallRuns(pieces: Piece[], room: Room): { wall: Wall; label: string; pieces: Piece[] }[] {
+  return activeWalls(room)
+    .map((wall) => ({ wall, label: WALL_LABELS[wall], pieces: pieces.filter((piece) => wallOf(piece) === wall) }))
+    .filter((run) => run.pieces.length > 0)
+}
+
 /** Whether the room has more than the back wall: an L or a U. */
 export const hasSideWalls = (room: Room) => room.left || room.right
 
