@@ -39,6 +39,27 @@ export function handleOutsets(piece: Rect, box: number) {
   }
 }
 
+/**
+ * Resize with the arrow keys: right and up grow the part, left and down shrink
+ * it, by `step`. The left and bottom edges stay where they are, and a part
+ * never gets smaller than `MIN_SIZE`. Null for any other key.
+ */
+export function resizeByKey(origin: Rect, key: string, step: number): Rect | null {
+  const { x, y, width, height } = origin
+  switch (key) {
+    case 'ArrowRight':
+      return { x, y, width: width + step, height }
+    case 'ArrowLeft':
+      return { x, y, width: Math.max(MIN_SIZE, width - step), height }
+    case 'ArrowUp':
+      return { x, y, width, height: height + step }
+    case 'ArrowDown':
+      return { x, y, width, height: Math.max(MIN_SIZE, height - step) }
+    default:
+      return null
+  }
+}
+
 export const handleKey = (handle: Handle) => `${handle.hx}:${handle.hy}`
 
 export function handleCursor({ hx, hy }: Handle) {

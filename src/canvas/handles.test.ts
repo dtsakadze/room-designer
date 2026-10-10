@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HANDLES, MIN_SIZE, handleCursor, handleKey, handleOutsets, resizePiece } from './handles'
+import { HANDLES, MIN_SIZE, handleCursor, handleKey, handleOutsets, resizeByKey, resizePiece } from './handles'
 
 const rect = { x: 0, y: 100, width: 500, height: 300 }
 const exact = (mm: number) => mm
@@ -43,5 +43,20 @@ describe('handles', () => {
 
   it('pushes handles outside a board thinner than they are', () => {
     expect(handleOutsets({ x: 0, y: 0, width: 18, height: 2000 }, 10)).toEqual({ x: 4, y: 0 })
+  })
+})
+
+describe('resizeByKey', () => {
+  it('grows to the right and up, shrinks from the right and top, keeping the left and bottom edges', () => {
+    expect(resizeByKey(rect, 'ArrowRight', 10)).toEqual({ x: 0, y: 100, width: 510, height: 300 })
+    expect(resizeByKey(rect, 'ArrowLeft', 10)).toEqual({ x: 0, y: 100, width: 490, height: 300 })
+    expect(resizeByKey(rect, 'ArrowUp', 100)).toEqual({ x: 0, y: 100, width: 500, height: 400 })
+    expect(resizeByKey(rect, 'ArrowDown', 100)).toEqual({ x: 0, y: 100, width: 500, height: 200 })
+  })
+
+  it('never gets smaller than the minimum, and ignores other keys', () => {
+    expect(resizeByKey({ ...rect, width: 15 }, 'ArrowLeft', 100)?.width).toBe(MIN_SIZE)
+    expect(resizeByKey({ ...rect, height: 15 }, 'ArrowDown', 100)?.height).toBe(MIN_SIZE)
+    expect(resizeByKey(rect, 'a', 10)).toBeNull()
   })
 })

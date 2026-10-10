@@ -51,6 +51,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
     ...SHORTCUTS.slice(0, -3),
     ['← → ↑ ↓', `Nudge the selected parts ${len(SNAP)} (Front view); an adjustable shelf moves one hole up or down`],
     ['⇧ + arrows', `Nudge ${len(SNAP * 10)}`],
+    [`${MULTI_SELECT_KEY} + arrows`, `Resize the selected part ${len(SNAP)} (Front view): → wider, ← narrower, ↑ taller, ↓ shorter; add ⇧ for ${len(SNAP * 10)}. A box's panel resizes the whole box`],
     ...SHORTCUTS.slice(-3),
   ]
   return (

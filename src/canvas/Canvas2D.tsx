@@ -35,7 +35,7 @@ import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
 import { DoorSwings } from './DoorSwings'
 import { doorSwings, swingBounds, swingConflicts } from '../lib/swing'
 import type { Handle, Rect } from './handles'
-import { resizePiece } from './handles'
+import { resizeByKey, resizePiece } from './handles'
 import {
   VIEWS,
   type ViewName,
@@ -592,6 +592,22 @@ export function Canvas2D() {
         return
       }
 
+      // ⌘ (Ctrl) with an arrow resizes the selected part: the right and top edges move.
+      // A box's panel resizes the whole box. Also stops the browser's own ⌘← (back).
+      if (hasModifier(event) && !event.altKey && event.key.startsWith('Arrow')) {
+        event.preventDefault()
+        if (!isFront || selection.length !== 1) return
+        const { pieces: all, boxes } = useDesignStore.getState()
+        const piece = all.find((p) => p.id === selectedId)
+        if (!piece) return
+        const box = piece.boxId ? boxes.find((b) => b.id === piece.boxId) : undefined
+        const resized = resizeByKey(box ?? piece, event.key, event.shiftKey ? SNAP * 10 : SNAP)
+        if (!resized) return
+        if (box) updateBox(box.id, resized)
+        else updatePiece(selectedId, resized)
+        return
+      }
+
       const step = event.shiftKey ? SNAP * 10 : SNAP
       const nudge: Record<string, { x?: number; y?: number }> = {
         ArrowLeft: { x: -step },
@@ -621,7 +637,7 @@ export function Canvas2D() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, movePieces, select, measuring])
+  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, updateBox, movePieces, select, measuring])
 
   /** Hiding doors lets go of any that are selected, so nothing unseen can be deleted or moved. */
   const toggleDoors = () => {
