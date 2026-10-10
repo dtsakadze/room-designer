@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Templates: Projects → New project now asks what to start from: Blank, or a Two-door wardrobe, Sliding-door wardrobe, Bookshelf, Closet with drawers or Hall unit, each with a small preview. A template opens as a new project that you can change like any other, and nothing in it overlaps, sags or is too close to a door.
+
 - Install it and use it offline: after the first visit Boardcut saves itself on your device, so it opens without a connection, and your browser can install it as an app (Chrome and Edge show an install button in the address bar; on an iPhone use Share, then Add to Home Screen). A new version is picked up the next time you open it with a connection, and your projects stay as they were.
 
 ## 1.10.0 — 2026-10-10

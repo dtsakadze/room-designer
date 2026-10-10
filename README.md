@@ -15,6 +15,7 @@ A browser tool for designing wardrobes, closets and shelving: a flat 2D front vi
 - Printable drawings: front, side and top views to scale with dimensions, plus the cut list, on A4 or A3 (or as a PDF); any view also exports as SVG or PNG.
 - Each board has a material (chipboard, MDF, plywood or solid wood). Shelves that span further than they can without sagging are outlined in orange and explained in the Selected panel, and hanging rods that are too long get centre support brackets in the hardware list; the limits are rules of thumb for clothes and folded things.
 - Adjustable shelves sit on shelf-pin holes (32 mm apart by default, set per project), so they always land where a hole can be drilled; fixed shelves go anywhere.
+- Start a new project blank or from a template (two-door and sliding-door wardrobes, a bookshelf, a closet with drawers, a hall unit).
 - Multiple projects, autosaved in the browser. Save a project to a JSON file, or open one.
 - Select several parts (⌘/Ctrl-drag a selection rectangle, or ⌘/Ctrl-click) to move, nudge, colour or delete them together, and set a colour for new parts.
 - Undo/redo and keyboard shortcuts (shown on the buttons and in the sidebar).

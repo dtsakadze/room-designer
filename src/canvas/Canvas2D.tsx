@@ -957,7 +957,7 @@ export function Canvas2D() {
       </div>
 
       {allPieces.length === 0 ? (
-        <p className="viewport-hint">Pick a component from the sidebar to start building.</p>
+        <p className="viewport-hint">Pick a component from the sidebar to start building, or start from a template under Projects.</p>
       ) : (
         !isFront && (
           <p className="viewport-hint">

@@ -1318,3 +1318,43 @@ button kbd {
   border: 1px solid #9c8f6d;
   border-radius: 50%;
 }
+
+.template-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+}
+
+.template-button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  text-align: left;
+}
+
+.template-button:hover {
+  background: #f5f8fe;
+}
+
+.template-button .project-thumbnail {
+  flex: none;
+}
+
+.template-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.template-text strong {
+  font-size: 14px;
+}

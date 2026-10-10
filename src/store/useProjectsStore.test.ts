@@ -1,3 +1,4 @@
+import { TEMPLATES, projectNameFor } from '../lib/templates'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_THICKNESS } from '../lib/defaults'
 import { FORMAT_VERSION, toProjectData } from '../lib/project'
@@ -196,6 +197,20 @@ describe('managing projects', () => {
     await projects().createProject({ name: 'From file', design: design(2) })
     expect(projects().projects[0].name).toBe('From file')
     expect(open().pieces).toHaveLength(2)
+  })
+
+  it('creates a project from a template: its parts, boxes and unit depth, under its name', async () => {
+    const { projects, design: open } = await start()
+    const template = TEMPLATES.find((t) => t.id === 'bookshelf')!
+    const built = template.build()
+    await projects().createProject({ name: projectNameFor(template, []), design: built })
+    expect(projects().projects[0].name).toBe('Bookshelf')
+    expect(open().pieces).toHaveLength(built.pieces.length)
+    expect(open().boxes).toHaveLength(1)
+    expect(open().unitDepth).toBe(300)
+    // Editing it leaves the template alone.
+    open().addPiece('shelf')
+    expect(template.build().pieces).toHaveLength(built.pieces.length)
   })
 
   it('switches projects, saving the open one first', async () => {

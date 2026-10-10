@@ -15,14 +15,19 @@ export function ProjectThumbnail({
   pieces: all,
   room,
   colors,
+  size = SIZE,
 }: {
   pieces: Piece[]
   room: Room
   colors: DesignColors
+  /** Width and height in pixels. */
+  size?: number
 }) {
   const pieces = unfold(all, room)
   const bounds = contentBounds(pieces)
-  if (!bounds) return <div className="project-thumbnail project-thumbnail-empty" />
+  if (!bounds) {
+    return <div className="project-thumbnail project-thumbnail-empty" style={{ width: size, height: size }} />
+  }
 
   const margin = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * 0.06
   const x = bounds.minX - margin
@@ -35,8 +40,8 @@ export function ProjectThumbnail({
   return (
     <svg
       className="project-thumbnail"
-      width={SIZE}
-      height={SIZE}
+      width={size}
+      height={size}
       viewBox={`${x} ${y} ${w} ${h}`}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden

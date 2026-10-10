@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { useDesignStore } from '../store/useDesignStore'
 import { EditableName } from './EditableName'
 import { ProjectThumbnail } from './ProjectThumbnail'
+import { TEMPLATES, projectNameFor } from '../lib/templates'
+import { DEFAULT_ROOM } from '../lib/room'
 
 /** Every project in this browser: open, create, rename and delete. */
 export function ProjectsPanel({ onClose }: { onClose: () => void }) {
@@ -16,6 +18,10 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
     useProjectsStore.getState()
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  // Choosing what to start the new project from.
+  const [choosing, setChoosing] = useState(false)
+  // Built once: each template is worked out only when someone looks at the picker.
+  const templates = useMemo(() => (choosing ? TEMPLATES.map((template) => ({ template, project: template.build() })) : []), [choosing])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -29,23 +35,69 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
     <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
       <div className="projects-panel" role="dialog" aria-label="Projects">
         <header className="projects-header">
-          <h2>Projects</h2>
-          <button
-            type="button"
-            className="add-button"
-            onClick={async () => {
-              await createProject()
-              onClose()
-            }}
-          >
-            New project
-          </button>
+          <h2>{choosing ? 'New project' : 'Projects'}</h2>
+          {choosing ? (
+            <button type="button" className="add-button" onClick={() => setChoosing(false)}>
+              Back
+            </button>
+          ) : (
+            <button type="button" className="add-button" onClick={() => setChoosing(true)}>
+              New project
+            </button>
+          )}
           <button type="button" className="icon-button" aria-label="Close projects" onClick={onClose}>
             ×
           </button>
         </header>
 
-        <ul className="project-list">
+        {choosing && (
+          <ul className="template-list" aria-label="Start from">
+            <li>
+              <button
+                type="button"
+                className="template-button"
+                onClick={async () => {
+                  await createProject()
+                  onClose()
+                }}
+              >
+                <ProjectThumbnail pieces={[]} room={DEFAULT_ROOM} colors={{ boardColors: {}, edgeColors: {} }} size={72} />
+                <span className="template-text">
+                  <strong>Blank</strong>
+                  <span className="muted">Start with nothing and add parts yourself.</span>
+                </span>
+              </button>
+            </li>
+            {templates.map(({ template, project }) => (
+              <li key={template.id}>
+                <button
+                  type="button"
+                  className="template-button"
+                  onClick={async () => {
+                    await createProject({
+                      name: projectNameFor(template, projects.map((existing) => existing.name)),
+                      design: project,
+                    })
+                    onClose()
+                  }}
+                >
+                  <ProjectThumbnail
+                    pieces={project.pieces}
+                    room={project.room}
+                    colors={{ boardColors: project.boardColors ?? {}, edgeColors: project.edgeColors ?? {} }}
+                    size={72}
+                  />
+                  <span className="template-text">
+                    <strong>{template.name}</strong>
+                    <span className="muted">{template.description}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!choosing && <ul className="project-list">
           {projects.map((project) => {
             const isOpen = project.id === currentId
             return (
@@ -138,7 +190,7 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
               </li>
             )
           })}
-        </ul>
+        </ul>}
 
         <p className="hint">Projects are kept in this browser. Save to a file to back one up or move it.</p>
       </div>
