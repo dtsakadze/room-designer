@@ -79,24 +79,46 @@ export const adjacentWalls = (wall: Wall, room: Room): Wall[] =>
 /** A 3D box in room coordinates, in mm. */
 export type RoomBox = { min: [number, number, number]; max: [number, number, number] }
 
+/** A direction or a point on the floor plan: the room's x and z. */
+type PlanVector = [x: number, z: number]
+
+/**
+ * How each wall's own coordinates turn into the room's: `along` the wall
+ * (its front view's x) and `out` from it into the room, each a direction in
+ * the room's x and z, from `origin` (the wall's middle, at its face). Walls
+ * only turn by right angles, so the room's axes stay lined up with them.
+ */
+export const WALL_FRAMES: Record<Wall, { along: PlanVector; out: PlanVector; origin: (room: Room) => PlanVector }> = {
+  back: { along: [1, 0], out: [0, 1], origin: () => [0, 0] },
+  left: { along: [0, -1], out: [1, 0], origin: (room) => [-room.width / 2, room.depth / 2] },
+  right: { along: [0, 1], out: [-1, 0], origin: (room) => [room.width / 2, room.depth / 2] },
+}
+
+/** A spot on a wall, `along` it and `out` from it, as the room's x and z. */
+export function toRoom(wall: Wall, along: number, out: number, room: Room): PlanVector {
+  const { along: a, out: o, origin } = WALL_FRAMES[wall]
+  const [x, z] = origin(room)
+  return [x + a[0] * along + o[0] * out, z + a[1] * along + o[1] * out]
+}
+
+/** The inverse of `toRoom`: a spot in the room's x and z, as how far along and out from a wall it is. */
+function fromRoom(wall: Wall, [x, z]: PlanVector, room: Room): [along: number, out: number] {
+  const { along: a, out: o, origin } = WALL_FRAMES[wall]
+  const [dx, dz] = [x - origin(room)[0], z - origin(room)[1]]
+  return [a[0] * dx + a[1] * dz, o[0] * dx + o[1] * dz]
+}
+
 /**
  * Where a piece is in the room, given where it starts front to back (`z`, from
- * `wallDepthStart`). Walls only turn by right angles, so the box stays aligned
- * with the room's axes.
+ * `wallDepthStart`).
  */
 export function roomBox(piece: Piece, z: number, room: Room): RoomBox {
-  const [x0, x1] = [piece.x, piece.x + piece.width]
-  const [y0, y1] = [piece.y, piece.y + piece.height]
-  const [z0, z1] = [z, z + piece.depth]
-  const halfWidth = room.width / 2
-  const halfDepth = room.depth / 2
-  switch (wallOf(piece)) {
-    case 'back':
-      return { min: [x0, y0, z0], max: [x1, y1, z1] }
-    case 'left':
-      return { min: [-halfWidth + z0, y0, halfDepth - x1], max: [-halfWidth + z1, y1, halfDepth - x0] }
-    case 'right':
-      return { min: [halfWidth - z1, y0, halfDepth + x0], max: [halfWidth - z0, y1, halfDepth + x1] }
+  const wall = wallOf(piece)
+  const [ax, az] = toRoom(wall, piece.x, z, room)
+  const [bx, bz] = toRoom(wall, piece.x + piece.width, z + piece.depth, room)
+  return {
+    min: [Math.min(ax, bx), piece.y, Math.min(az, bz)],
+    max: [Math.max(ax, bx), piece.y + piece.height, Math.max(az, bz)],
   }
 }
 
@@ -106,21 +128,10 @@ export function roomBox(piece: Piece, z: number, room: Room): RoomBox {
  * Used to show the neighbouring walls' parts in a corner.
  */
 export function fromWall(box: RoomBox, wall: Wall, room: Room) {
-  const halfWidth = room.width / 2
-  const halfDepth = room.depth / 2
-  const distance =
-    wall === 'back'
-      ? box.min[2]
-      : wall === 'left'
-        ? box.min[0] + halfWidth
-        : halfWidth - box.max[0]
-  const [x0, x1] =
-    wall === 'back'
-      ? [box.min[0], box.max[0]]
-      : wall === 'left'
-        ? [halfDepth - box.max[2], halfDepth - box.min[2]]
-        : [box.min[2] - halfDepth, box.max[2] - halfDepth]
-  return { x: x0, y: box.min[1], width: x1 - x0, height: box.max[1] - box.min[1], distance }
+  const [a0, out0] = fromRoom(wall, [box.min[0], box.min[2]], room)
+  const [a1, out1] = fromRoom(wall, [box.max[0], box.max[2]], room)
+  const x = Math.min(a0, a1)
+  return { x, y: box.min[1], width: Math.max(a0, a1) - x, height: box.max[1] - box.min[1], distance: Math.min(out0, out1) }
 }
 
 /**

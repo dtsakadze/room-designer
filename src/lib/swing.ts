@@ -1,7 +1,7 @@
 import type { Piece, Room, Thickness, Wall } from '../types'
 import { DOOR_OPEN_ANGLE } from './defaults'
 import { type Rect, depthSpan, doorFronts, wallDepthStart } from './geometry'
-import { hasSideWalls, roomBox, wallOf } from './room'
+import { hasSideWalls, roomBox, toRoom, wallOf } from './room'
 
 /**
  * A point in the top view, in the same design mm as the room plan: x across
@@ -29,17 +29,10 @@ export type DoorSwing = {
   angle: number
 }
 
-/** Where a spot on a wall's unit is in the top view: `along` the wall in its front-view x, `out` from it. */
+/** Where a spot on a wall's unit is in the top view (whose y is the room's z, turned round): `along` the wall in its front-view x, `out` from it. */
 function planPoint(wall: Wall, along: number, out: number, room: Room): PlanPoint {
-  const [halfWidth, halfDepth] = [room.width / 2, room.depth / 2]
-  switch (wall) {
-    case 'back':
-      return { x: along, y: -out }
-    case 'left':
-      return { x: -halfWidth + out, y: -(halfDepth - along) }
-    case 'right':
-      return { x: halfWidth - out, y: -(halfDepth + along) }
-  }
+  const [x, z] = toRoom(wall, along, out, room)
+  return { x, y: -z }
 }
 
 /**

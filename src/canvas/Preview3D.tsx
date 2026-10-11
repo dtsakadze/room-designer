@@ -5,7 +5,7 @@ import { drawerParts } from '../lib/drawer'
 import { bandsOf, grainOf } from '../lib/edges'
 import { roomAxisOf } from '../lib/grain'
 import { pieceSolids, wallDepthStart } from '../lib/geometry'
-import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
+import { type RoomBox, WALL_FRAMES, hasSideWalls, roomBox, wallOf } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
@@ -171,7 +171,7 @@ export default function Preview3D() {
         const { board, bands, grain } = boards[index] ?? boards[0]
         // Wood grain on the boards marked as having one, along the way each part's grain runs.
         const grainAxis = board && grain && grainedBoards.includes(board) ? roomAxisOf(grain, wallOf(piece)) : null
-        current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, room, grainAxis)))
+        current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, grainAxis)))
       })
     }
     current.invalidate()
@@ -265,31 +265,27 @@ function finishOf(
   board: BoardKey | null,
   bands: Edge[],
   colors: DesignColors,
-  room: Room,
   grainAxis: number | null,
 ): Finish {
   const face = faceColor(piece, colors, board)
   const edge = (board && colors.edgeColors[board]) || null
   if (!edge || bands.length === 0) return { face, edge: null, bandedFaces: [], grainAxis }
-  const faces = boxFaces(piece, room)
+  const faces = boxFaces(piece)
   return { face, edge, bandedFaces: bands.map((band) => faces[band]), grainAxis }
 }
 
 /**
  * Which face of a `BoxGeometry` (its material groups: +x, -x, +y, -y, +z, -z)
- * each edge of a part faces in the room, worked out from how `roomBox` turns
- * a part on its wall: a step right along the wall, and a step out from it.
+ * each edge of a part faces in the room: its right edge faces along its wall,
+ * its front edge out from it.
  */
-function boxFaces(piece: Piece, room: Room): Record<Edge, number> {
-  const probe = { ...piece, x: 0, y: 0, width: 1, height: 1, depth: 1 }
-  const base = roomBox(probe, 0, room)
-  const face = (moved: RoomBox) => {
-    const axis = [0, 1, 2].find((a) => moved.min[a] !== base.min[a])!
-    return axis * 2 + (moved.min[axis] > base.min[axis] ? 0 : 1)
-  }
+function boxFaces(piece: Piece): Record<Edge, number> {
+  const { along, out } = WALL_FRAMES[wallOf(piece)]
+  // A direction on the floor plan is along the room's x or z.
+  const face = ([x, z]: [number, number]) => (x !== 0 ? (x > 0 ? 0 : 1) : z > 0 ? 4 : 5)
   const opposite = (index: number) => index ^ 1
-  const right = face(roomBox({ ...probe, x: 1 }, 0, room))
-  const front = face(roomBox(probe, 1, room))
+  const right = face(along)
+  const front = face(out)
   return { right, left: opposite(right), top: 2, bottom: 3, front, back: opposite(front) }
 }
 
