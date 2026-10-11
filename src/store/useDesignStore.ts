@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { BoardKey, BoardMaterial, SheetSetup, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
-import { contentBounds, normalizePiece } from '../lib/geometry'
+import { type Rect, contentBounds, normalizePiece } from '../lib/geometry'
 import { BOARDS, MAX_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { DESIGN_KEYS, type Design, type ProjectData, clampUnitDepth, cleanBoardName, designOf, newDesign } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
@@ -71,6 +71,18 @@ type DesignState = Design & {
    * their places relative to it.
    */
   movePieces: (ids: string[], dx: number, dy: number) => void
+  /**
+   * Nudges the selection (the arrow keys): several parts move together, one
+   * part on its own. With `byHoles`, an adjustable shelf steps up or down a
+   * shelf-pin hole at a time, since it only sits on one.
+   */
+  nudgeSelection: (dx: number, dy: number, byHoles?: boolean) => void
+  /**
+   * Resizes the one selected part with `resize` (⌘ + an arrow key), or its
+   * whole box when it's a box's panel. Nothing happens for several parts or
+   * when `resize` gives null.
+   */
+  resizeSelection: (resize: (rect: Rect) => Rect | null) => void
   duplicatePiece: (id: string) => void
   select: (id: string | null) => void
   /** Adds a part to the selection, or takes it out if it's already in (⌘-click). */
@@ -495,6 +507,30 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = pieces
           state.boxes = nextBoxes
         }),
+
+      nudgeSelection: (dx, dy, byHoles = false) => {
+        const { selectedIds, pieces, holePitch, movePieces, updatePiece } = get()
+        if (selectedIds.length > 1) {
+          movePieces(selectedIds, dx, dy)
+          return
+        }
+        const piece = pieces.find((candidate) => candidate.id === selectedIds[0])
+        if (!piece) return
+        const step = dy && byHoles && isAdjustable(piece) ? Math.sign(dy) * holePitch : dy
+        updatePiece(piece.id, { x: piece.x + dx, y: piece.y + step })
+      },
+
+      resizeSelection: (resize) => {
+        const { selectedIds, pieces, boxes, updatePiece, updateBox } = get()
+        if (selectedIds.length !== 1) return
+        const piece = pieces.find((candidate) => candidate.id === selectedIds[0])
+        if (!piece) return
+        const box = piece.boxId ? boxes.find((candidate) => candidate.id === piece.boxId) : undefined
+        const resized = resize(box ?? piece)
+        if (!resized) return
+        if (box) updateBox(box.id, resized)
+        else updatePiece(piece.id, resized)
+      },
 
       duplicatePiece: (id) =>
         set((state) => {

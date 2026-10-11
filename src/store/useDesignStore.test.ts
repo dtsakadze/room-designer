@@ -364,6 +364,17 @@ describe('adjustable shelves', () => {
     expect(byId(shelf).y).toBe(544)
   })
 
+  it('step a hole at a time when nudged, or by the given distance when asked', () => {
+    const { shelf } = shelfInBox()
+    store().select(shelf)
+    store().nudgeSelection(0, 1, true)
+    expect(byId(shelf).y).toBe(544)
+    store().nudgeSelection(0, -1, true)
+    expect(byId(shelf).y).toBe(512)
+    store().nudgeSelection(10, 0, true)
+    expect(byId(shelf).x).toBe(store().boxes[0].x + 28)
+  })
+
   it('land on this project’s holes when pasted from one with other spacing', () => {
     const { box, shelf } = shelfInBox()
     store().selectMany([...store().pieces.filter((piece) => piece.boxId === box.id).map((piece) => piece.id), shelf])
@@ -1059,5 +1070,37 @@ describe('blocks', () => {
     const count = store().pieces.length
     store().insertBlock(emptyProject())
     expect(store().pieces).toHaveLength(count)
+  })
+})
+
+describe('nudging and resizing the selection', () => {
+  beforeEach(() => store().loadProject(emptyProject()))
+
+  it('nudges one part, or several together', () => {
+    store().addPiece('vertical')
+    const a = selected()!
+    store().nudgeSelection(5, 10)
+    expect(byId(a)).toMatchObject({ y: 10 })
+    store().addPiece('vertical')
+    const b = selected()!
+    const [ax, bx] = [byId(a).x, byId(b).x]
+    store().selectMany([a, b])
+    store().nudgeSelection(-5, 0)
+    expect([byId(a).x, byId(b).x]).toEqual([ax - 5, bx - 5])
+  })
+
+  it('resizes one part, or a panel’s whole box, and nothing with several selected', () => {
+    store().addPiece('shelf')
+    const shelf = selected()!
+    const width = byId(shelf).width
+    store().resizeSelection((rect) => ({ ...rect, width: rect.width + 10 }))
+    expect(byId(shelf).width).toBe(width + 10)
+    store().addBox()
+    const box = store().boxes[0]
+    store().resizeSelection((rect) => ({ ...rect, height: rect.height + 20 }))
+    expect(store().boxes[0].height).toBe(box.height + 20)
+    store().selectMany([shelf, `${box.id}:left`])
+    store().resizeSelection((rect) => ({ ...rect, width: 1 }))
+    expect(byId(shelf).width).toBe(width + 10)
   })
 })

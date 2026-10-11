@@ -25,7 +25,6 @@ import { ExportViewMenu } from './ExportViewMenu'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { fileBase } from '../lib/projectFile'
 import { UNITS } from '../lib/units'
-import { isAdjustable } from '../lib/shelfPins'
 import { CeilingLine } from './CeilingLine'
 import { GrainPatterns } from './GrainPatterns'
 import { GridLayer } from './GridLayer'
@@ -181,6 +180,8 @@ export function Canvas2D() {
   const removePieces = useDesignStore((s) => s.removePieces)
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const movePieces = useDesignStore((s) => s.movePieces)
+  const nudgeSelection = useDesignStore((s) => s.nudgeSelection)
+  const resizeSelection = useDesignStore((s) => s.resizeSelection)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const beginBatch = useDesignStore((s) => s.beginBatch)
   const endBatch = useDesignStore((s) => s.endBatch)
@@ -666,18 +667,10 @@ export function Canvas2D() {
       }
 
       // ⌘ (Ctrl) with an arrow resizes the selected part: the right and top edges move.
-      // A box's panel resizes the whole box. Also stops the browser's own ⌘← (back).
+      // Also stops the browser's own ⌘← (back).
       if (hasModifier(event) && !event.altKey && event.key.startsWith('Arrow')) {
         event.preventDefault()
-        if (!isFront || selection.length !== 1) return
-        const { pieces: all, boxes } = useDesignStore.getState()
-        const piece = all.find((p) => p.id === selectedId)
-        if (!piece) return
-        const box = piece.boxId ? boxes.find((b) => b.id === piece.boxId) : undefined
-        const resized = resizeByKey(box ?? piece, event.key, event.shiftKey ? SNAP * 10 : SNAP)
-        if (!resized) return
-        if (box) updateBox(box.id, resized)
-        else updatePiece(selectedId, resized)
+        if (isFront) resizeSelection((rect) => resizeByKey(rect, event.key, event.shiftKey ? SNAP * 10 : SNAP))
         return
       }
 
@@ -693,24 +686,13 @@ export function Canvas2D() {
       if (!delta || !isFront) return
 
       event.preventDefault()
-      if (selection.length > 1) {
-        movePieces(selection, delta.x ?? 0, delta.y ?? 0)
-        return
-      }
-      const { pieces: all, holePitch: pitch } = useDesignStore.getState()
-      const piece = all.find((p) => p.id === selectedId)
-      if (!piece) return
-      // An adjustable shelf only sits on a hole, so it steps a hole at a time.
-      const dy = delta.y && isAdjustable(piece) && !event.shiftKey ? Math.sign(delta.y) * pitch : (delta.y ?? 0)
-      updatePiece(selectedId, {
-        x: piece.x + (delta.x ?? 0),
-        y: piece.y + dy,
-      })
+      // A big step (⇧) moves an adjustable shelf by the grid, not by holes.
+      nudgeSelection(delta.x ?? 0, delta.y ?? 0, !event.shiftKey)
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePieces, duplicatePiece, updatePiece, updateBox, movePieces, select, measuring])
+  }, [selectedId, isFront, removePieces, duplicatePiece, nudgeSelection, resizeSelection, select, measuring])
 
   /** Hiding doors lets go of any that are selected, so nothing unseen can be deleted or moved. */
   const toggleDoors = () => {
