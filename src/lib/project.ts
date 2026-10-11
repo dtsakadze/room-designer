@@ -181,44 +181,93 @@ export type ProjectData = {
   room: Room
 }
 
-export function toProjectData(
-  design: {
-    pieces: Piece[]
-    boxes?: Box[]
-    thickness: Thickness
-    boardNames?: BoardNames
-    boardMaterials?: BoardMaterials
-    joints?: JointType
-    boardSheets?: BoardSheets
-    grainedBoards?: BoardKey[]
-    holePitch?: number
-    boardColors?: BoardColors
-    edgeColors?: BoardColors
-    unitDepth?: number
-    defaultColor?: string | null
-    room?: Room
-  },
-  name?: string,
-): ProjectData {
-  const boardNames = design.boardNames ?? {}
+/**
+ * A design as the app keeps it while it's open: every setting there, the
+ * defaults too. A save holds the same, minus whatever is at its default.
+ */
+export type Design = {
+  pieces: Piece[]
+  boxes: Box[]
+  thickness: Thickness
+  boardNames: BoardNames
+  boardMaterials: BoardMaterials
+  boardSheets: BoardSheets
+  joints: JointType
+  grainedBoards: BoardKey[]
+  holePitch: number
+  boardColors: BoardColors
+  edgeColors: BoardColors
+  unitDepth: number
+  /** Null for the standard look. */
+  defaultColor: string | null
+  room: Room
+}
+
+/** A design with no parts and every setting at its default. */
+export const newDesign = (): Design => ({
+  pieces: [],
+  boxes: [],
+  thickness: DEFAULT_THICKNESS,
+  boardNames: {},
+  boardMaterials: {},
+  boardSheets: {},
+  joints: 'screws',
+  grainedBoards: [],
+  holePitch: DEFAULT_HOLE_PITCH,
+  boardColors: {},
+  edgeColors: {},
+  unitDepth: DEFAULT_UNIT_DEPTH,
+  defaultColor: null,
+  room: DEFAULT_ROOM,
+})
+
+/** Every key of a `Design`. */
+export const DESIGN_KEYS = Object.keys(newDesign()) as (keyof Design)[]
+
+/**
+ * A whole design from some of it, such as a save that leaves out settings at
+ * their default: whatever is missing or undefined is at its default.
+ */
+export function designOf(values: Partial<Design>): Design {
+  const design = newDesign()
+  for (const key of DESIGN_KEYS) {
+    if (values[key] !== undefined) Object.assign(design, { [key]: values[key] })
+  }
+  return design
+}
+
+/** A design to save, with what it needs; anything left out is at its default. */
+export function toProjectData(design: Partial<Design> & Pick<Design, 'pieces' | 'thickness'>, name?: string): ProjectData {
   return {
     formatVersion: FORMAT_VERSION,
     savedAt: new Date().toISOString(),
     ...(name ? { name } : {}),
+    ...compact(designOf(design)),
+  }
+}
+
+/**
+ * A design as a save holds it: settings at their default are left out, so a
+ * save only says what was changed. The keys go in the same order every time.
+ */
+function compact(design: Design) {
+  const { boardNames, boardMaterials, boardSheets, joints, grainedBoards, boardColors, edgeColors, defaultColor } = design
+  const any = (map: object) => Object.keys(map).length > 0
+  return {
     thickness: design.thickness,
-    ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
-    ...(Object.keys(design.boardMaterials ?? {}).length > 0 ? { boardMaterials: design.boardMaterials } : {}),
-    ...(Object.keys(design.boardSheets ?? {}).length > 0 ? { boardSheets: design.boardSheets } : {}),
-    ...(design.joints && design.joints !== 'screws' ? { joints: design.joints } : {}),
-    ...(design.grainedBoards?.length ? { grainedBoards: design.grainedBoards } : {}),
-    holePitch: design.holePitch ?? DEFAULT_HOLE_PITCH,
-    ...(Object.keys(design.boardColors ?? {}).length > 0 ? { boardColors: design.boardColors } : {}),
-    ...(Object.keys(design.edgeColors ?? {}).length > 0 ? { edgeColors: design.edgeColors } : {}),
-    unitDepth: design.unitDepth ?? DEFAULT_UNIT_DEPTH,
+    ...(any(boardNames) ? { boardNames } : {}),
+    ...(any(boardMaterials) ? { boardMaterials } : {}),
+    ...(any(boardSheets) ? { boardSheets } : {}),
+    ...(joints !== 'screws' ? { joints } : {}),
+    ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
+    holePitch: design.holePitch,
+    ...(any(boardColors) ? { boardColors } : {}),
+    ...(any(edgeColors) ? { edgeColors } : {}),
+    unitDepth: design.unitDepth,
     pieces: design.pieces,
-    boxes: design.boxes ?? [],
-    ...(design.defaultColor ? { defaultColor: design.defaultColor } : {}),
-    room: design.room ?? DEFAULT_ROOM,
+    boxes: design.boxes,
+    ...(defaultColor ? { defaultColor } : {}),
+    room: design.room,
   }
 }
 
@@ -290,13 +339,6 @@ function validate(data: Raw): ProjectData | null {
     front: board(stored.front) ?? body,
     drawer: board(stored.drawer) ?? body,
   }
-  const boardNames = readBoardNames(data.boardNames)
-  const boardMaterials = readBoardMaterials(data.boardMaterials)
-  const boardSheets = readBoardSheets(data.boardSheets)
-  const grainedBoards = readGrainedBoards(data.grainedBoards)
-  const boardColors = readBoardColors(data.boardColors)
-  const edgeColors = readBoardColors(data.edgeColors)
-
   const pieces = data.pieces.flatMap((raw): Piece[] => {
     if (!isRecord(raw) || typeof raw.id !== 'string' || !isKind(raw.kind)) return []
     const numbers = ['x', 'y', 'width', 'height', 'depth'] as const
@@ -395,20 +437,22 @@ function validate(data: Raw): ProjectData | null {
     formatVersion: FORMAT_VERSION,
     savedAt: typeof data.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
     ...(typeof data.name === 'string' && data.name.trim() ? { name: data.name.trim() } : {}),
-    thickness,
-    ...(Object.keys(boardNames).length > 0 ? { boardNames } : {}),
-    ...(Object.keys(boardMaterials).length > 0 ? { boardMaterials } : {}),
-    ...(Object.keys(boardSheets).length > 0 ? { boardSheets } : {}),
-    ...(data.joints === 'confirmat' || data.joints === 'cam' ? { joints: data.joints } : {}),
-    ...(grainedBoards.length > 0 ? { grainedBoards } : {}),
-    holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
-    ...(Object.keys(boardColors).length > 0 ? { boardColors } : {}),
-    ...(Object.keys(edgeColors).length > 0 ? { edgeColors } : {}),
-    unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
-    pieces: allPieces,
-    boxes: uniqueBoxes,
-    ...(isHexColor(data.defaultColor) ? { defaultColor: data.defaultColor } : {}),
-    room,
+    ...compact({
+      pieces: allPieces,
+      boxes: uniqueBoxes,
+      thickness,
+      boardNames: readBoardNames(data.boardNames),
+      boardMaterials: readBoardMaterials(data.boardMaterials),
+      boardSheets: readBoardSheets(data.boardSheets),
+      joints: data.joints === 'confirmat' || data.joints === 'cam' ? data.joints : 'screws',
+      grainedBoards: readGrainedBoards(data.grainedBoards),
+      holePitch: clampHolePitch(positive(data.holePitch) ?? DEFAULT_HOLE_PITCH),
+      boardColors: readBoardColors(data.boardColors),
+      edgeColors: readBoardColors(data.edgeColors),
+      unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
+      defaultColor: isHexColor(data.defaultColor) ? data.defaultColor : null,
+      room,
+    }),
   }
 }
 

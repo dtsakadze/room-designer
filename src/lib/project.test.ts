@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FORMAT_VERSION, opensIntact, readProject, toProjectData } from './project'
+import { FORMAT_VERSION, designOf, newDesign, opensIntact, readProject, toProjectData } from './project'
 import { DEFAULT_ROOM } from './room'
 import { MAX_LENGTH, MAX_PIECES, MAX_THICKNESS } from './defaults'
 import type { Piece } from '../types'
@@ -552,6 +552,36 @@ describe('readProject', () => {
     if (!result.ok) throw new Error("the edited save didn't open")
     expect(result.project.pieces).toHaveLength(count)
     expect(result.project.boardMaterials).toEqual({ back: 'mdf' })
+  })
+})
+
+describe('toProjectData and designOf', () => {
+  it('leaves settings at their default out of a save, and designOf puts them back', () => {
+    const saved = toProjectData({ pieces: [], thickness: newDesign().thickness })
+    expect(Object.keys(saved)).toEqual(['formatVersion', 'savedAt', 'thickness', 'holePitch', 'unitDepth', 'pieces', 'boxes', 'room'])
+    expect(designOf(saved)).toEqual(newDesign())
+  })
+
+  it('saves changed settings in the same key order as a read save, and opens them again', () => {
+    const design = {
+      ...newDesign(),
+      boardNames: { body: 'Oak' },
+      boardMaterials: { back: 'mdf' as const },
+      boardSheets: { body: { length: 2800, width: 2070, kerf: 4 } },
+      joints: 'cam' as const,
+      grainedBoards: ['body' as const],
+      boardColors: { front: '#112233' },
+      edgeColors: { body: '#445566' },
+      defaultColor: '#778899',
+    }
+    const saved = toProjectData(design)
+    const read = readProject(saved)
+    expect(read.ok && Object.keys(read.project)).toEqual(Object.keys(saved))
+    expect(designOf(saved)).toEqual(design)
+  })
+
+  it('takes undefined as the default', () => {
+    expect(designOf({ boxes: undefined, unitDepth: undefined })).toEqual(newDesign())
   })
 })
 

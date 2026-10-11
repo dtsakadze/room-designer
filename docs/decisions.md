@@ -480,3 +480,7 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 *Decision*: the design store keeps only `selectedIds`; the primary part (the one the inspector shows, the last clicked) is its last entry, read through `selectedIdOf`.
 *Why*: every action already kept `selectedId` equal to `selectedIds.at(-1)`, and five places repeated the "drop missing ids, re-pick the primary" code to keep them in step.
 *Instead of*: a separate `selectedId` field.
+
+**One `Design` shape, defaults dropped in one place** (2026-10-11)
+*Decision*: `lib/project.ts` defines `Design`, a design with every setting present (the shape the store keeps), with `newDesign()` for the defaults and `designOf` to fill in what a save leaves out. Leaving defaults out of a save happens only in `compact`, which both `toProjectData` and `validate` use. The save format and its key order are unchanged.
+*Why*: each project setting was listed by hand in about eight places (the saved type, `toProjectData`'s parameter and body, `validate`, both store load paths, the undo snapshot and the autosave check), and the "leave out when empty" test was repeated seven times. Missing one place could silently stop a setting from being saved.
