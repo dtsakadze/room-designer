@@ -42,7 +42,12 @@ export function ExportViewMenu({ pieces, view, caption, fileName }: ExportViewMe
   const choose = (format: 'svg' | 'png') => {
     setOpen(false)
     if (format === 'svg') exportSvg(pieces, view, caption, fileName)
-    else void exportPng(pieces, view, caption, fileName)
+    else {
+      exportPng(pieces, view, caption, fileName).catch((error: unknown) => {
+        console.error('PNG export failed', error)
+        window.alert("The PNG couldn't be made in this browser. Try SVG instead.")
+      })
+    }
   }
 
   return (

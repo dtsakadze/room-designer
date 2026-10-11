@@ -33,7 +33,10 @@ export function viewSvg(pieces: Piece[], view: ViewName, caption: string) {
   flushSync(() => {
     root.render(<PrintDrawing pieces={pieces} view={view} scale={SCALE} area={area} caption={caption} />)
   })
-  const markup = host.innerHTML
+  // XML, not `innerHTML`: HTML writes a non-breaking space (typed with
+  // Option+Space, or pasted into a project's name) as `&nbsp;`, which XML
+  // doesn't know, so the file wouldn't open and the PNG couldn't be drawn.
+  const markup = new XMLSerializer().serializeToString(host.firstElementChild!)
   root.unmount()
   return { markup: `<?xml version="1.0" encoding="UTF-8"?>\n${markup}`, ...area }
 }

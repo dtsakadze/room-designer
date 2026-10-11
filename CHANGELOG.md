@@ -28,6 +28,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Printed drawings measure the right openings when the dividers above a shelf aren't in line with the ones below it: each opening gets its own width and heights, and an opening that starts higher up has its width written inside it. Before, the widths were worked out between neighbouring dividers as if they all ran full height, which gave openings that don't exist.
 - Hanging rods now hang halfway between the back and the front of the unit in the side, top and 3D views and the clash check, where hangers fit, instead of against the back panel. A Z you typed yourself is kept.
 - Cut list CSV downloads are safer to open in Excel or Google Sheets: a board name starting with =, +, - or @ (which a spreadsheet would run as a formula) now gets a ' in front, so it shows as plain text.
+- Export view works for a project whose name has a non-breaking space in it (Option+Space on a Mac, or pasted from a web page): the SVG used to be a broken file and the PNG silently didn't download. If a PNG ever can't be made, you're now told so.
 
 ## 1.11.0 — 2026-10-10
 
