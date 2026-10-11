@@ -17,6 +17,11 @@ describe('CSV', () => {
     expect(csv).toBe('﻿a,"b, c","say ""hi""","two\nlines",3\r\n')
   })
 
+  it('keeps text that a spreadsheet would run as a formula from running', () => {
+    const csv = toCsv([['=HYPERLINK("http://x","y")', '+1', '-2', '@SUM(A1)', '\tx', 'Oak', -5]])
+    expect(csv).toBe('﻿"\'=HYPERLINK(""http://x"",""y"")",\'+1,\'-2,\'@SUM(A1),\'\tx,Oak,-5\r\n')
+  })
+
   it('lists the cut list with its sections, sizes in the chosen units, grain and banding', () => {
     const groups = cutList(
       [

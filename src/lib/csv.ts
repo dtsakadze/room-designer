@@ -6,10 +6,15 @@ import { CUT_LIST_SECTIONS, type CutListGroup, type HardwareRow, describeHardwar
  * between fields, CRLF between rows, and a field quoted (with quotes
  * doubled) when it holds a comma, quote or line break. It starts with a byte
  * order mark so Excel reads it as UTF-8 (for ⌀, ° and names in any language).
+ *
+ * Text starting with = + - @, a tab or a carriage return gets a ' in front:
+ * spreadsheets run such a cell as a formula even when it's quoted, so a board
+ * named `=HYPERLINK(…)` in a shared project file could otherwise run in Excel.
+ * Numbers are left alone, so negative ones stay numbers.
  */
 export function toCsv(rows: (string | number)[][]) {
   const field = (value: string | number) => {
-    const text = String(value)
+    const text = typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : String(value)
     return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
   }
   return `﻿${rows.map((row) => row.map(field).join(',')).join('\r\n')}\r\n`
