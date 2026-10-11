@@ -98,9 +98,10 @@ export function PieceRect({
         />
       )}
       {screws &&
-        [piece.x + SCREW_INSET, piece.x + piece.width - SCREW_INSET].map((cx) => (
+        // Keyed by end, not position: on a shelf 2 × SCREW_INSET wide both sit at one x.
+        [piece.x + SCREW_INSET, piece.x + piece.width - SCREW_INSET].map((cx, end) => (
           <circle
-            key={cx}
+            key={end}
             cx={cx}
             cy={y + piece.height / 2}
             r={unit * 2.5}
@@ -199,12 +200,13 @@ function SlidingMarks({ piece, y, unit }: { piece: Piece; y: number; unit: numbe
   const ordered = [...panels].sort((a, b) => b.lane - a.lane)
   return (
     <g style={{ pointerEvents: 'none' }} stroke="#6f6450" strokeWidth={unit}>
-      {[y, y + piece.height - SLIDING_TRACK_HEIGHT].map((trackY) => (
-        <rect key={trackY} x={piece.x} y={trackY} width={piece.width} height={SLIDING_TRACK_HEIGHT} fill="#8a8068" />
+      {/* Keyed by which track and which panel, not position, which can repeat on a tiny set. */}
+      {[y, y + piece.height - SLIDING_TRACK_HEIGHT].map((trackY, track) => (
+        <rect key={track} x={piece.x} y={trackY} width={piece.width} height={SLIDING_TRACK_HEIGHT} fill="#8a8068" />
       ))}
       {ordered.map((panel) => (
         <rect
-          key={panel.x}
+          key={panels.indexOf(panel)}
           x={panel.x}
           y={y + SLIDING_TRACK_HEIGHT}
           width={panel.width}

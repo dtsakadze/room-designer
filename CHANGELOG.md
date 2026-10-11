@@ -42,6 +42,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Windows (Settings, Projects, Print, What's new, Open file) work better from the keyboard: they take the focus when they open, Tab stays inside them, focus goes back to where it was when they close, and Esc closes only the one on top, so Print opened over Settings no longer closes both.
 - A drag can no longer get stuck: if the mouse button is let go somewhere Boardcut doesn't hear it (over another window, or during a system gesture), the drag ends as soon as the pointer moves again, instead of the part following the pointer with no button held.
 - Right-dragging that starts on a blue resize handle now pans the drawing, as it does everywhere else, instead of resizing the part.
+- Fixed a drawing glitch that could leave stray marks behind on a very narrow fixed shelf (its screw marks) or a very small set of sliding doors (its tracks and panels).
 
 ## 1.11.0 — 2026-10-10
 
