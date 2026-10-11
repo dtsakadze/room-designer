@@ -482,6 +482,21 @@ describe('undo and redo', () => {
     expect(store().selectedId).toBe(first)
   })
 
+  it('takes the view along when undo moves the selected part to another wall', () => {
+    store().setRoom({ left: true })
+    store().setActiveWall('left')
+    store().addPiece('shelf')
+    const id = store().selectedId!
+    store().updatePiece(id, { wall: undefined })
+    expect(store().activeWall).toBe('back')
+    store().undo()
+    expect(byId(id).wall).toBe('left')
+    expect(store().activeWall).toBe('left')
+    expect(store().selectedId).toBe(id)
+    store().redo()
+    expect(store().activeWall).toBe('back')
+  })
+
   it('starts a fresh history when a project is opened', () => {
     store().addPiece('shelf')
     store().loadProject(emptyProject())

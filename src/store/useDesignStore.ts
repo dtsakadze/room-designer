@@ -227,6 +227,9 @@ export const useDesignStore = create<DesignState>()(
       if (state.selectedId && !ids.has(state.selectedId)) {
         state.selectedId = state.selectedIds.at(-1) ?? null
       }
+      // Undoing a move to another wall puts the part back on its old one: the
+      // view goes with it, so the selection is never a part that isn't drawn.
+      followSelection(state)
       keepActiveWall(state)
       // Undo in the middle of a drag or of typing: the rest of it becomes a
       // new step of its own. Otherwise it would record nothing, leaving a stale
