@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+## 1.13.0 — 2026-10-11
+
 - In an L- or U-shaped room, a door that would swing into the front panel of a set of sliding doors on another wall is now flagged. Only the back panel was checked before, so it could go unnoticed.
 - In a room with side walls, sliding doors on a neighbouring wall now show their full depth (both panels) where that wall's parts are outlined faintly in a corner, and the 3D view frames them in full.
 
