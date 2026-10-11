@@ -109,6 +109,19 @@ describe('what an opening door hits', () => {
     })
   })
 
+  it('finds a door that swings into the front lane of sliding doors on another wall', () => {
+    const back = door('back', { x: -1200 + 618, hinge: 'right' })
+    // Set back so its back lane stops short of the swing and only the front lane reaches it.
+    const sliding = door('slide', { x: -300, width: 1200, wall: 'left', sliding: 2, z: 580 })
+    const conflicts = swingConflicts([side(undefined, -1200 + 600), back, sliding], thickness, room)
+    expect(conflicts.get('back')).toContainEqual({ kind: 'part', id: 'slide' })
+    const further = { ...sliding, z: 520 }
+    expect(swingConflicts([side(undefined, -1200 + 600), back, further], thickness, room).get('back') ?? []).not.toContainEqual({
+      kind: 'part',
+      id: 'slide',
+    })
+  })
+
   it("doesn't check doors on the same wall against each other", () => {
     // Hinged on the same panel from both sides: they meet past square, as intended.
     const a = door('a', { x: -600, hinge: 'right' })

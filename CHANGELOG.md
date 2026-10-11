@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- In an L- or U-shaped room, a door that would swing into the front panel of a set of sliding doors on another wall is now flagged. Only the back panel was checked before, so it could go unnoticed.
+
 ## 1.12.0 — 2026-10-11
 
 - Tidier sidebar header: the project's name sits at the top with a File menu beside it (Projects, Open file, Save to file, Print), replacing the Projects button and the File section. "Saved" shows as one word next to the app name, the version and What's new moved to the bottom of the sidebar with a labelled GitHub link beside them, and Room now comes first, before Add. The warning that the browser may clear projects when disk space runs low is now in the File menu, next to Save to file, instead of always on screen.
