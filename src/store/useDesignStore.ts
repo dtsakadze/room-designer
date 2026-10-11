@@ -220,6 +220,10 @@ export const useDesignStore = create<DesignState>()(
         state.selectedId = state.selectedIds.at(-1) ?? null
       }
       keepActiveWall(state)
+      // Undo in the middle of a drag or of typing: the rest of it becomes a
+      // new step of its own. Otherwise it would record nothing, leaving a stale
+      // redo and no way back to where it started.
+      if (state.batch.open) state.batch.recorded = false
     }
 
     /** Falls back to the back wall when the one being edited is switched off. */

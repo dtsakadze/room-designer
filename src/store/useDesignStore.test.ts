@@ -448,6 +448,23 @@ describe('undo and redo', () => {
     expect(byId(id).x).not.toBe(30)
   })
 
+  it('makes the rest of a drag its own step after an undo in the middle of it', () => {
+    store().addPiece('shelf')
+    const id = store().selectedId!
+    store().updatePiece(id, { x: 100 })
+    store().beginBatch()
+    store().updatePiece(id, { x: 200 })
+    store().undo()
+    expect(byId(id).x).toBe(100)
+    store().updatePiece(id, { x: 300 })
+    store().endBatch()
+    expect(store().future).toHaveLength(0)
+    store().undo()
+    expect(byId(id).x).toBe(100)
+    store().undo()
+    expect(byId(id).x).not.toBe(100)
+  })
+
   it('keeps at most 200 steps', () => {
     store().addPiece('shelf')
     const id = store().selectedId!
