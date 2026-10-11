@@ -443,6 +443,13 @@ export function Canvas2D() {
     const active = gesture.current
     const svg = svgRef.current
     if (!active || !svg) return
+    // The mouse was let go where we didn't hear it (another window, an OS
+    // gesture): finish the drag rather than have the part follow the pointer
+    // with no button held, and every later change join its undo step.
+    if (event.pointerType === 'mouse' && event.buttons === 0) {
+      endGesture(event)
+      return
+    }
 
     if (active.mode === 'pinch') {
       if (touches.current.size < 2) return
@@ -821,6 +828,8 @@ export function Canvas2D() {
         onPointerMove={onPointerMove}
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
+        // The browser took the pointer away without a pointerup.
+        onLostPointerCapture={endGesture}
       >
         <GrainPatterns unit={unit} />
         <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />

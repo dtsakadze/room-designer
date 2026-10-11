@@ -40,6 +40,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - The note about glass and mirror pane thickness in the Selected panel now uses your chosen units, instead of always saying mm.
 - Printing from the browser's own menu (instead of Boardcut's File → Print…) no longer gives a blank page: it prints a short note saying where to print from.
 - Windows (Settings, Projects, Print, What's new, Open file) work better from the keyboard: they take the focus when they open, Tab stays inside them, focus goes back to where it was when they close, and Esc closes only the one on top, so Print opened over Settings no longer closes both.
+- A drag can no longer get stuck: if the mouse button is let go somewhere Boardcut doesn't hear it (over another window, or during a system gesture), the drag ends as soon as the pointer moves again, instead of the part following the pointer with no button held.
 
 ## 1.11.0 — 2026-10-10
 
