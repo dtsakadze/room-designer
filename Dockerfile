@@ -6,7 +6,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 # Optional: the address this copy is served from, for the canonical link and
-# sitemap (docker build --build-arg SITE_URL=https://example.com .)
+# og:url (docker build --build-arg SITE_URL=https://example.com .)
 ARG SITE_URL=""
 ENV SITE_URL=$SITE_URL
 RUN pnpm build

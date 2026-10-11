@@ -1,6 +1,5 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { serviceWorkerSource } from './src/lib/serviceWorker.ts'
@@ -21,22 +20,8 @@ function readSiteUrl(value: string | undefined): string | null {
   return url.href.replace(/\/*$/, '/')
 }
 
-// robots.txt always; sitemap.xml only with a site address
-function seoFiles(siteUrl: string | null): Record<string, string> {
-  const robots = ['User-agent: *', 'Allow: /']
-  if (!siteUrl) return { 'robots.txt': robots.join('\n') + '\n' }
-  robots.push('', `Sitemap: ${siteUrl}sitemap.xml`)
-  const sitemap = [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    `  <url><loc>${siteUrl}</loc></url>`,
-    '</urlset>',
-  ]
-  return { 'robots.txt': robots.join('\n') + '\n', 'sitemap.xml': sitemap.join('\n') + '\n' }
-}
-
+// The canonical link and og:url, when the build knows its site address.
 function seo(siteUrl: string | null): Plugin {
-  const files = seoFiles(siteUrl)
   return {
     name: 'seo',
     transformIndexHtml() {
@@ -45,20 +30,6 @@ function seo(siteUrl: string | null): Plugin {
         { tag: 'link', attrs: { rel: 'canonical', href: siteUrl }, injectTo: 'head' },
         { tag: 'meta', attrs: { property: 'og:url', content: siteUrl }, injectTo: 'head' },
       ]
-    },
-    // The dev server would answer these paths with the app page otherwise.
-    configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        const name = req.url?.split('?')[0].slice(1) ?? ''
-        if (!Object.hasOwn(files, name)) return next()
-        res.setHeader('Content-Type', name.endsWith('.xml') ? 'application/xml' : 'text/plain')
-        res.end(files[name])
-      })
-    },
-    generateBundle() {
-      for (const [fileName, source] of Object.entries(files)) {
-        this.emitFile({ type: 'asset', fileName, source })
-      }
     },
   }
 }
@@ -72,9 +43,7 @@ function pwa(): Plugin {
     apply: 'build',
     generateBundle(_, bundle) {
       const own = ['./', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
-      const built = Object.keys(bundle).filter(
-        (name) => name !== 'index.html' && !name.endsWith('.map') && !['robots.txt', 'sitemap.xml'].includes(name),
-      )
+      const built = Object.keys(bundle).filter((name) => name !== 'index.html' && !name.endsWith('.map'))
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: serviceWorkerSource([...own, ...built], Date.now()) })
     },
   }
@@ -101,26 +70,8 @@ export function productionHeaders(text: string): Record<string, string> {
   return headers
 }
 
-// `version` is read once, when the config loads, and Vite doesn't reload the
-// config when package.json changes, so a release left the dev server showing the
-// old version until it was restarted by hand.
-function restartOnVersionChange(): Plugin {
-  const file = fileURLToPath(new URL('./package.json', import.meta.url))
-  return {
-    name: 'restart-on-version-change',
-    configureServer(server) {
-      server.watcher.add(file)
-      server.watcher.on('change', (changed) => {
-        if (changed !== file) return
-        const next = JSON.parse(readFileSync(file, 'utf8')).version
-        if (next !== version) void server.restart()
-      })
-    },
-  }
-}
-
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), restartOnVersionChange(), pwa(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
+  plugins: [react(), pwa(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
   define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative asset paths, so the build works from any folder on any host
   base: './',
