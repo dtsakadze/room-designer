@@ -81,6 +81,27 @@ function pwa(): Plugin {
   }
 }
 
+/**
+ * The headers in public/_headers (Cloudflare's format) for every path, so
+ * `pnpm preview` serves the build as production does and a Content Security
+ * Policy that breaks something shows up before it's deployed. Not in the dev
+ * server, whose hot reload needs inline scripts the policy forbids.
+ */
+export function productionHeaders(text: string): Record<string, string> {
+  const headers: Record<string, string> = {}
+  let inAll = false
+  for (const line of text.split('\n')) {
+    if (line.trim() === '' || line.trimStart().startsWith('#')) continue
+    if (!/^\s/.test(line)) {
+      inAll = line.trim() === '/*'
+      continue
+    }
+    const colon = line.indexOf(':')
+    if (inAll && colon > 0) headers[line.slice(0, colon).trim()] = line.slice(colon + 1).trim()
+  }
+  return headers
+}
+
 // `version` is read once, when the config loads, and Vite doesn't reload the
 // config when package.json changes, so a release left the dev server showing the
 // old version until it was restarted by hand.
@@ -127,6 +148,7 @@ export default defineConfig(({ mode }) => ({
   // Relative asset paths, so the build works from any folder on any host
   base: './',
   build: { chunkSizeWarningLimit: 700 },
+  preview: { headers: productionHeaders(readFileSync(new URL('./public/_headers', import.meta.url), 'utf8')) },
   // Only read for tests, so builds and the dev server don't run git.
   test: { provide: { releasedChangelogs: mode === 'test' ? releasedChangelogs() : {} } },
 }))

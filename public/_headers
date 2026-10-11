@@ -1,0 +1,14 @@
+# Security headers for every response. Cloudflare reads this file from the
+# build (dist/_headers); docker/security-headers.conf has the same headers for
+# nginx, and `pnpm preview` serves them too. Keep the two files in step
+# (headers.test.ts checks they match).
+#
+# The policy allows only the app's own files. Styles may be inline, as React
+# sets `style` attributes and printing adds a <style> element; images may be
+# data: and blob: URLs, which exporting a view as PNG uses.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
