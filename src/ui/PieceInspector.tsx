@@ -68,6 +68,7 @@ export function PieceInspector() {
   const fitPiece = useDesignStore((s) => s.fitBetweenSides)
   const thickness = useDesignStore((s) => s.thickness)
   const unit = useUnitLabel()
+  const { len } = useUnits()
 
   const piece = pieces.find((candidate) => candidate.id === selectedId)
   if (!piece) return null
@@ -128,7 +129,7 @@ export function PieceInspector() {
                     title={
                       isThickness
                         ? piece.pane
-                          ? `Glass and mirror panes are ${PANE_THICKNESS} mm thick.`
+                          ? `Glass and mirror panes are ${len(PANE_THICKNESS)} thick.`
                           : 'Set for the whole project in Settings → Boards.'
                         : key === 'depth'
                           ? 'Not drawn in the front view; see the side, top and 3D views.'
@@ -632,12 +633,13 @@ function HandleRow({ piece }: { piece: Piece }) {
 /** What the door's panels are made of: board, glass or a mirror. */
 function PanelRow({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
+  const { len } = useUnits()
   return (
     <ChoiceRow
       label="Panel"
       info={
         piece.pane
-          ? `${PANE_LABELS[piece.pane]} panes are ${PANE_THICKNESS} mm thick and bought to size: they're in the hardware list, not the cut list, and have no colour or edge banding.`
+          ? `${PANE_LABELS[piece.pane]} panes are ${len(PANE_THICKNESS)} thick and bought to size: they're in the hardware list, not the cut list, and have no colour or edge banding.`
           : undefined
       }
       value={piece.pane ?? 'board'}
