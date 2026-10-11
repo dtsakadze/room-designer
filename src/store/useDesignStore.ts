@@ -69,6 +69,12 @@ type DesignState = {
    * Like the selection, it isn't saved or undone.
    */
   activeWall: Wall
+  /**
+   * Whether the whole room is on screen (the top view). Only then can a
+   * selection span walls; otherwise it keeps to the wall being edited, so
+   * Delete or a move never reaches parts that aren't drawn. Not saved or undone.
+   */
+  wholeRoomShown: boolean
 
   past: Snapshot[]
   future: Snapshot[]
@@ -154,6 +160,8 @@ type DesignState = {
   setRoom: (patch: Partial<Room>) => void
   /** Switches the wall being edited, leaving behind a selection on the old one. */
   setActiveWall: (wall: Wall) => void
+  /** Says whether the whole room is on screen; leaving it lets go of parts on other walls. */
+  setWholeRoomShown: (shown: boolean) => void
   clear: () => void
   /** Replaces the whole design, e.g. when a project is opened. Starts a fresh history. */
   loadProject: (project: ProjectData) => void
@@ -231,10 +239,26 @@ export const useDesignStore = create<DesignState>()(
       if (!activeWalls(state.room).includes(state.activeWall)) state.activeWall = 'back'
     }
 
-    /** The wall a selection is on, so selecting a part brings you to its wall. */
+    /**
+     * The wall a selection is on, so selecting a part brings you to its wall.
+     * Unless the whole room is shown, parts on other walls drop out of the
+     * selection: ⌘-clicking a part on another wall in the Parts list starts
+     * a selection there.
+     */
     const followSelection = (state: DesignState) => {
       const piece = state.pieces.find((candidate) => candidate.id === state.selectedId)
       if (piece) state.activeWall = wallOf(piece)
+      if (!state.wholeRoomShown) keepSelectionOnWall(state)
+    }
+
+    const keepSelectionOnWall = (state: DesignState) => {
+      const onWall = new Set(
+        state.pieces.filter((piece) => wallOf(piece) === state.activeWall).map((piece) => piece.id),
+      )
+      state.selectedIds = state.selectedIds.filter((id) => onWall.has(id))
+      if (state.selectedId && !onWall.has(state.selectedId)) {
+        state.selectedId = state.selectedIds.at(-1) ?? null
+      }
     }
 
     /** Where new parts on the wall being edited go: right of everything already on it. */
@@ -362,6 +386,7 @@ export const useDesignStore = create<DesignState>()(
       unitDepth: DEFAULT_UNIT_DEPTH,
       room: DEFAULT_ROOM,
       activeWall: 'back',
+      wholeRoomShown: false,
 
       past: [],
       future: [],
@@ -782,13 +807,13 @@ export const useDesignStore = create<DesignState>()(
         set((state) => {
           if (state.activeWall === wall || !activeWalls(state.room).includes(wall)) return
           state.activeWall = wall
-          const onWall = new Set(
-            state.pieces.filter((piece) => wallOf(piece) === wall).map((piece) => piece.id),
-          )
-          state.selectedIds = state.selectedIds.filter((id) => onWall.has(id))
-          if (state.selectedId && !onWall.has(state.selectedId)) {
-            state.selectedId = state.selectedIds.at(-1) ?? null
-          }
+          keepSelectionOnWall(state)
+        }),
+
+      setWholeRoomShown: (shown) =>
+        set((state) => {
+          state.wholeRoomShown = shown
+          if (!shown) keepSelectionOnWall(state)
         }),
 
       clear: () =>

@@ -21,6 +21,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Autosave is more careful: if a fault in the app ever left a part broken, the last good save is kept instead of being replaced by one that would open without that part.
 - A damaged project file with two parts or boxes sharing an id now opens with only the first of each, instead of deleting or moving both together and leaving stray lines on the drawing.
 - With Boardcut open in two tabs, each tab now follows what the other saves: a project changed in one tab shows the change in the other instead of being saved over by it, a project deleted in one tab no longer comes back from the other, and new or renamed projects show in both lists.
+- A selection now stays on one wall: ⌘-clicking a part on another wall in the Parts list starts a new selection there, so Delete, copy or a move can no longer reach a part on a wall you aren't looking at. In the Top view, which shows the whole room, you can still select parts on several walls; going back to a wall keeps only the ones on it.
 
 ## 1.11.0 — 2026-10-10
 

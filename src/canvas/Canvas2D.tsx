@@ -603,6 +603,11 @@ export function Canvas2D() {
     return () => svg.removeEventListener('wheel', onWheel)
   }, [])
 
+  // A selection can span walls only while the top view shows the whole room.
+  useEffect(() => {
+    useDesignStore.getState().setWholeRoomShown(viewName === 'top')
+  }, [viewName])
+
   // ⌘A selects every part; ⌘C / ⌘V copy and paste parts (Ctrl on Windows).
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

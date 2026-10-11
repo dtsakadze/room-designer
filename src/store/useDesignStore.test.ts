@@ -653,6 +653,28 @@ describe('selection', () => {
     expect(store().selectedIds).toEqual([a, b])
   })
 
+  it('keeps to one wall unless the whole room is shown', () => {
+    store().setRoom({ left: true })
+    store().addPiece('shelf')
+    const back = store().selectedId!
+    store().setActiveWall('left')
+    store().addPiece('divider')
+    const left = store().selectedId!
+    store().select(back)
+    store().toggleSelect(left)
+    expect(store().selectedIds).toEqual([left])
+    expect(store().activeWall).toBe('left')
+    store().selectMany([back], true)
+    expect(store().selectedIds).toEqual([back])
+
+    store().setWholeRoomShown(true)
+    store().selectMany([back, left])
+    expect(store().selectedIds).toEqual([back, left])
+    store().setWholeRoomShown(false)
+    expect(store().selectedIds).toEqual([left])
+    expect(store().selectedId).toBe(left)
+  })
+
   it('isn’t part of the undo history', () => {
     store().addPiece('shelf')
     const steps = store().past.length
