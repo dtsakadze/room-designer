@@ -45,6 +45,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Fixed a drawing glitch that could leave stray marks behind on a very narrow fixed shelf (its screw marks) or a very small set of sliding doors (its tracks and panels).
 - The 3D view uses less power: it only redraws when something changes (you turn the view, or edit the design) instead of all the time, and closing it frees its graphics memory straight away, so switching to 3D and back many times no longer piles up.
 - Opening a project while a new one was still being made could show one project but reopen the other after a reload. The project you picked last now wins on both counts.
+- For people running their own copy with Docker: the image now runs nginx as an ordinary user instead of root, and listens on port 8080 inside the container, so use `-p 8080:8080` instead of `-p 8080:80` (`docker compose` is already updated). It also sends security headers, which Boardcut's own site now does too.
 
 ## 1.11.0 — 2026-10-10
 

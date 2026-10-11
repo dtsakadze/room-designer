@@ -470,3 +470,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **Release workflow: token out of reach, actions pinned** (2026-10-11)
 *Decision*: `release.yml` grants nothing at workflow level and `contents: write` only to its one job, checks out with `persist-credentials: false`, and only the last step (`gh release create`) gets the token, through `GH_TOKEN`. Actions are pinned to commit SHAs with the release in a comment (checkout v4.4.0, pnpm/action-setup v4.3.0 — what `v4` pointed to — and setup-node v4.4.0).
 *Why*: checkout otherwise leaves the write token in `.git/config`, where any dependency's code run by `pnpm install`, the tests or the build could read it and tamper with releases; and a tag like `@v4` can be moved to other code by whoever controls the action's repository.
+
+**Docker image runs nginx as an ordinary user** (2026-10-11)
+*Decision*: the image is built on `nginxinc/nginx-unprivileged:alpine` instead of `nginx:alpine`, and nginx listens on 8080 inside the container (an ordinary user can't use ports below 1024); `docker-compose.yml` maps 8080 to 8080.
+*Why*: in the stock image nginx's main process runs as root, so a hole in nginx would mean root in the container. It's the same nginx, kept by the same people.
+*Instead of*: port 80 inside the container. Anyone running the image with `-p …:80` has to change it to `-p …:8080`.

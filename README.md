@@ -43,7 +43,7 @@ With Docker installed, one command builds the app and serves it on http://localh
 docker compose up -d
 ```
 
-Or without Compose: `docker build -t boardcut . && docker run -d -p 8080:80 boardcut`. The image is the built app on nginx (about 60 MB), with no database or other service. To set the canonical address for a public copy, build with `--build-arg SITE_URL=https://example.com`. Projects live in each person's browser, not in the container (see "Where your data lives").
+Or without Compose: `docker build -t boardcut . && docker run -d -p 8080:8080 boardcut`. The image is the built app on nginx, running as an ordinary user rather than root and listening on port 8080 (about 60 MB), with no database or other service. To set the canonical address for a public copy, build with `--build-arg SITE_URL=https://example.com`. Projects live in each person's browser, not in the container (see "Where your data lives").
 
 ## Self-host
 
