@@ -53,11 +53,11 @@ export const MAX_UNIT_DEPTH = 1500
 const SHELF_SETBACK = 20
 /** A new drawer leaves this much room behind it, for runner lengths to fit. */
 const DRAWER_SETBACK = 50
-export const ROD_DIAMETER = 25
-export const PLINTH_HEIGHT = 80
+const ROD_DIAMETER = 25
+const PLINTH_HEIGHT = 80
 /** How far the plinth sits back from the front, so toes don't hit it. */
 export const PLINTH_RECESS = 50
-export const RAIL_DEPTH = 100
+const RAIL_DEPTH = 100
 /**
  * How far a door opens, in degrees: concealed hinges usually open to 110°,
  * which takes the door past square and back behind its hinge side.
@@ -66,8 +66,8 @@ export const DOOR_OPEN_ANGLE = 110
 /** Hinges sold by how far they open: standard, then wide-angle ones. */
 export const DOOR_ANGLES = [DOOR_OPEN_ANGLE, 155, 170]
 /** Starting sizes of the trim boards, in mm. */
-export const FILLER_WIDTH = 50
-export const CORNICE_HEIGHT = 80
+const FILLER_WIDTH = 50
+const CORNICE_HEIGHT = 80
 
 /** Space between the two lanes sliding door panels run in, so they don't rub. */
 export const SLIDING_LANE_GAP = 6

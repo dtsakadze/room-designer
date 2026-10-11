@@ -86,6 +86,7 @@ type JointRow = {
  */
 export function jointHardware(pieces: Piece[], joints: JointType): JointRow[] {
   const carcass = carcassJoints(pieces)
+  const carcassScrewCount = carcass.reduce((sum, depth) => sum + screwsPerJoint(depth), 0)
   // A fixed shelf is joined to a side at each end.
   const shelves = pieces.filter((piece) => piece.kind === 'shelf' && piece.fixed)
   const shelfJoints = shelves.flatMap((shelf) => [shelf.depth, shelf.depth])
@@ -93,13 +94,13 @@ export function jointHardware(pieces: Piece[], joints: JointType): JointRow[] {
     case 'screws':
       return [
         { item: 'shelf-screws', quantity: shelves.length * SCREWS_PER_FIXED_SHELF },
-        { item: 'carcass-screws', quantity: carcassScrews(pieces) },
+        { item: 'carcass-screws', quantity: carcassScrewCount },
       ]
     case 'confirmat':
       return [
         {
           item: 'confirmat-screws',
-          quantity: carcassScrews(pieces) + shelves.length * SCREWS_PER_FIXED_SHELF,
+          quantity: carcassScrewCount + shelves.length * SCREWS_PER_FIXED_SHELF,
         },
       ]
     case 'cam': {
@@ -136,7 +137,7 @@ function inside(across: Piece, uprights: Piece[], direction: 'up' | 'down') {
 }
 
 /** Units taller than this, in mm, should be fixed to the wall so they can't tip over. */
-export const TIP_HEIGHT = 700
+const TIP_HEIGHT = 700
 
 /** Anti-tip brackets per unit, at the top, one near each side. */
 const BRACKETS_PER_UNIT = 2
@@ -235,11 +236,6 @@ export function doorFronts(piece: Piece): { width: number; height: number }[] {
   if (piece.kind === 'door' && piece.sliding) return slidingPanels({ ...piece, sliding: piece.sliding })
   if (piece.kind === 'door' && piece.double) return doorLeaves(piece, true)
   return [piece]
-}
-
-/** Handles or knobs to buy: one per door leaf (two for a double door, one per panel for sliding ones) and per drawer that has one. */
-export function handleCount(pieces: Piece[]) {
-  return pieces.filter(hasHandle).reduce((sum, piece) => sum + doorFronts(piece).length, 0)
 }
 
 type OpenerRow =

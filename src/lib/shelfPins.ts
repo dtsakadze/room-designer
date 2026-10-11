@@ -3,15 +3,15 @@ import { wallOf } from './room'
 
 /** The usual spacing of the holes shelf pins go in ("System 32"), in mm. */
 export const DEFAULT_HOLE_PITCH = 32
-export const MIN_HOLE_PITCH = 8
-export const MAX_HOLE_PITCH = 100
+const MIN_HOLE_PITCH = 8
+const MAX_HOLE_PITCH = 100
 
 /**
  * How far the hole columns are from a panel's front and back edges: 37 mm,
  * the usual setback for drilling ("System 32"), so pins sit near the
  * shelf's corners.
  */
-export const HOLE_SETBACK = 37
+const HOLE_SETBACK = 37
 
 /** Pins an adjustable shelf rests on: one at each corner. */
 export const PINS_PER_SHELF = 4

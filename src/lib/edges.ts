@@ -1,7 +1,7 @@
 import type { Dimension, Edge, Piece, PieceKind } from '../types'
 
 /** Every edge name, in the order they're listed and stored. */
-export const EDGES: Edge[] = ['front', 'back', 'top', 'bottom', 'left', 'right']
+const EDGES: Edge[] = ['front', 'back', 'top', 'bottom', 'left', 'right']
 
 export const EDGE_LABELS: Record<Edge, string> = {
   front: 'Front',

@@ -13,9 +13,9 @@ export const DEFAULT_SHEETS: Record<BoardMaterial, SheetSetup> = {
   solid: { length: 2440, width: 1220, kerf: DEFAULT_KERF },
 }
 
-export const MIN_SHEET_SIZE = 100
-export const MAX_SHEET_SIZE = 10000
-export const MAX_KERF = 20
+const MIN_SHEET_SIZE = 100
+const MAX_SHEET_SIZE = 10000
+const MAX_KERF = 20
 
 const whole = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, Math.round(value) || min))
@@ -30,7 +30,7 @@ export function cleanSheet(sheet: SheetSetup): SheetSetup {
 }
 
 /** A part placed on a sheet: `x` along the sheet's length and `y` along its width, with the size as it lies there. */
-export type PlacedPart = {
+type PlacedPart = {
   label: string
   x: number
   y: number

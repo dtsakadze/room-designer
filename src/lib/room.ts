@@ -17,11 +17,11 @@ import type { Piece, Room, SideWall, Wall } from '../types'
 export const DEFAULT_ROOM: Room = { left: false, right: false, width: 2400, depth: 1800 }
 /** Where a ceiling starts when it's switched on, in mm. */
 export const DEFAULT_CEILING_HEIGHT = 2400
-export const MIN_ROOM_SIZE = 500
-export const MAX_ROOM_SIZE = 20000
+const MIN_ROOM_SIZE = 500
+const MAX_ROOM_SIZE = 20000
 
 /** In the order they're seen in a plan, left to right. */
-export const WALLS: Wall[] = ['left', 'back', 'right']
+const WALLS: Wall[] = ['left', 'back', 'right']
 
 export const WALL_LABELS: Record<Wall, string> = {
   left: 'Left wall',

@@ -11,7 +11,7 @@ import {
 import { cutList, describeHardware, hardwareList } from './cutList'
 import { PANE_FILLS, faceColor } from '../canvas/colors'
 import { bandsOf } from './edges'
-import { handleCount } from './fixings'
+import { openerHardware } from './fixings'
 import { depthStart, findClashes, neighbourGaps, normalizePiece, slidingPanels } from './geometry'
 import { doorHinges } from './hinges'
 
@@ -143,7 +143,7 @@ describe('sliding doors', () => {
   it('have no hinges, and a handle per panel', () => {
     expect(doorHinges([sliding()], thickness)).toEqual([])
     expect(hardwareList([sliding()], thickness).some((r) => r.item === 'hinges')).toBe(false)
-    expect(handleCount([sliding({ sliding: 3 })])).toBe(3)
+    expect(openerHardware([sliding({ sliding: 3 })]).find((row) => row.item === 'handles')?.quantity).toBe(3)
     expect(pieceLabel(sliding())).toBe('Sliding doors')
   })
 })

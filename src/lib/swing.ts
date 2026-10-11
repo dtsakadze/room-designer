@@ -91,7 +91,7 @@ export function swingArc(swing: DoorSwing): PlanPoint[] {
 }
 
 /** The floor the leaf sweeps: the pivot and its arc, a convex fan. */
-export const swingArea = (swing: DoorSwing): PlanPoint[] => [swing.pivot, ...swingArc(swing)]
+const swingArea = (swing: DoorSwing): PlanPoint[] => [swing.pivot, ...swingArc(swing)]
 
 /** The rectangle a swing fits in, for framing the top view. */
 export function swingBounds(swing: DoorSwing): Rect {

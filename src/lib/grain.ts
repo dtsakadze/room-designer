@@ -3,7 +3,7 @@ import { BOARD } from './defaults'
 import { grainOf } from './edges'
 
 /** The views grain lines can be drawn in: the flat ones, where a part's face is a rectangle. */
-export type GrainView = 'front' | 'back' | 'left' | 'right' | 'top'
+type GrainView = 'front' | 'back' | 'left' | 'right' | 'top'
 
 /**
  * Which two of a part's dimensions each flat view shows on its face: across

@@ -10,7 +10,7 @@ export const SLIDING_CLEARANCE = 5
 /** More room for a handle or knob on the drawer front, in mm. */
 export const HANDLE_CLEARANCE = 25
 
-export type ClearanceWarning = {
+type ClearanceWarning = {
   drawerId: string
   doorId: string
   /** Gap from the door's back face to the drawer's front, in mm; negative when the drawer pokes through. */

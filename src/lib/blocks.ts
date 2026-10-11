@@ -1,4 +1,5 @@
 import type { Box, Piece, Thickness } from '../types'
+import { freeName } from './names'
 import { type ProjectData, readProject, toProjectData } from './project'
 
 const KEY = 'room-designer:blocks'
@@ -25,13 +26,7 @@ export const cleanBlockName = (name: unknown) =>
   typeof name === 'string' ? name.trim().slice(0, MAX_BLOCK_NAME) : ''
 
 /** "My unit", then "My unit 2", 3, … skipping names in use. */
-export function blockName(name: string, taken: string[]) {
-  const base = cleanBlockName(name) || 'My block'
-  if (!taken.includes(base)) return base
-  let n = 2
-  while (taken.includes(`${base} ${n}`)) n++
-  return `${base} ${n}`
-}
+export const blockName = (name: string, taken: string[]) => freeName(cleanBlockName(name) || 'My block', taken)
 
 /** Every saved block, newest first; nothing when storage is blocked or holds something else. */
 export function loadBlocks(): StoredBlock[] {

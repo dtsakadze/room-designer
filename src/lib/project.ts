@@ -142,7 +142,7 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
 /** Why a save couldn't be opened. */
 export type ReadProblem = 'newer' | 'invalid'
 
-export type ReadResult = { ok: true; project: ProjectData } | { ok: false; problem: ReadProblem }
+type ReadResult = { ok: true; project: ProjectData } | { ok: false; problem: ReadProblem }
 
 /**
  * A project as it's stored: the same shape goes into the browser's autosave
@@ -412,57 +412,42 @@ function validate(data: Raw): ProjectData | null {
   }
 }
 
-/** Board names worth keeping: known boards, trimmed, not empty, not too long. */
-export function readBoardNames(value: unknown): BoardNames {
+/** Each known board's entry that `clean` keeps (it returns undefined to drop one). */
+function readBoardMap<T>(value: unknown, clean: (entry: unknown) => T | undefined): Partial<Record<BoardKey, T>> {
   if (!isRecord(value)) return {}
-  const names: BoardNames = {}
+  const map: Partial<Record<BoardKey, T>> = {}
   for (const { key } of BOARDS) {
-    const name = cleanBoardName(value[key])
-    if (name) names[key] = name
+    const entry = clean(value[key])
+    if (entry !== undefined) map[key] = entry
   }
-  return names
+  return map
 }
+
+/** Board names worth keeping: known boards, trimmed, not empty, not too long. */
+const readBoardNames = (value: unknown): BoardNames => readBoardMap(value, (name) => cleanBoardName(name) ?? undefined)
 
 /** Board sheets worth keeping: known boards, each with a sheet of sizes that make sense. */
-export function readBoardSheets(value: unknown): BoardSheets {
-  if (!isRecord(value)) return {}
-  const sheets: BoardSheets = {}
-  for (const { key } of BOARDS) {
-    const sheet = value[key]
-    if (!isRecord(sheet) || !positive(sheet.length) || !positive(sheet.width)) continue
-    sheets[key] = cleanSheet({
-      length: sheet.length as number,
-      width: sheet.width as number,
-      kerf: typeof sheet.kerf === 'number' ? sheet.kerf : DEFAULT_KERF,
-    })
-  }
-  return sheets
-}
+const readBoardSheets = (value: unknown): BoardSheets =>
+  readBoardMap(value, (sheet) =>
+    isRecord(sheet) && positive(sheet.length) && positive(sheet.width)
+      ? cleanSheet({
+          length: sheet.length as number,
+          width: sheet.width as number,
+          kerf: typeof sheet.kerf === 'number' ? sheet.kerf : DEFAULT_KERF,
+        })
+      : undefined,
+  )
 
 /** Board materials worth keeping: known boards and materials; chipboard (the default) is stored as nothing. */
-export function readBoardMaterials(value: unknown): BoardMaterials {
-  if (!isRecord(value)) return {}
-  const materials: BoardMaterials = {}
-  for (const { key } of BOARDS) {
-    const material = value[key]
-    if (isMaterial(material) && material !== 'chipboard') materials[key] = material
-  }
-  return materials
-}
+const readBoardMaterials = (value: unknown): BoardMaterials =>
+  readBoardMap(value, (material) => (isMaterial(material) && material !== 'chipboard' ? material : undefined))
 
 /** Board colours worth keeping: known boards, `#rrggbb` only. */
-export function readBoardColors(value: unknown): BoardColors {
-  if (!isRecord(value)) return {}
-  const colors: BoardColors = {}
-  for (const { key } of BOARDS) {
-    const color = value[key]
-    if (isHexColor(color)) colors[key] = color
-  }
-  return colors
-}
+const readBoardColors = (value: unknown): BoardColors =>
+  readBoardMap(value, (color) => (isHexColor(color) ? color : undefined))
 
 /** Boards with a grain: known boards, each once, in the order of `BOARDS`. */
-export function readGrainedBoards(value: unknown): BoardKey[] {
+function readGrainedBoards(value: unknown): BoardKey[] {
   if (!Array.isArray(value)) return []
   return BOARDS.map((board) => board.key).filter((key) => value.includes(key))
 }

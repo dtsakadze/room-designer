@@ -1,7 +1,7 @@
 import type { Piece } from '../types'
 
 /** Drawing scales, as 1:n, in the order they're tried: the largest that fits wins. */
-export const SCALES = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]
+const SCALES = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]
 
 /** Paper sizes, landscape, in mm. */
 export const PAPER = {
@@ -24,7 +24,7 @@ export function fitScale(size: { width: number; height: number }, area: { width:
 }
 
 /** A dimension: a measured span along x or y, in design mm. */
-export type Span = { from: number; to: number }
+type Span = { from: number; to: number }
 
 /** Gaps too small to label on a drawing: the slit between two drawer fronts, say. */
 const MIN_LABELLED = 20

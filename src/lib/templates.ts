@@ -2,11 +2,12 @@ import type { Box, Piece, PieceKind } from '../types'
 import { withBoxPanels } from './box'
 import { DEFAULT_THICKNESS, createPiece } from './defaults'
 import { normalizePiece } from './geometry'
+import { freeName } from './names'
 import { type ProjectData, toProjectData } from './project'
 import { DEFAULT_HOLE_PITCH, isAdjustable, snapToHoles } from './shelfPins'
 
 /** A ready-made design to start a project from. */
-export type Template = {
+type Template = {
   id: string
   name: string
   /** One line on what it is, for the picker. */
@@ -162,9 +163,4 @@ export const TEMPLATES: Template[] = [
 ]
 
 /** The template's name, or with a number after it when a project already has that name. */
-export function projectNameFor(template: Template, taken: string[]) {
-  if (!taken.includes(template.name)) return template.name
-  let n = 2
-  while (taken.includes(`${template.name} ${n}`)) n++
-  return `${template.name} ${n}`
-}
+export const projectNameFor = (template: Template, taken: string[]) => freeName(template.name, taken)

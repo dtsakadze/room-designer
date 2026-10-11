@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Box, Piece, PieceKind } from '../types'
 import { boxPanels } from './box'
 import { DEFAULT_THICKNESS } from './defaults'
-import { backFixings, carcassScrews, handleCount, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets, feetNeeded } from './fixings'
+import { backFixings, carcassScrews, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets, feetNeeded } from './fixings'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -53,7 +53,7 @@ describe('handles', () => {
       piece('f', 'drawer', { height: 200, noHandle: true }),
       piece('g', 'shelf'),
     ]
-    expect(handleCount(pieces)).toBe(1 + 2 + 1)
+    expect(openerHardware(pieces).find((row) => row.item === 'handles')?.quantity).toBe(1 + 2 + 1)
     expect(pieces.filter(hasHandle).map((p) => p.id)).toEqual(['a', 'b', 'd'])
   })
 
@@ -171,7 +171,6 @@ describe('what doors and drawers are opened with', () => {
     expect(quantity('push-latches')).toBe(1)
     // The drawer's front, and both leaves of the double door.
     expect(rows.filter((row) => row.item === 'j-profile').map((row) => (row as { length: number }).length)).toEqual([564, 298, 298])
-    expect(handleCount(pieces)).toBe(1 + 2 + 1)
   })
 })
 
