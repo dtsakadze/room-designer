@@ -42,6 +42,9 @@ export function PrintDrawing({ pieces, view, scale, area, linesOnly = false, cap
   // Doors would hide what's inside, and their sizes are in the cut list.
   const inside = pieces.filter((piece) => piece.kind !== 'door')
   const columns = view === 'front' ? openings(inside) : []
+  // Widths go in a row under the unit for the openings starting lowest; one
+  // higher up (above a shelf, with dividers elsewhere) is measured inside it.
+  const lowest = Math.min(...columns.map((column) => column.bottom))
 
   return (
     <svg
@@ -80,12 +83,13 @@ export function PrintDrawing({ pieces, view, scale, area, linesOnly = false, cap
       <Dimension axis="y" from={bounds.minY} to={bounds.maxY} at={bounds.minX - 14 * mm} reach={bounds.minX} mm={mm} label={num(bounds.maxY - bounds.minY)} />
       {columns.map((column) => (
         <Dimension
-          key={`w|${column.from}|${column.to}`}
+          key={`w|${column.from}|${column.to}|${column.bottom}`}
           axis="x"
           from={column.from}
           to={column.to}
-          at={bounds.minY - 7 * mm}
-          reach={bounds.minY}
+          {...(column.bottom <= lowest + 1
+            ? { at: bounds.minY - 7 * mm, reach: bounds.minY }
+            : { at: column.bottom + 7 * mm })}
           mm={mm}
           label={num(column.to - column.from)}
         />
@@ -93,7 +97,7 @@ export function PrintDrawing({ pieces, view, scale, area, linesOnly = false, cap
       {columns.flatMap((column) =>
         openingHeights(inside, column).map((gap) => (
           <Dimension
-            key={`h|${column.from}|${gap.from}|${gap.to}`}
+            key={`h|${column.from}|${column.bottom}|${gap.from}|${gap.to}`}
             axis="y"
             from={gap.from}
             to={gap.to}

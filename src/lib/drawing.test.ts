@@ -27,9 +27,24 @@ describe('drawing scale', () => {
 describe('dimensions', () => {
   it('measures the clear openings between sides and dividers', () => {
     expect(openings([right, left, divider, top, bottom])).toEqual([
-      { from: -582, to: -9 },
-      { from: 9, to: 582 },
+      { from: -582, to: -9, bottom: 18, top: 1982 },
+      { from: 9, to: 582, bottom: 18, top: 1982 },
     ])
+  })
+
+  it('measures openings above and below a shelf separately when their dividers differ', () => {
+    const lower = piece('d1', 'divider', { x: 300, y: 18, height: 982 })
+    const upper = piece('d2', 'divider', { x: 0, y: 1018, height: 964 })
+    const shelf = piece('s', 'shelf', { x: -582, y: 1000, width: 1164, fixed: true })
+    const found = openings([left, right, lower, upper, top, bottom, shelf])
+    expect(found.map(({ from, to, bottom, top }) => [to - from, bottom, top])).toEqual([
+      [882, 18, 1000],
+      [582, 1018, 1982],
+      [564, 1018, 1982],
+      [264, 18, 1000],
+    ])
+    expect(openingHeights([top, bottom, shelf], found[0])).toEqual([{ from: 18, to: 1000 }])
+    expect(openingHeights([top, bottom, shelf], found[1])).toEqual([{ from: 1018, to: 1982 }])
   })
 
   it('measures the clear heights inside an opening, between what runs across it', () => {
@@ -46,6 +61,6 @@ describe('dimensions', () => {
 
   it('leaves out gaps too thin to label', () => {
     const drawers = [0, 203].map((y, i) => piece(`w${i}`, 'drawer', { x: -582, y, width: 573, height: 200 }))
-    expect(openingHeights(drawers, { from: -582, to: -9 })).toEqual([])
+    expect(openingHeights(drawers, { from: -582, to: -9, bottom: 0, top: 2000 })).toEqual([])
   })
 })

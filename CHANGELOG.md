@@ -25,6 +25,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Undoing a move to another wall now takes the view back to that wall with the part, instead of leaving it selected but out of sight.
 - If the 3D view can't start (a browser or computer without 3D graphics, or no connection when it first loads), it now says so with a Try again button, and the rest of Boardcut keeps working, instead of the whole app showing "Something went wrong".
 - Fit between sides on an overlay drawer now covers only half of a divider, so the drawers in the bays either side of it meet in the middle instead of overlapping by most of the divider (and the cut list no longer asks for fronts that can't both fit). A side panel's edge is still covered all the way.
+- Printed drawings measure the right openings when the dividers above a shelf aren't in line with the ones below it: each opening gets its own width and heights, and an opening that starts higher up has its width written inside it. Before, the widths were worked out between neighbouring dividers as if they all ran full height, which gave openings that don't exist.
 
 ## 1.11.0 — 2026-10-10
 
