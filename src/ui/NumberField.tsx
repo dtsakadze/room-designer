@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { UNITS, formatNumber, fromUnit } from '../lib/units'
+import { UNITS, formatNumber, fromUnit, parseLength } from '../lib/units'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useEditBatch } from './useEditBatch'
 
@@ -53,17 +53,18 @@ export function NumberField({
     const parsed = Number(text.replace(',', '.'))
     // From what's typed, if it's a number, so a half-typed edit carries on.
     const shown = text.trim() !== '' && Number.isFinite(parsed) ? parsed : Number(formatNumber(value, unit))
-    const next = Number((shown + direction * size).toFixed(UNITS[unit].decimals))
+    const next = fromUnit(Number((shown + direction * size).toFixed(UNITS[unit].decimals)), unit)
+    if (!Number.isFinite(next)) return
     stepped.current = true
-    onChange(fromUnit(next, unit))
+    onChange(next)
   }
 
   const handleChange = (raw: string) => {
     // Typing takes over from a step the store didn't change anything for.
     stepped.current = false
     setText(raw)
-    const parsed = Number(raw.replace(',', '.'))
-    if (raw.trim() !== '' && Number.isFinite(parsed)) onChange(fromUnit(parsed, unit))
+    const mm = parseLength(raw, unit)
+    if (mm !== null) onChange(mm)
   }
 
   return (

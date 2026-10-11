@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLength, formatNumber, fromUnit, isUnit } from './units'
+import { formatLength, formatNumber, fromUnit, isUnit, parseLength } from './units'
 
 describe('units', () => {
   it.each([
@@ -39,5 +39,14 @@ describe('units', () => {
   it('knows its units', () => {
     expect(['mm', 'cm', 'm', 'in'].every(isUnit)).toBe(true)
     expect(['ft', '', null, 3, 'toString', '__proto__', 'constructor'].some(isUnit)).toBe(false)
+  })
+
+  it('reads typed lengths as mm, and nothing that isn’t a usable length', () => {
+    expect(parseLength('116,4', 'cm')).toBe(1164)
+    expect(parseLength('-5', 'mm')).toBe(-5)
+    expect(['', '  ', '-', 'abc', '1e309'].map((text) => parseLength(text, 'mm'))).toEqual([null, null, null, null, null])
+    expect(parseLength('1e308', 'mm')).toBe(1e308)
+    expect(parseLength('1e308', 'cm')).toBeNull()
+    expect(parseLength('1e308', 'in')).toBeNull()
   })
 })

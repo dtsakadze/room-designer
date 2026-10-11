@@ -17,6 +17,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Keys no longer change the drawing behind a dropdown or an open window: Backspace in a dropdown such as Handle, or with Print, Settings or the cut list open, used to delete the selected part, and the arrows moved it instead of changing the dropdown. ⌘A, ⌘C, ⌘V, ⌘D and M also wait until the window is closed. The Shortcuts panel still lets you try them.
 - Undo in the middle of a drag no longer mixes up the history: the rest of the drag becomes its own step, and Redo can't jump back to a position from halfway through it.
 - Closing Settings with Esc while a field was focused no longer makes the next changes undo together as one step.
+- A number too big to be a length (such as 1e308 in cm or inches) is now ignored while you type it, instead of making the part disappear the next time the project opened, or a board thickness taking all its parts with it.
 
 ## 1.11.0 — 2026-10-10
 

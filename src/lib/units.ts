@@ -22,6 +22,17 @@ export const isUnit = (value: unknown): value is Unit =>
 export const fromUnit = (value: number, unit: Unit) => value * UNITS[unit].mm
 
 /**
+ * Typed text as millimetres, or null while it isn't a usable length yet
+ * (empty, half-typed, or so big it overflows to Infinity once in mm: 1e308 cm
+ * is a number, but 1e309 mm isn't). A comma works as the decimal separator.
+ */
+export function parseLength(text: string, unit: Unit) {
+  if (text.trim() === '') return null
+  const mm = fromUnit(Number(text.replace(',', '.')), unit)
+  return Number.isFinite(mm) ? mm : null
+}
+
+/**
  * A length as a plain number in `unit`, rounded to the unit's precision with
  * trailing zeros dropped: 1164 mm is "1164", "116.4" cm, "1.164" m, "45.83" in.
  */
