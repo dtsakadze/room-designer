@@ -563,6 +563,16 @@ describe('adding parts', () => {
     expect(store().pieces.every((piece) => piece.color === '#112233')).toBe(true)
   })
 
+  it('leaves the new-part colour and unit depth out of undo', () => {
+    store().addPiece('shelf')
+    store().setDefaultColor('#112233')
+    store().setUnitDepth(350)
+    store().undo()
+    expect(store().pieces).toHaveLength(0)
+    expect(store()).toMatchObject({ defaultColor: '#112233', unitDepth: 350 })
+    store().setDefaultColor(null)
+  })
+
   it('starts parts as deep as the unit depth', () => {
     store().setUnitDepth(350)
     store().addPiece('vertical')

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { DEFAULT_THICKNESS } from '../lib/defaults'
 import {
+  DESIGN_KEYS,
   type ProjectData,
   type ReadProblem,
   opensIntact,
@@ -141,22 +142,8 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
   const startAutosave = () => {
     useDesignStore.subscribe((state, previous) => {
       if (applying) return
-      const unchanged =
-        state.pieces === previous.pieces &&
-        state.boxes === previous.boxes &&
-        state.defaultColor === previous.defaultColor &&
-        state.thickness === previous.thickness &&
-        state.boardNames === previous.boardNames &&
-        state.boardMaterials === previous.boardMaterials &&
-        state.boardSheets === previous.boardSheets &&
-        state.joints === previous.joints &&
-        state.grainedBoards === previous.grainedBoards &&
-        state.holePitch === previous.holePitch &&
-        state.boardColors === previous.boardColors &&
-        state.edgeColors === previous.edgeColors &&
-        state.unitDepth === previous.unitDepth &&
-        state.room === previous.room
-      if (unchanged) return
+      // Edits replace what they change (immer), so the same object means unchanged.
+      if (DESIGN_KEYS.every((key) => state[key] === previous[key])) return
       pending = true
       set({ saveStatus: 'saving' })
       clearTimeout(timer)

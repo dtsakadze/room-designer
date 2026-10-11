@@ -187,19 +187,30 @@ export type ProjectData = {
  */
 export type Design = {
   pieces: Piece[]
+  /** Carcasses whose panels (tagged with `boxId`) live in `pieces`. */
   boxes: Box[]
   thickness: Thickness
+  /** What each board is, for the cut list. */
   boardNames: BoardNames
+  /** What each board is made of; a board without one is chipboard. */
   boardMaterials: BoardMaterials
+  /** The boards bought as whole sheets, with their sheet; the rest are bought cut to size. */
   boardSheets: BoardSheets
+  /** How the carcass is joined, for the hardware list. */
   joints: JointType
+  /** Boards with a grain, in the order of `BOARDS`. */
   grainedBoards: BoardKey[]
+  /** Spacing of the shelf-pin holes in sides and dividers; adjustable shelves sit on them. */
   holePitch: number
+  /** The colour of each board's parts, unless a part has its own. */
   boardColors: BoardColors
+  /** The colour of each board's edge banding, where it shows. */
   edgeColors: BoardColors
+  /** How deep new parts start. */
   unitDepth: number
-  /** Null for the standard look. */
+  /** Colour new parts start with; null means the standard look. */
   defaultColor: string | null
+  /** Which walls have units on them, and the room's size. */
   room: Room
 }
 

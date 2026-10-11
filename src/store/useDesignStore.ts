@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { BoardColors, BoardKey, BoardMaterial, BoardMaterials, BoardNames, BoardSheets, SheetSetup, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
+import type { BoardKey, BoardMaterial, SheetSetup, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { contentBounds, normalizePiece } from '../lib/geometry'
 import { BOARDS, MAX_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
-import { type ProjectData, clampUnitDepth, cleanBoardName, designOf, newDesign } from '../lib/project'
+import { DESIGN_KEYS, type Design, type ProjectData, clampUnitDepth, cleanBoardName, designOf, newDesign } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { newId } from '../lib/ids'
@@ -12,61 +12,28 @@ import { cleanSheet } from '../lib/sheets'
 import type { Look } from '../lib/looks'
 import { clampHolePitch, isAdjustable, snapToHoles } from '../lib/shelfPins'
 
-/** The part of the state that undo/redo rewinds. Selection isn't in it. */
-type Snapshot = {
-  pieces: Piece[]
-  boxes: Box[]
-  thickness: Thickness
-  boardNames: BoardNames
-  boardMaterials: BoardMaterials
-  boardSheets: BoardSheets
-  joints: JointType
-  grainedBoards: BoardKey[]
-  holePitch: number
-  boardColors: BoardColors
-  edgeColors: BoardColors
-  room: Room
-}
+/**
+ * Settings that only affect parts added later, so undo skips them. They're
+ * still saved.
+ */
+const NOT_UNDONE = ['defaultColor', 'unitDepth'] as const
+
+/** The part of the state that undo/redo rewinds: the design, less `NOT_UNDONE`. Selection isn't in it. */
+type Snapshot = Omit<Design, (typeof NOT_UNDONE)[number]>
+
+const SNAPSHOT_KEYS = DESIGN_KEYS.filter((key) => !(NOT_UNDONE as readonly string[]).includes(key))
 
 /** Oldest steps are dropped past this, so a long session can't grow forever. */
 const HISTORY_LIMIT = 200
 
-type DesignState = {
-  pieces: Piece[]
-  /** Carcasses whose panels (tagged with `boxId`) live in `pieces`. */
-  boxes: Box[]
+/** The open design (saved, and undone apart from `NOT_UNDONE`), and how it's being edited. */
+type DesignState = Design & {
   /**
    * Every selected part; more than one for a multi-selection. The last is the
    * primary one, the part the inspector shows and the last one clicked
    * (`selectedIdOf`).
    */
   selectedIds: string[]
-  thickness: Thickness
-  /** What each board is, for the cut list. */
-  boardNames: BoardNames
-  /** What each board is made of; a board without one is chipboard. */
-  boardMaterials: BoardMaterials
-  /** The boards bought as whole sheets, with their sheet; the rest are bought cut to size. */
-  boardSheets: BoardSheets
-  /** How the carcass is joined, for the hardware list. */
-  joints: JointType
-  /** Boards with a grain, in the order of `BOARDS`. */
-  grainedBoards: BoardKey[]
-  /** Spacing of the shelf-pin holes in sides and dividers; adjustable shelves sit on them. */
-  holePitch: number
-  /** The colour of each board's parts, unless a part has its own. */
-  boardColors: BoardColors
-  /** The colour of each board's edge banding, where it shows. */
-  edgeColors: BoardColors
-  /**
-   * Colour new parts start with; null means the standard look. Like `unitDepth`,
-   * it only affects parts added later, so undo skips it.
-   */
-  defaultColor: string | null
-  /** How deep new parts start. Only affects parts added later, so undo skips it. */
-  unitDepth: number
-  /** Which walls have units on them, and the room's size. */
-  room: Room
   /**
    * The wall being edited: the canvas shows its unit, and new parts go on it.
    * Like the selection, it isn't saved or undone.
@@ -199,23 +166,12 @@ export const useDesignStore = create<DesignState>()(
     }
 
     const snapshot = (): Snapshot => {
-      const { pieces, boxes, thickness, boardNames, boardMaterials, boardSheets, joints, grainedBoards, holePitch, boardColors, edgeColors, room } = get()
-      return { pieces, boxes, thickness, boardNames, boardMaterials, boardSheets, joints, grainedBoards, holePitch, boardColors, edgeColors, room }
+      const state = get()
+      return Object.fromEntries(SNAPSHOT_KEYS.map((key) => [key, state[key]])) as Snapshot
     }
 
     const restore = (state: DesignState, snapshot: Snapshot) => {
-      state.pieces = snapshot.pieces
-      state.boxes = snapshot.boxes
-      state.thickness = snapshot.thickness
-      state.boardNames = snapshot.boardNames
-      state.boardMaterials = snapshot.boardMaterials
-      state.boardSheets = snapshot.boardSheets
-      state.joints = snapshot.joints
-      state.grainedBoards = snapshot.grainedBoards
-      state.holePitch = snapshot.holePitch
-      state.boardColors = snapshot.boardColors
-      state.edgeColors = snapshot.edgeColors
-      state.room = snapshot.room
+      Object.assign(state, snapshot)
       const ids = new Set(snapshot.pieces.map((piece) => piece.id))
       state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
       // Undoing a move to another wall puts the part back on its old one: the

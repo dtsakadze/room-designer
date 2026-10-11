@@ -197,6 +197,11 @@ describe('autosave', () => {
     open().setRoom({ left: true })
     await vi.advanceTimersByTimeAsync(500)
     expect(readStored(projects().currentId!).room.left).toBe(true)
+    // Not undone, but still saved.
+    open().setDefaultColor('#112233')
+    open().setUnitDepth(350)
+    await vi.advanceTimersByTimeAsync(500)
+    expect(readStored(projects().currentId!)).toMatchObject({ defaultColor: '#112233', unitDepth: 350 })
   })
 
   it('keeps the last good save rather than one that would lose a part', async () => {
