@@ -1,27 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { PointerEvent as ReactPointerEvent } from 'react'
-import type { Piece } from '../types'
-import { BOARD, SNAP } from '../lib/defaults'
-import { type Gap, type Rect, centredGaps, snapToMiddle } from '../lib/geometry'
-import { WALL_LABELS, activeWalls, hasSideWalls, wallLength } from '../lib/room'
+import { BOARD } from '../lib/defaults'
+import type { Rect } from '../lib/geometry'
+import { WALL_LABELS, hasSideWalls, wallLength } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
-import { CutListPanel } from '../ui/CutListPanel'
 import { EditButtons } from '../ui/EditButtons'
-import { ShortcutsPanel } from '../ui/ShortcutsPanel'
 import { useClashes } from '../ui/useClashes'
 import { useSpanWarnings } from '../ui/useSpanWarnings'
 import { useClearanceWarnings } from '../ui/useClearanceWarnings'
 import { useRoomOverhangs } from '../ui/useRoomOverhangs'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
-import { MEASURE_SHORTCUT, escapeOwnedByOverlay, hasModifier, isFieldTarget, isOverlayOpen } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
 import { MiddleGuides } from './MiddleGuides'
 import { type EdgeView, SELECTED, edgeOnColor, faceColor } from './colors'
-import { MeasureLayer } from './MeasureLayer'
-import { type Point, type SnapKind, snapPoint } from '../lib/measure'
-import { ExportViewMenu } from './ExportViewMenu'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { fileBase } from '../lib/projectFile'
 import { UNITS } from '../lib/units'
@@ -34,8 +26,6 @@ import { ResizeHandles } from './ResizeHandles'
 import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
 import { DoorSwings } from './DoorSwings'
 import { doorSwings, swingBounds, swingConflicts } from '../lib/swing'
-import type { Handle } from './handles'
-import { resizeByKey, resizePiece } from './handles'
 import {
   VIEWS,
   type ViewName,
@@ -43,123 +33,25 @@ import {
   endWalls,
   drawOrder,
   isHollow,
-  piecesAt,
-  piecesInRect,
   roomPlan,
   showsEdge,
   sizeLabel,
   viewPieces,
   visiblePieces,
 } from './views'
-
 import { Preview3DLoader } from './Preview3DLoader'
-import {
-  INITIAL_VIEW,
-  type ViewBox,
-  fitView,
-  screenToSvgMatrix,
-  svgPoint,
-  toDesignY,
-  wheelZoomFactor,
-  zoomAround,
-} from './view'
-
-type Gesture =
-  | { mode: 'pan'; inverse: DOMMatrix; startX: number; startY: number; startView: ViewBox }
-  | {
-      mode: 'marquee'
-      inverse: DOMMatrix
-      startX: number
-      startY: number
-      /** The part the ⌘-press started on, toggled if the pointer doesn't move. */
-      clickedId: string | null
-      /** Where the pointer is now; read on release, as state may not have caught up. */
-      endX: number
-      endY: number
-      moved: boolean
-    }
-  | {
-      mode: 'piece'
-      inverse: DOMMatrix
-      id: string
-      startX: number
-      startY: number
-      originX: number
-      originY: number
-      /** Only the front view moves pieces; elsewhere a press just selects. */
-      editable: boolean
-      /** Pieces under the pointer when an already-selected one was pressed. */
-      stack: string[] | null
-      /** Set when the press was on part of a multi-selection, which then moves together. */
-      group: string[] | null
-      moved: boolean
-    }
-  | {
-      mode: 'resize'
-      inverse: DOMMatrix
-      id: string
-      /** Set when resizing a whole box rather than one piece. */
-      boxId: string | null
-      startX: number
-      startY: number
-      handle: Handle
-      origin: Rect
-    }
-  | {
-      /** Two fingers on a touch screen: zoom by their spread, pan by their middle. */
-      mode: 'pinch'
-      inverse: DOMMatrix
-      startView: ViewBox
-      /** The design point between the fingers when they went down. */
-      startMid: { x: number; y: number }
-      startDistance: number
-    }
-
-/**
- * Pointer capture throws when the pointer is already gone (a finger lifted
- * between the event and the call, or a touch the browser cancelled), which
- * would crash a drag; the gesture works without it, just less reliably.
- */
-function capture(svg: SVGSVGElement, pointerId: number) {
-  try {
-    svg.setPointerCapture(pointerId)
-  } catch {
-    // The pointer is gone: nothing to capture.
-  }
-}
-
-function release(svg: SVGSVGElement | null, pointerId: number) {
-  try {
-    svg?.releasePointerCapture(pointerId)
-  } catch {
-    // Already released.
-  }
-}
+import { INITIAL_VIEW, type ViewBox, fitView } from './view'
+import { CanvasTools, ViewSwitchers } from './CanvasToolbar'
+import { useCanvasGestures } from './useCanvasGestures'
+import { useCanvasShortcuts } from './useCanvasShortcuts'
+import { useMeasureTool } from './useMeasureTool'
 
 export function Canvas2D() {
   const svgRef = useRef<SVGSVGElement>(null)
-  const gesture = useRef<Gesture | null>(null)
-  /** Where each finger touching the canvas is, in screen pixels, for pinch zoom. */
-  const touches = useRef(new Map<number, { x: number; y: number }>())
   const [view, setView] = useState<ViewBox>(INITIAL_VIEW)
-  // The cut list and the shortcuts float in the same corner, so one at a time.
-  const [panel, setPanel] = useState<'cut-list' | 'shortcuts' | null>(null)
-  const togglePanel = (which: 'cut-list' | 'shortcuts') =>
-    setPanel((open) => (open === which ? null : which))
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [viewName, setViewName] = useState<ViewName>('front')
-  /** The selection rectangle being dragged, in SVG coordinates. */
-  const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(
-    null,
-  )
   const isFront = viewName === 'front'
-  /** The equal gaps either side of a part being dragged while it's snapped to the middle. */
-  const [centred, setCentred] = useState<Gap[] | null>(null)
-  /** The Measure tool: while it's on, clicks pick points to measure between. */
-  const [measuring, setMeasuring] = useState(false)
-  // Kept with the view it was taken in: points measured in one view mean nothing in another.
-  const [measurement, setMeasurement] = useState<{ view: string; from: Point; to: Point | null } | null>(null)
-  const [measureHover, setMeasureHover] = useState<(Point & { snap: SnapKind }) | null>(null)
 
   const allPieces = useDesignStore((s) => s.pieces)
   const showDoors = useSettingsStore((s) => s.showDoors)
@@ -172,17 +64,7 @@ export function Canvas2D() {
   const pieces = useMemo(() => visiblePieces(allPieces, { showDoors }), [allPieces, showDoors])
   const selectedId = useDesignStore(selectedIdOf)
   const selectedIds = useDesignStore((s) => s.selectedIds)
-  const select = useDesignStore((s) => s.select)
-  const toggleSelect = useDesignStore((s) => s.toggleSelect)
   const selectMany = useDesignStore((s) => s.selectMany)
-  const removePieces = useDesignStore((s) => s.removePieces)
-  const updatePiece = useDesignStore((s) => s.updatePiece)
-  const movePieces = useDesignStore((s) => s.movePieces)
-  const nudgeSelection = useDesignStore((s) => s.nudgeSelection)
-  const resizeSelection = useDesignStore((s) => s.resizeSelection)
-  const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
-  const beginBatch = useDesignStore((s) => s.beginBatch)
-  const endBatch = useDesignStore((s) => s.endBatch)
 
   const thickness = useDesignStore((s) => s.thickness)
   const holePitch = useDesignStore((s) => s.holePitch)
@@ -191,8 +73,6 @@ export function Canvas2D() {
   const colors = { boardColors, edgeColors }
   const room = useDesignStore((s) => s.room)
   const activeWall = useDesignStore((s) => s.activeWall)
-  const measureView = `${viewName}|${activeWall}`
-  const measured = measurement?.view === measureView ? measurement : null
   const setActiveWall = useDesignStore((s) => s.setActiveWall)
   const clashes = useClashes()
   const spanWarnings = useSpanWarnings()
@@ -244,27 +124,15 @@ export function Canvas2D() {
 
   const unit = view.w / 1400
 
-  /** Where a pointer event lands for measuring: caught on a part's corner or edge, unless Alt is held. */
-  const measurePoint = (event: { clientX: number; clientY: number; altKey: boolean }) => {
-    const svg = svgRef.current
-    const inverse = svg && screenToSvgMatrix(svg)
-    if (!inverse) return null
-    const point = svgPoint(inverse, event.clientX, event.clientY)
-    const raw = { x: point.x, y: toDesignY(point.y) }
-    return event.altKey ? { ...raw, snap: null } : snapPoint(raw, shown, unit * MEASURE_SNAP)
-  }
+  const measure = useMeasureTool({ svgRef, viewKey: `${viewName}|${activeWall}`, canMeasure: viewName !== '3d', shown, unit })
+  const gestures = useCanvasGestures({ svgRef, view, setView, viewName, pieces, shown, drawn, obstacles, unit, setHoveredId })
+  useCanvasShortcuts({ viewName, showDoors, measuring: measure.measuring })
 
-  const toggleMeasuring = () => {
-    setMeasuring((on) => !on)
-    setMeasurement(null)
-    setMeasureHover(null)
-  }
   // What the view shows, in words: "Front", or "Left wall, front" in a room.
   const viewLabel = VIEWS.find((candidate) => candidate.name === viewName)?.label ?? ''
   const viewTitle =
     multiWall && viewName !== 'top' ? `${WALL_LABELS[activeWall]}, ${viewLabel.toLowerCase()}` : viewLabel
   const selected = pieces.find((piece) => piece.id === selectedId) ?? null
-  const updateBox = useDesignStore((s) => s.updateBox)
   const selectedBox =
     useDesignStore((s) => s.boxes.find((box) => box.id === selected?.boxId)) ?? null
   const selectedShown = shown.find((piece) => piece.id === selectedId) ?? null
@@ -276,411 +144,10 @@ export function Canvas2D() {
     pieces.filter((piece) => selectedSet.has(piece.id) && piece.boxId).map((p) => p.boxId),
   )
 
-  /**
-   * ⌘/Ctrl + drag draws a selection rectangle that adds what it touches to the
-   * selection. It can start over a part (the back panel covers the whole unit),
-   * so a ⌘-press that doesn't move is a ⌘-click on that part instead.
-   */
-  const beginMarquee = (
-    event: ReactPointerEvent<SVGElement>,
-    clickedId: string | null,
-  ) => {
-    const svg = svgRef.current
-    const inverse = svg && screenToSvgMatrix(svg)
-    if (!svg || !inverse) return
-    const point = svgPoint(inverse, event.clientX, event.clientY)
-    gesture.current = {
-      mode: 'marquee',
-      inverse,
-      startX: point.x,
-      startY: point.y,
-      clickedId,
-      endX: point.x,
-      endY: point.y,
-      moved: false,
-    }
-    setHoveredId(null)
-    capture(svg, event.pointerId)
-  }
-
-  /**
-   * A second finger turns whatever the first started (a pan, a drag) into a
-   * pinch. Runs in the capture phase, before a part under the finger claims it.
-   */
-  const trackTouch = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (event.pointerType !== 'touch') return
-    touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (touches.current.size !== 2) return
-    const svg = svgRef.current
-    const inverse = svg && screenToSvgMatrix(svg)
-    if (!svg || !inverse) return
-    event.stopPropagation()
-    const active = gesture.current
-    // A drag the first finger started keeps what it did, as one undo step.
-    if (active?.mode === 'resize' || (active?.mode === 'piece' && active.editable)) endBatch()
-    setMarquee(null)
-    setCentred(null)
-    const [a, b] = [...touches.current.values()]
-    gesture.current = {
-      mode: 'pinch',
-      inverse,
-      startView: view,
-      startMid: svgPoint(inverse, (a.x + b.x) / 2, (a.y + b.y) / 2),
-      startDistance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
-    }
-    capture(svg, event.pointerId)
-  }
-
-  /** Dragging empty space pans the view, and pressing it clears the selection. */
-  const beginBackground = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (event.button === 0 && hasModifier(event)) {
-      beginMarquee(event, null)
-      return
-    }
-    const svg = svgRef.current
-    const inverse = svg && screenToSvgMatrix(svg)
-    if (!svg || !inverse) return
-    const point = svgPoint(inverse, event.clientX, event.clientY)
-    if (event.button === 0) select(null)
-    gesture.current = {
-      mode: 'pan',
-      inverse,
-      startX: point.x,
-      startY: point.y,
-      startView: view,
-    }
-    setHoveredId(null)
-    capture(svg, event.pointerId)
-  }
-
-  /**
-   * Pressing a part selects it and, in the front view, starts dragging it.
-   * Pressing where the selected part is (even under others) keeps it, so it can
-   * be dragged; releasing without moving then selects the next part beneath.
-   */
-  const beginPieceDrag = (event: ReactPointerEvent<SVGRectElement>, clicked: Piece) => {
-    // Right-drag pans, even when it starts on a part.
-    if (event.button !== 0) return
-    event.stopPropagation()
-    const svg = svgRef.current
-    const inverse = svg && screenToSvgMatrix(svg)
-    if (!svg || !inverse) return
-    const point = svgPoint(inverse, event.clientX, event.clientY)
-
-    const stack = piecesAt(drawn, point.x, toDesignY(point.y), viewName).map((piece) => piece.id)
-    if (hasModifier(event)) {
-      beginMarquee(event, clicked.id)
-      return
-    }
-    const current = shown.find((piece) => piece.id === selectedId)
-    // A see-through panel underneath stays selectable, but pressing a part
-    // inside it should grab that part, not the panel. Pressing it again starts
-    // over from the top of the stack, so clicking keeps going round.
-    const underneath = current && isHollow(current, viewName) && stack.at(-1) === current.id
-    const keep = current && stack.includes(current.id) && !underneath
-    const target = pieces.find((piece) => piece.id === (keep ? current.id : clicked.id))
-    if (!target) return
-    // Pressing a part of a multi-selection keeps the selection, to drag it all.
-    const inGroup =
-      !single &&
-      (selectedSet.has(target.id) || (!!target.boxId && selectedBoxIds.has(target.boxId)))
-    if (!inGroup) select(target.id)
-
-    gesture.current = {
-      mode: 'piece',
-      inverse,
-      id: target.id,
-      startX: point.x,
-      startY: point.y,
-      originX: target.x,
-      originY: target.y,
-      editable: isFront,
-      stack: keep ? stack : null,
-      group: inGroup ? selectedIds : null,
-      moved: false,
-    }
-    // The whole drag undoes as one step.
-    if (isFront) beginBatch()
-    setHoveredId(null)
-    capture(svg, event.pointerId)
-  }
-
-  const beginResize = (
-    event: ReactPointerEvent<SVGRectElement>,
-    handle: Handle,
-    target: { id: string; boxId: string | null; origin: Rect },
-  ) => {
-    // Right-drag pans, even when it starts on a handle, as it does on a part.
-    if (event.button !== 0) return
-    event.stopPropagation()
-    const svg = svgRef.current
-    const inverse = svg && screenToSvgMatrix(svg)
-    if (!svg || !inverse) return
-    const point = svgPoint(inverse, event.clientX, event.clientY)
-    gesture.current = {
-      mode: 'resize',
-      inverse,
-      id: target.id,
-      boxId: target.boxId,
-      startX: point.x,
-      startY: point.y,
-      handle,
-      origin: target.origin,
-    }
-    beginBatch()
-    setHoveredId(null)
-    capture(svg, event.pointerId)
-  }
-
-  const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (touches.current.has(event.pointerId)) {
-      touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    }
-    const active = gesture.current
-    const svg = svgRef.current
-    if (!active || !svg) return
-    // The mouse was let go where we didn't hear it (another window, an OS
-    // gesture): finish the drag rather than have the part follow the pointer
-    // with no button held, and every later change join its undo step.
-    if (event.pointerType === 'mouse' && event.buttons === 0) {
-      endGesture(event)
-      return
-    }
-
-    if (active.mode === 'pinch') {
-      if (touches.current.size < 2) return
-      const [a, b] = [...touches.current.values()]
-      const { startView, startMid } = active
-      // Zoomed by the fingers' spread around where their middle is now, then
-      // moved so the design point that was between them stays between them.
-      const mid = svgPoint(active.inverse, (a.x + b.x) / 2, (a.y + b.y) / 2)
-      const zoomed = zoomAround(startView, mid, active.startDistance / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)))
-      setView({ ...zoomed, x: zoomed.x + startMid.x - mid.x, y: zoomed.y + startMid.y - mid.y })
-      return
-    }
-    const point = svgPoint(active.inverse, event.clientX, event.clientY)
-
-    if (active.mode === 'marquee') {
-      const distance = Math.hypot(point.x - active.startX, point.y - active.startY)
-      if (!active.moved && distance < unit * 4) return
-      active.moved = true
-      active.endX = point.x
-      active.endY = point.y
-      setMarquee({ x1: active.startX, y1: active.startY, x2: point.x, y2: point.y })
-      return
-    }
-
-    if (active.mode === 'pan') {
-      setView({
-        ...active.startView,
-        x: active.startView.x + (active.startX - point.x),
-        y: active.startView.y + (active.startY - point.y),
-      })
-      return
-    }
-
-    // SVG y grows down, design y grows up.
-    const dx = point.x - active.startX
-    const dy = toDesignY(point.y - active.startY)
-
-    if (active.mode === 'resize') {
-      const resized = resizePiece(active.origin, active.handle, dx, dy, snap)
-      if (active.boxId) updateBox(active.boxId, resized)
-      else updatePiece(active.id, resized)
-      return
-    }
-
-    // A few pixels of wobble is still a click, not a drag.
-    if (!active.moved && Math.hypot(dx, dy) < unit * 4) return
-    active.moved = true
-    if (!active.editable) return
-    if (active.group) {
-      // The pressed part snaps to the grid; the rest keep their places around it.
-      const target = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
-      if (!target) return
-      movePieces(
-        active.group,
-        snap(active.originX + dx) - target.x,
-        snap(active.originY + dy) - target.y,
-      )
-      return
-    }
-    const placed = { x: snap(active.originX + dx), y: snap(active.originY + dy) }
-    const target = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
-    // A loose part snaps to the middle of its space when dragged near it; a
-    // box's panel moves its whole box, so it doesn't.
-    if (!target || target.boxId) {
-      updatePiece(active.id, placed)
-      return
-    }
-    const middle = snapToMiddle({ ...target, ...placed }, shown, obstacles, unit * MIDDLE_SNAP)
-    updatePiece(active.id, { x: middle.x, y: middle.y })
-    const moved = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
-    const centred = moved ? centredGaps(middle, moved) : []
-    setCentred(centred.length > 0 ? centred : null)
-  }
-
-  const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
-    touches.current.delete(event.pointerId)
-    const active = gesture.current
-    if (!active) return
-    if (active.mode === 'pinch') {
-      // Lifting one finger ends the pinch; the other doesn't start a pan.
-      gesture.current = null
-      release(svgRef.current, event.pointerId)
-      return
-    }
-    if (active.mode === 'marquee') {
-      if (active.moved) {
-        const hit = piecesInRect(drawn, { x: active.startX, y: active.startY }, { x: active.endX, y: active.endY })
-        selectMany(
-          hit.map((piece) => piece.id),
-          true,
-        )
-      } else if (active.clickedId) {
-        // ⌘/Ctrl-click: adds the part to the selection, or takes it out.
-        toggleSelect(active.clickedId)
-      }
-      setMarquee(null)
-    }
-    if (active.mode === 'resize' || (active.mode === 'piece' && active.editable)) endBatch()
-    setCentred(null)
-    if (active.mode === 'piece' && active.group && !active.moved) {
-      // A click (no drag) on part of a multi-selection selects just that part.
-      select(active.id)
-    } else if (active.mode === 'piece' && active.stack && !active.moved) {
-      const next = active.stack[(active.stack.indexOf(active.id) + 1) % active.stack.length]
-      select(next)
-    }
-    gesture.current = null
-    release(svgRef.current, event.pointerId)
-  }
-
-  // Wheel must be a non-passive native listener so the gesture can be claimed.
-  useEffect(() => {
-    const svg = svgRef.current
-    if (!svg) return
-
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault()
-      const inverse = screenToSvgMatrix(svg)
-      if (!inverse) return
-      const cursor = svgPoint(inverse, event.clientX, event.clientY)
-
-      // Whatever is under the cursor stays pinned in place.
-      setView((current) => zoomAround(current, cursor, wheelZoomFactor(event)))
-    }
-
-    svg.addEventListener('wheel', onWheel, { passive: false })
-    return () => svg.removeEventListener('wheel', onWheel)
-  }, [])
-
   // A selection can span walls only while the top view shows the whole room.
   useEffect(() => {
     useDesignStore.getState().setWholeRoomShown(viewName === 'top')
   }, [viewName])
-
-  // ⌘A selects every part; ⌘C / ⌘V copy and paste parts (Ctrl on Windows).
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isFieldTarget(event.target) || isOverlayOpen()) return
-      if (!hasModifier(event) || event.shiftKey || event.altKey) return
-      // Leave copying selected text on the page to the browser.
-      if (window.getSelection()?.toString()) return
-      const store = useDesignStore.getState()
-      const key = event.key.toLowerCase()
-      // Everything in view: the wall being edited, or the whole room from the top.
-      const all = visiblePieces(store.pieces, { showDoors, wall: viewName === 'top' ? undefined : store.activeWall })
-      if (key === 'a') selectMany(all.map((piece) => piece.id))
-      else if (key === 'c' && store.selectedIds.length > 0) store.copySelection()
-      else if (key === 'v' && store.canPaste) store.paste()
-      else return
-      event.preventDefault()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectMany, viewName, showDoors])
-
-  // M turns the Measure tool on and off; Escape clears a measurement, then turns it off.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isFieldTarget(event.target)) return
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      if (event.key.toLowerCase() === 'm' && viewName !== '3d' && !isOverlayOpen()) {
-        event.preventDefault()
-        toggleMeasuring()
-      } else if (event.key === 'Escape' && measuring) {
-        if (escapeOwnedByOverlay()) return
-        event.preventDefault()
-        if (measured) setMeasurement(null)
-        else toggleMeasuring()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  })
-
-  // Arrow keys nudge the selection; Delete removes it; Escape lets go of it.
-  useEffect(() => {
-    if (!selectedId) return
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isFieldTarget(event.target)) return
-
-      if (event.key === 'Escape') {
-        // The Measure tool takes Escape while it's on.
-        if (measuring) return
-        if (escapeOwnedByOverlay()) return
-        event.preventDefault()
-        select(null)
-        return
-      }
-
-      if (isOverlayOpen()) return
-
-      if (event.key === 'Delete' || event.key === 'Backspace') {
-        event.preventDefault()
-        removePieces(useDesignStore.getState().selectedIds)
-        return
-      }
-
-      const selection = useDesignStore.getState().selectedIds
-
-      // Also stops the browser's own ⌘D / Ctrl+D (bookmark this page).
-      if (hasModifier(event) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'd') {
-        event.preventDefault()
-        // Duplicating acts on one part at a time.
-        if (selection.length === 1) duplicatePiece(selectedId)
-        return
-      }
-
-      // ⌘ (Ctrl) with an arrow resizes the selected part: the right and top edges move.
-      // Also stops the browser's own ⌘← (back).
-      if (hasModifier(event) && !event.altKey && event.key.startsWith('Arrow')) {
-        event.preventDefault()
-        if (isFront) resizeSelection((rect) => resizeByKey(rect, event.key, event.shiftKey ? SNAP * 10 : SNAP))
-        return
-      }
-
-      const step = event.shiftKey ? SNAP * 10 : SNAP
-      const nudge: Record<string, { x?: number; y?: number }> = {
-        ArrowLeft: { x: -step },
-        ArrowRight: { x: step },
-        ArrowUp: { y: step },
-        ArrowDown: { y: -step },
-      }
-      const delta = nudge[event.key]
-      // Nudging moves along the front view's axes, so only there.
-      if (!delta || !isFront) return
-
-      event.preventDefault()
-      // A big step (⇧) moves an adjustable shelf by the grid, not by holes.
-      nudgeSelection(delta.x ?? 0, delta.y ?? 0, !event.shiftKey)
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, isFront, removePieces, duplicatePiece, nudgeSelection, resizeSelection, select, measuring])
 
   /** Hiding doors lets go of any that are selected, so nothing unseen can be deleted or moved. */
   const toggleDoors = () => {
@@ -738,6 +205,8 @@ export function Canvas2D() {
     if (viewName !== 'top' && viewName !== '3d') fitTo(framed(viewName, activeWall))
   }
 
+  const { marquee, centred } = gestures
+
   return (
     <div className="viewport">
       <svg
@@ -747,15 +216,15 @@ export function Canvas2D() {
         style={viewName === '3d' ? { display: 'none' } : undefined}
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         preserveAspectRatio="xMidYMid meet"
-        onPointerDownCapture={trackTouch}
-        onPointerDown={beginBackground}
+        onPointerDownCapture={gestures.trackTouch}
+        onPointerDown={gestures.beginBackground}
         // The right button pans, so its menu would only get in the way.
         onContextMenu={(event) => event.preventDefault()}
-        onPointerMove={onPointerMove}
-        onPointerUp={endGesture}
-        onPointerCancel={endGesture}
+        onPointerMove={gestures.onPointerMove}
+        onPointerUp={gestures.endGesture}
+        onPointerCancel={gestures.endGesture}
         // The browser took the pointer away without a pointerup.
-        onLostPointerCapture={endGesture}
+        onLostPointerCapture={gestures.endGesture}
       >
         <GrainPatterns unit={unit} />
         <GridLayer view={view} wall={viewName === 'left' || viewName === 'right'} />
@@ -797,7 +266,7 @@ export function Canvas2D() {
             // From behind, a door's hinges would show on the wrong side.
             doorMarks={isFront}
             unit={unit}
-            onPointerDown={beginPieceDrag}
+            onPointerDown={gestures.beginPieceDrag}
             onHoverChange={setHoveredId}
           />
         ))}
@@ -827,39 +296,7 @@ export function Canvas2D() {
           <HangingGuides rod={selectedShown} pieces={shown} unit={unit} />
         )}
 
-        {measuring && viewName !== '3d' && (
-          <>
-            <MeasureLayer
-              from={measured?.from ?? null}
-              to={measured?.to ?? (measured ? measureHover : null)}
-              hover={measureHover}
-              unit={unit}
-            />
-            {/* On top of everything, so clicks pick points rather than parts; right-drag still pans. */}
-            <rect
-              x={view.x}
-              y={view.y}
-              width={view.w}
-              height={view.h}
-              fill="transparent"
-              style={{ cursor: 'crosshair' }}
-              onPointerDown={(event) => {
-                if (event.button !== 0) return
-                event.stopPropagation()
-                const point = measurePoint(event)
-                if (!point) return
-                const { snap: _snap, ...picked } = point
-                // From the latest state, so quick clicks each count.
-                setMeasurement((current) => {
-                  const open = current?.view === measureView && !current.to ? current : null
-                  return open ? { ...open, to: picked } : { view: measureView, from: picked, to: null }
-                })
-              }}
-              onPointerMove={(event) => setMeasureHover(measurePoint(event))}
-              onPointerLeave={() => setMeasureHover(null)}
-            />
-          </>
-        )}
+        {measure.layer(view)}
 
         {marquee && (
           <rect
@@ -883,7 +320,7 @@ export function Canvas2D() {
             piece={selectedBox}
             unit={unit}
             onPointerDown={(event, handle) =>
-              beginResize(event, handle, {
+              gestures.beginResize(event, handle, {
                 id: selectedBox.id,
                 boxId: selectedBox.id,
                 origin: selectedBox,
@@ -897,7 +334,7 @@ export function Canvas2D() {
             locked={BOARD[selected.kind]?.axis}
             unit={unit}
             onPointerDown={(event, handle) =>
-              beginResize(event, handle, { id: selected.id, boxId: null, origin: selected })
+              gestures.beginResize(event, handle, { id: selected.id, boxId: null, origin: selected })
             }
           />
         )}
@@ -909,96 +346,20 @@ export function Canvas2D() {
 
       <EditButtons />
 
-      <div className="canvas-tools">
-        {hasDoors && (
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={toggleDoors}
-            title="Doors stay in the cut list while hidden"
-          >
-            {showDoors ? 'Hide doors' : 'Show doors'}
-          </button>
-        )}
-        {viewName !== '3d' && (
-          <button
-            type="button"
-            className="ghost-button"
-            aria-pressed={measuring}
-            onClick={toggleMeasuring}
-            title={`Measure between two points (${MEASURE_SHORTCUT})`}
-          >
-            Measure <kbd>{MEASURE_SHORTCUT}</kbd>
-          </button>
-        )}
-        {viewName !== '3d' && (
-          <ExportViewMenu
-            pieces={shown}
-            view={viewName}
-            caption={`${projectName} · ${viewTitle} · sizes in ${UNITS[lengthUnit].label}`}
-            fileName={`${fileBase(projectName) || 'boardcut'} ${viewTitle.toLowerCase()}`}
-          />
-        )}
-        {viewName !== '3d' && (
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => fitTo([...shown, ...swings.map(swingBounds)])}
-          >
-            Fit view
-          </button>
-        )}
-        <button
-          type="button"
-          className="ghost-button"
-          aria-pressed={panel === 'cut-list'}
-          onClick={() => togglePanel('cut-list')}
-        >
-          Cut list
-        </button>
-        <button
-          type="button"
-          className="ghost-button shortcuts-button"
-          aria-pressed={panel === 'shortcuts'}
-          onClick={() => togglePanel('shortcuts')}
-        >
-          Shortcuts
-        </button>
-      </div>
+      <CanvasTools
+        viewName={viewName}
+        hasDoors={hasDoors}
+        showDoors={showDoors}
+        onToggleDoors={toggleDoors}
+        measuring={measure.measuring}
+        onToggleMeasuring={measure.toggle}
+        shown={shown}
+        caption={`${projectName} · ${viewTitle} · sizes in ${UNITS[lengthUnit].label}`}
+        fileName={`${fileBase(projectName) || 'boardcut'} ${viewTitle.toLowerCase()}`}
+        onFit={() => fitTo([...shown, ...swings.map(swingBounds)])}
+      />
 
-      {panel === 'cut-list' && <CutListPanel onClose={() => setPanel(null)} />}
-      {panel === 'shortcuts' && <ShortcutsPanel onClose={() => setPanel(null)} />}
-
-      {/* Only there when the room has more than one wall, so a single unit looks as before. */}
-      {multiWall && viewName !== 'top' && viewName !== '3d' && (
-        <div className="view-switcher wall-switcher" role="group" aria-label="Wall">
-          {activeWalls(room).map((wall) => (
-            <button
-              key={wall}
-              type="button"
-              className="ghost-button"
-              aria-pressed={activeWall === wall}
-              onClick={() => setActiveWall(wall)}
-            >
-              {WALL_LABELS[wall]}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="view-switcher" role="group" aria-label="View">
-        {VIEWS.map(({ name, label }) => (
-          <button
-            key={name}
-            type="button"
-            className="ghost-button"
-            aria-pressed={viewName === name}
-            onClick={() => switchView(name)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <ViewSwitchers viewName={viewName} onView={switchView} room={room} activeWall={activeWall} onWall={setActiveWall} />
 
       {allPieces.length === 0 ? (
         <p className="viewport-hint">Pick a component from the sidebar to start building, or start from a template under Projects.</p>
@@ -1019,9 +380,3 @@ export function Canvas2D() {
 
 /** How much of a wall's height to frame when it's shown, in mm. */
 const WALL_FRAME_HEIGHT = 2400
-
-const snap = (mm: number) => Math.round(mm / SNAP) * SNAP
-/** How near the middle of its space a dragged part snaps to it, in screen pixels (times `unit`). */
-const MIDDLE_SNAP = 8
-/** How near a part's corner or edge a measured point catches on it, in screen pixels (times `unit`). */
-const MEASURE_SNAP = 10
