@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { holeColumns, holeLines } from '../lib/shelfPins'
 import type { Piece } from '../types'
 import { toSvgY } from './view'
@@ -24,7 +25,8 @@ type HoleLinesProps = {
  * the drilled face. From the left or right the face is in view, and the holes
  * show as two columns of dots, near the front and back edges.
  */
-export function HoleLines({ pieces, shown, view, pitch, unit }: HoleLinesProps) {
+// Memoised: its lines only change with the parts or the zoom, not on a pan.
+export const HoleLines = memo(function HoleLines({ pieces, shown, view, pitch, unit }: HoleLinesProps) {
   const lines = holeLines(pieces, pitch)
   if (lines.length === 0) return null
 
@@ -76,4 +78,4 @@ export function HoleLines({ pieces, shown, view, pitch, unit }: HoleLinesProps) 
       })}
     </g>
   )
-}
+})

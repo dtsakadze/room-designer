@@ -1,4 +1,4 @@
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import { type PointerEvent as ReactPointerEvent, memo } from 'react'
 import type { Piece } from '../types'
 import { ACCESSORIES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorFronts, slidingPanels } from '../lib/geometry'
@@ -38,7 +38,8 @@ type PieceRectProps = {
 /** How far in from each end a fixed shelf's screw marks sit, in mm. */
 const SCREW_INSET = 25
 
-export function PieceRect({
+/** One part on the canvas. Memoised: on a pan or zoom, only the parts whose look changed are drawn again. */
+export const PieceRect = memo(function PieceRect({
   piece,
   selected,
   labelled,
@@ -152,7 +153,7 @@ export function PieceRect({
       )}
     </g>
   )
-}
+})
 
 /**
  * The usual drawing convention for a hinged door: lines from the corners of

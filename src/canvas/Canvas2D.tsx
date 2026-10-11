@@ -138,10 +138,11 @@ export function Canvas2D() {
   const selectedShown = shown.find((piece) => piece.id === selectedId) ?? null
   // Handles, gap lines and the like are for one part at a time.
   const single = selectedIds.length <= 1
-  const selectedSet = new Set(selectedIds)
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
   // Selecting any panel of a box selects the whole box.
-  const selectedBoxIds = new Set(
-    pieces.filter((piece) => selectedSet.has(piece.id) && piece.boxId).map((p) => p.boxId),
+  const selectedBoxIds = useMemo(
+    () => new Set(pieces.filter((piece) => selectedSet.has(piece.id) && piece.boxId).map((p) => p.boxId)),
+    [pieces, selectedSet],
   )
 
   // A selection can span walls only while the top view shows the whole room.

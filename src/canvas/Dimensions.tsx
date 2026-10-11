@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Piece } from '../types'
 import { type Gap, type Rect, contentBounds, neighbourGaps } from '../lib/geometry'
 import { useUnits } from '../store/useSettingsStore'
@@ -20,7 +21,8 @@ type DimensionsProps = {
  * Measurements drawn on the canvas: the overall size of everything placed,
  * along the top and left, and the clear gaps around the selected piece.
  */
-export function Dimensions({ pieces, selected, obstacles, unit }: DimensionsProps) {
+// Memoised: its lines only change with the parts or the zoom, not on a pan.
+export const Dimensions = memo(function Dimensions({ pieces, selected, obstacles, unit }: DimensionsProps) {
   const { len } = useUnits()
   const bounds = contentBounds(pieces)
   if (!bounds) return null
@@ -60,7 +62,7 @@ export function Dimensions({ pieces, selected, obstacles, unit }: DimensionsProp
         ))}
     </g>
   )
-}
+})
 
 type DimensionLineProps = {
   gap: Gap

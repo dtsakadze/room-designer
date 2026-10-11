@@ -1,4 +1,4 @@
-import { type Dispatch, type PointerEvent as ReactPointerEvent, type RefObject, type SetStateAction, useEffect, useRef, useState } from 'react'
+import { type Dispatch, type PointerEvent as ReactPointerEvent, type RefObject, type SetStateAction, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Piece } from '../types'
 import { SNAP } from '../lib/defaults'
 import { type Gap, type Rect, centredGaps, snapToMiddle } from '../lib/geometry'
@@ -397,7 +397,27 @@ export function useCanvasGestures({
     return () => svg.removeEventListener('wheel', onWheel)
   }, [svgRef, setView])
 
-  return { trackTouch, beginBackground, beginPieceDrag, beginResize, onPointerMove, endGesture, marquee, centred }
+  // The same function on every render, so parts (memoised) aren't drawn again
+  // for every frame of a pan or zoom; it calls the latest one.
+  const latestPieceDrag = useRef(beginPieceDrag)
+  useLayoutEffect(() => {
+    latestPieceDrag.current = beginPieceDrag
+  })
+  const stablePieceDrag = useCallback(
+    (event: ReactPointerEvent<SVGRectElement>, clicked: Piece) => latestPieceDrag.current(event, clicked),
+    [],
+  )
+
+  return {
+    trackTouch,
+    beginBackground,
+    beginPieceDrag: stablePieceDrag,
+    beginResize,
+    onPointerMove,
+    endGesture,
+    marquee,
+    centred,
+  }
 }
 
 const snap = (mm: number) => Math.round(mm / SNAP) * SNAP
