@@ -5,8 +5,7 @@ import type { Piece, PieceKind } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
 import { boardOf, faceColor } from '../canvas/colors'
 import { CollapsibleSection } from './CollapsibleSection'
-import { ColorField } from './ColorField'
-import { FinishFields } from './FinishFields'
+import { FinishFields, FinishSection } from './FinishFields'
 import { NumberField } from './NumberField'
 import { InspectorHeader } from './InspectorHeader'
 import { BoolChoice, ChoiceRow, Facts, FieldGroup, PositionFields, SelectRow } from './InspectorFields'
@@ -26,7 +25,6 @@ export function PieceInspector({ piece }: { piece: Piece }) {
   const pieces = useDesignStore((s) => s.pieces)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePieces = useDesignStore((s) => s.removePieces)
-  const setPieceColors = useDesignStore((s) => s.setPieceColors)
   const boardColors = useDesignStore((s) => s.boardColors)
   const thickness = useDesignStore((s) => s.thickness)
   const unit = useUnitLabel()
@@ -40,7 +38,6 @@ export function PieceInspector({ piece }: { piece: Piece }) {
   // A glass or mirror door isn't board: no thickness from the project, colour or banding.
   const board = piece.pane ? undefined : BOARD[piece.kind]
   const options = KIND_OPTIONS[piece.kind]
-  const color = piece.color ?? faceColor({ ...piece, color: undefined }, { boardColors })
 
   return (
     <>
@@ -124,25 +121,15 @@ export function PieceInspector({ piece }: { piece: Piece }) {
         )}
 
         {!piece.pane && (
-          <CollapsibleSection
-            id="inspector-finish"
-            title="Finish"
-            badge={<span className="board-swatch" style={{ background: color }} aria-hidden />}
+          <FinishSection
+            ids={[piece.id]}
+            value={piece.color ?? null}
+            // Without a colour of its own, a part shows its board's.
+            fallback={faceColor({ ...piece, color: undefined }, { boardColors })}
+            boardColored={!!boardOfPiece && !!boardColors[boardOfPiece]}
           >
-            <ColorField
-              // A fresh picker per part, so it always opens on this part's colour and
-              // a picker left open can't recolour the next part selected.
-              key={piece.id}
-              label="Colour"
-              value={piece.color ?? null}
-              // Without a colour of its own, a part shows its board's.
-              fallback={faceColor({ ...piece, color: undefined }, { boardColors })}
-              emptyLabel={boardOfPiece && boardColors[boardOfPiece] ? 'Board colour' : 'Standard'}
-              onChange={(next) => setPieceColors([piece.id], next)}
-              onReset={() => setPieceColors([piece.id], null)}
-            />
             <FinishFields piece={piece} />
-          </CollapsibleSection>
+          </FinishSection>
         )}
       </div>
     </>

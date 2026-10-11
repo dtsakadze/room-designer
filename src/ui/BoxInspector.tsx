@@ -1,9 +1,8 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnitLabel } from '../store/useSettingsStore'
 import type { Box } from '../types'
-import { faceColor } from '../canvas/colors'
-import { ColorField } from './ColorField'
-import { FinishFields } from './FinishFields'
+import { faceColor, sharedColor } from '../canvas/colors'
+import { FinishFields, FinishSection } from './FinishFields'
 import { NumberField } from './NumberField'
 import { InspectorHeader } from './InspectorHeader'
 import { ChoiceRow, FieldGroup, PositionFields } from './InspectorFields'
@@ -21,14 +20,11 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
   const separateBox = useDesignStore((s) => s.separateBox)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePieces = useDesignStore((s) => s.removePieces)
-  const setPieceColors = useDesignStore((s) => s.setPieceColors)
   const boardColors = useDesignStore((s) => s.boardColors)
   // Filtered here, not in the selector: a selector that returns a new array
   // every time makes React re-render forever.
   const pieces = useDesignStore((s) => s.pieces)
   const panels = pieces.filter((piece) => piece.boxId === box.id)
-  const colors = new Set(panels.map((piece) => piece.color ?? null))
-  const shared = colors.size === 1 ? [...colors][0] : null
   const panel = panels.find((piece) => piece.id === panelId)
   const unit = useUnitLabel()
 
@@ -90,27 +86,20 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
           </button>
         </CollapsibleSection>
 
-        <CollapsibleSection
-          id="inspector-finish"
-          title="Finish"
-          badge={<span className="board-swatch" style={{ background: shared ?? faceColor({ kind: 'vertical' }, { boardColors }) }} aria-hidden />}
+        {/* Colouring one panel colours the whole box. */}
+        <FinishSection
+          ids={[panelId]}
+          value={sharedColor(panels)}
+          fallback={faceColor({ kind: 'vertical' }, { boardColors })}
+          boardColored={!!boardColors.body}
         >
-          <ColorField
-            key={box.id}
-            label="Colour"
-            value={shared}
-            fallback={faceColor({ kind: 'vertical' }, { boardColors })}
-            emptyLabel={boardColors.body ? 'Board colour' : 'Standard'}
-            onChange={(color) => setPieceColors([panelId], color)}
-            onReset={() => setPieceColors([panelId], null)}
-          />
           {panel && (
             <>
               <p className="muted finish-panel">This panel: {PANEL_NAMES[panel.id.slice(box.id.length + 1)] ?? pieceLabel(panel)}</p>
               <FinishFields piece={panel} />
             </>
           )}
-        </CollapsibleSection>
+        </FinishSection>
       </div>
     </>
   )

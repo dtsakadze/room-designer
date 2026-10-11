@@ -1,4 +1,4 @@
-import { BOARD_FILLS } from '../canvas/colors'
+import { BOARD_FILLS, sharedColor } from '../canvas/colors'
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
 import { InspectorHeader } from './InspectorHeader'
@@ -12,8 +12,7 @@ export function MultiInspector() {
 
   const selected = pieces.filter((piece) => selectedIds.includes(piece.id))
   // Show a colour only when they all share one.
-  const colors = new Set(selected.map((piece) => piece.color ?? null))
-  const shared = colors.size === 1 ? [...colors][0] : null
+  const shared = sharedColor(selected)
   const anyColored = selected.some((piece) => piece.color)
 
   return (

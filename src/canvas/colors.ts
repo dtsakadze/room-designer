@@ -61,6 +61,12 @@ export const BOARD_FILLS: Record<BoardKey, string> = {
   drawer: FILLS.drawer,
 }
 
+/** The colour every one of these parts has of its own, or null when they differ or have none. */
+export function sharedColor(pieces: Pick<Piece, 'color'>[]) {
+  const colors = new Set(pieces.map((piece) => piece.color ?? null))
+  return colors.size === 1 ? [...colors][0] : null
+}
+
 /** The colours a design sets: per board, and per board's edge banding. */
 export type DesignColors = { boardColors: BoardColors; edgeColors: BoardColors }
 

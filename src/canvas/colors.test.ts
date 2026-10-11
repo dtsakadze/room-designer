@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_THICKNESS } from '../lib/defaults'
 import { normalizePiece } from '../lib/geometry'
 import type { Piece, PieceKind } from '../types'
-import { BOARD_FILLS, EDGE_FILLS, FILLS, boardOf, edgeOnColor, faceColor } from './colors'
+import { BOARD_FILLS, EDGE_FILLS, FILLS, boardOf, edgeOnColor, faceColor, sharedColor } from './colors'
 
 const piece = (kind: PieceKind, patch: Partial<Piece> = {}): Piece =>
   normalizePiece({ id: kind, kind, x: 0, y: 0, width: 600, height: 18, depth: 580, ...patch }, DEFAULT_THICKNESS)
@@ -44,5 +44,13 @@ describe('part colours', () => {
   it('looks as it always did with no colours set', () => {
     expect(faceColor(piece('shelf'), none)).toBe(FILLS.shelf)
     expect(edgeOnColor(piece('shelf'), 'front', none)).toBe(EDGE_FILLS.shelf)
+  })
+})
+
+describe('sharedColor', () => {
+  it('is the colour all the parts have, or null when they differ or have none', () => {
+    expect(sharedColor([{ color: '#112233' }, { color: '#112233' }])).toBe('#112233')
+    expect(sharedColor([{ color: '#112233' }, {}])).toBeNull()
+    expect(sharedColor([{}, {}])).toBeNull()
   })
 })

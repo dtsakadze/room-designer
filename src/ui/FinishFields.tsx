@@ -1,9 +1,53 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { BOARD } from '../lib/defaults'
 import { EDGE_LABELS, GRAIN_LABELS, bandsOf, boardEdges, faceDimensions, grainOf } from '../lib/edges'
 import { useDesignStore } from '../store/useDesignStore'
 import type { Piece } from '../types'
 import { InfoTip } from './InspectorFields'
+import { CollapsibleSection } from './CollapsibleSection'
+import { ColorField } from './ColorField'
+
+/**
+ * The Finish section of the Selected panel: the colour of these parts
+ * (`value`, or null without one of their own, when they show `fallback`, their
+ * board's colour or the standard look), then `children` (banding, grain).
+ */
+export function FinishSection({
+  ids,
+  value,
+  fallback,
+  boardColored,
+  children,
+}: {
+  ids: string[]
+  value: string | null
+  fallback: string
+  /** Whether `fallback` is a colour set for the board, rather than the standard look. */
+  boardColored: boolean
+  children: ReactNode
+}) {
+  const setPieceColors = useDesignStore((s) => s.setPieceColors)
+  return (
+    <CollapsibleSection
+      id="inspector-finish"
+      title="Finish"
+      badge={<span className="board-swatch" style={{ background: value ?? fallback }} aria-hidden />}
+    >
+      <ColorField
+        // A fresh picker per selection, so it always opens on its colour and a
+        // picker left open can't recolour the next part selected.
+        key={ids.join()}
+        label="Colour"
+        value={value}
+        fallback={fallback}
+        emptyLabel={boardColored ? 'Board colour' : 'Standard'}
+        onChange={(color) => setPieceColors(ids, color)}
+        onReset={() => setPieceColors(ids, null)}
+      />
+      {children}
+    </CollapsibleSection>
+  )
+}
 
 const BANDING_INFO = 'Starts with the edges that show; tick what this part needs.'
 
