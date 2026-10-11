@@ -108,6 +108,12 @@ describe('sliding doors', () => {
     const three = slidingPanels({ ...sliding({ sliding: 3 }), sliding: 3 })
     expect(three.map((p) => p.lane)).toEqual([0, 1, 0])
     expect(three.at(-1)!.x + three.at(-1)!.width).toBe(600)
+    // (1200 + 2 × 50) / 3 is 433.3: cut as 433, the end ones still flush.
+    expect(three.map((p) => [p.x, p.width])).toEqual([
+      [-600, 433],
+      [-216, 433],
+      [167, 433],
+    ])
   })
 
   it('are cut as one row of panels, and need a top and a bottom track', () => {

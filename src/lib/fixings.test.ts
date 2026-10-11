@@ -170,7 +170,7 @@ describe('what doors and drawers are opened with', () => {
     expect(quantity('bar-handles')).toBe(1)
     expect(quantity('push-latches')).toBe(1)
     // The drawer's front, and both leaves of the double door.
-    expect(rows.filter((row) => row.item === 'j-profile').map((row) => (row as { length: number }).length)).toEqual([564, 298.5, 298.5].map(Math.round))
+    expect(rows.filter((row) => row.item === 'j-profile').map((row) => (row as { length: number }).length)).toEqual([564, 298, 298])
     expect(handleCount(pieces)).toBe(1 + 2 + 1)
   })
 })

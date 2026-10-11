@@ -422,13 +422,16 @@ export function clearanceBelow(rod: Piece, pieces: Piece[]) {
  * A door's leaves as they're cut: the door itself, or for a double door two
  * halves with a small gap between them. Along the door's width only, so it
  * works on any rectangle that spans it (the front view, or a wall's run in 3D).
+ * Leaves are whole mm, rounded down: the cut list shows whole mm, and a
+ * 598.5 mm leaf shown and cut as 599 would make the pair 1 mm too wide. The
+ * gap between them takes the spare half mm each.
  */
 export function doorLeaves<T extends { x: number; width: number }>(
   piece: T,
   double: boolean | undefined,
 ): T[] {
   if (!double) return [piece]
-  const width = Math.max(1, (piece.width - DOOR_LEAF_GAP) / 2)
+  const width = Math.max(1, Math.floor((piece.width - DOOR_LEAF_GAP) / 2))
   return [
     { ...piece, width },
     { ...piece, x: piece.x + piece.width - width, width },
@@ -439,17 +442,20 @@ export function doorLeaves<T extends { x: number; width: number }>(
  * The panels of a set of sliding doors, left to right: each as wide as the
  * set less what its neighbours overlap, in alternating lanes (`lane` 0 is
  * the front one), shorter than the set by the tracks they run in. Works on
- * any rectangle that spans the set, like `doorLeaves`.
+ * any rectangle that spans the set, like `doorLeaves`. Panels are whole mm,
+ * rounded down like leaves, and spread so the outer ones stay flush with the
+ * set's ends; the overlaps take the spare fraction of a mm.
  */
 export function slidingPanels<T extends { x: number; y: number; width: number; height: number }>(
   piece: T & { sliding: number; overlap?: number },
 ): (T & { lane: number })[] {
   const count = piece.sliding
   const overlap = piece.overlap ?? SLIDING_OVERLAP
-  const width = Math.max(1, (piece.width + overlap * (count - 1)) / count)
+  const width = Math.max(1, Math.floor((piece.width + overlap * (count - 1)) / count))
+  const step = count > 1 ? (piece.width - width) / (count - 1) : 0
   return Array.from({ length: count }, (_, index) => ({
     ...piece,
-    x: piece.x + index * (width - overlap),
+    x: piece.x + Math.round(index * step),
     y: piece.y + SLIDING_TRACK_HEIGHT,
     width,
     height: Math.max(1, piece.height - 2 * SLIDING_TRACK_HEIGHT),

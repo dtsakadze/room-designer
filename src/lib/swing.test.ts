@@ -53,7 +53,7 @@ describe('door swings', () => {
     const [a, b] = swingsOf(door('d', { double: true }))
     expect(a.pivot.x).toBe(-300)
     expect(b.pivot.x).toBe(300)
-    expect(a.square.y).toBe(-618 - (600 - DOOR_LEAF_GAP) / 2)
+    expect(a.square.y).toBe(-618 - Math.floor((600 - DOOR_LEAF_GAP) / 2))
   })
 
   it('open doors on a side wall across the room', () => {

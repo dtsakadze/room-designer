@@ -233,9 +233,15 @@ describe('doorLeaves', () => {
     expect(doorLeaves(door, false)).toEqual([door])
     const half = (600 - DOOR_LEAF_GAP) / 2
     expect(doorLeaves(door, true)).toEqual([
-      { x: -300, width: half },
-      { x: 300 - half, width: half },
+      { x: -300, width: Math.floor(half) },
+      { x: 300 - Math.floor(half), width: Math.floor(half) },
     ])
+  })
+
+  it('cuts leaves to whole mm, so the pair is never wider than the door', () => {
+    const leaves = doorLeaves({ x: -600, width: 1200 }, true)
+    expect(leaves.map((leaf) => leaf.width)).toEqual([598, 598])
+    expect(leaves[1].x + leaves[1].width).toBe(600)
   })
 })
 
