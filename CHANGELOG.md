@@ -33,6 +33,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Pasted adjustable shelves, and those in a block you insert, now sit on the shelf-pin holes of the project they land in, even when its hole spacing differs from where they came from.
 - A drawer can't be made shallower than its front plus a drawer box behind it (37 mm with standard 18 mm boards). Shallower ones used to get a front sticking into the wall and a box shorter than its own back board in the cut list, the 3D view and the clash check.
 - An adjustable shelf above a short divider now rests on the holes of the full-height side at its other end, instead of jumping down to the divider's holes, and holes are no longer drawn on the divider for it.
+- The hardware list no longer counts too many fixings: a unit whose sides go down to the floor gets no adjustable feet just because a divider stands on its raised bottom, and a middle board with a divider under it no longer counts as a unit's top (which doubled the anti-tip brackets and wall anchors).
 
 ## 1.11.0 — 2026-10-10
 

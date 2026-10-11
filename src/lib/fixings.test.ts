@@ -127,6 +127,17 @@ describe('anti-tip brackets', () => {
     expect(tippingUnits(loose)).toBe(1)
     expect(tippingUnits([...loose, ...loose.map((p) => ({ ...p, id: `${p.id}2`, wall: 'left' as const }))])).toBe(2)
   })
+
+  it('don’t take a middle board for a top because a divider stops under it', () => {
+    const unit = [
+      piece('l', 'vertical', { x: 0, width: 18, height: 2000, depth: 580 }),
+      piece('r', 'vertical', { x: 582, width: 18, height: 2000, depth: 580 }),
+      piece('top', 'horizontal', { x: 18, y: 1982, width: 564, height: 18, depth: 580 }),
+      piece('middle', 'horizontal', { x: 18, y: 982, width: 564, height: 18, depth: 580 }),
+      piece('d', 'divider', { x: 291, y: 18, width: 18, height: 964, depth: 580 }),
+    ]
+    expect(tippingUnits(unit)).toBe(1)
+  })
 })
 
 describe('what doors and drawers are opened with', () => {
@@ -195,6 +206,16 @@ describe('adjustable feet', () => {
       piece('top', 'horizontal', { x: 18, y: 1882, width: 564, height: 18, depth: 580 }),
     ]
     expect(feetNeeded(loose)).toEqual([{ height: 100, quantity: 4 }])
+  })
+
+  it('need none for a unit standing on its sides, even with a divider on its raised bottom', () => {
+    const unit = [
+      piece('l', 'vertical', { x: 0, width: 18, height: 2000, depth: 580 }),
+      piece('r', 'vertical', { x: 582, width: 18, height: 2000, depth: 580 }),
+      piece('bottom', 'horizontal', { x: 18, y: 80, width: 564, height: 18, depth: 580 }),
+      piece('d', 'divider', { x: 291, y: 98, width: 18, height: 1000, depth: 580 }),
+    ]
+    expect(feetNeeded(unit)).toEqual([])
   })
 
   it('only count a unit’s own wall’s sides', () => {

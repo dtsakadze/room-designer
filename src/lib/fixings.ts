@@ -113,6 +113,28 @@ export function jointHardware(pieces: Piece[], joints: JointType): JointRow[] {
   }
 }
 
+/**
+ * Whether the uprights at both ends of a board run on past it, above it
+ * (`'up'`) or below it (`'down'`): then it's a board inside a unit, like a
+ * middle board or a raised bottom between sides that go to the floor, not
+ * the unit's top or bottom, even where a divider stops level with it.
+ */
+function inside(across: Piece, uprights: Piece[], direction: 'up' | 'down') {
+  const past = (upright: Piece) =>
+    direction === 'up'
+      ? upright.y + upright.height > across.y + across.height + TOUCH
+      : upright.y < across.y - TOUCH
+  const atEnd = (x: number) =>
+    uprights.some(
+      (upright) =>
+        wallOf(upright) === wallOf(across) &&
+        (Math.abs(upright.x + upright.width - x) <= TOUCH || Math.abs(upright.x - x) <= TOUCH) &&
+        overlaps(across.y, across.y + across.height, upright.y, upright.y + upright.height) &&
+        past(upright),
+    )
+  return atEnd(across.x) && atEnd(across.x + across.width)
+}
+
 /** Units taller than this, in mm, should be fixed to the wall so they can't tip over. */
 export const TIP_HEIGHT = 700
 
@@ -132,6 +154,7 @@ export function tippingUnits(pieces: Piece[]) {
     (across) =>
       across.kind === 'horizontal' &&
       across.y + across.height > TIP_HEIGHT &&
+      !inside(across, uprights, 'up') &&
       uprights.some(
         (upright) =>
           wallOf(upright) === wallOf(across) &&
@@ -158,7 +181,7 @@ const FOOT_SPACING = 600
 export function feetNeeded(pieces: Piece[]): { height: number; quantity: number }[] {
   const uprights = pieces.filter(isUpright)
   return pieces.flatMap((across) => {
-    if (across.kind !== 'horizontal') return []
+    if (across.kind !== 'horizontal' || inside(across, uprights, 'down')) return []
     const sides = uprights.filter(
       (upright) =>
         wallOf(upright) === wallOf(across) && joined(across, upright) && across.y <= upright.y + TOUCH,
