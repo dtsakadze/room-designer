@@ -116,6 +116,16 @@ describe('sliding doors', () => {
     ])
   })
 
+  it('stay within a set narrower than their overlap', () => {
+    const narrow = slidingPanels({ ...sliding({ width: 150, sliding: 4, overlap: 200 }), sliding: 4 })
+    for (const [i, panel] of narrow.entries()) {
+      expect(panel.x).toBeGreaterThanOrEqual(-600)
+      expect(panel.x + panel.width).toBeLessThanOrEqual(-450)
+      if (i > 0) expect(panel.x).toBeGreaterThan(narrow[i - 1].x)
+    }
+    expect(narrow.at(-1)!.x + narrow.at(-1)!.width).toBe(-450)
+  })
+
   it('are cut as one row of panels, and need a top and a bottom track', () => {
     const door = sliding({ sliding: 3 })
     const [row] = cutList([door], thickness)[0].rows

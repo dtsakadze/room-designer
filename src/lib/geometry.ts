@@ -450,7 +450,9 @@ export function slidingPanels<T extends { x: number; y: number; width: number; h
   piece: T & { sliding: number; overlap?: number },
 ): (T & { lane: number })[] {
   const count = piece.sliding
-  const overlap = piece.overlap ?? SLIDING_OVERLAP
+  // No more than a panel's share of the set, or a set narrower than its
+  // overlap would have panels wider than itself, stepping off to the left.
+  const overlap = Math.min(piece.overlap ?? SLIDING_OVERLAP, Math.floor(piece.width / count))
   const width = Math.max(1, Math.floor((piece.width + overlap * (count - 1)) / count))
   const step = count > 1 ? (piece.width - width) / (count - 1) : 0
   return Array.from({ length: count }, (_, index) => ({
