@@ -469,8 +469,10 @@ export const FITS_BETWEEN_SIDES: readonly PieceKind[] = ['shelf', 'horizontal', 
  * Where a part goes to fill the gap between the side panels or dividers left
  * and right of it, on its wall: the nearest one each side of its middle that
  * reaches its height. It runs from face to face, except an overlay drawer,
- * whose front covers the panels' edges, so it runs across them. Null when
- * there isn't a panel on both sides.
+ * whose front covers the panels' edges, so it runs across them: all of a
+ * side's edge, but only half of a divider's, which the drawer in the next bay
+ * shares (as half-overlay hinges do). Null when there isn't a panel on both
+ * sides.
  */
 export function fitBetweenSides(piece: Piece, pieces: Piece[]): { x: number; width: number } | null {
   const middle = piece.x + piece.width / 2
@@ -491,8 +493,9 @@ export function fitBetweenSides(piece: Piece, pieces: Piece[]): { x: number; wid
     .reduce<Piece | null>((best, p) => (!best || p.x < best.x ? p : best), null)
   if (!left || !right) return null
   const overlay = piece.kind === 'drawer' && piece.overlay
-  const from = overlay ? left.x : left.x + left.width
-  const to = overlay ? right.x + right.width : right.x
+  const covered = (panel: Piece) => (panel.kind === 'divider' ? panel.width / 2 : panel.width)
+  const from = left.x + left.width - (overlay ? covered(left) : 0)
+  const to = right.x + (overlay ? covered(right) : 0)
   return to > from ? { x: from, width: to - from } : null
 }
 

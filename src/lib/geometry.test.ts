@@ -289,6 +289,15 @@ describe('fitBetweenSides', () => {
     expect(fitBetweenSides(drawer, [left, right, drawer])).toEqual({ x: -1200, width: 1247 })
   })
 
+  it('runs overlay drawers either side of a divider over half of it each, so they don’t overlap', () => {
+    const divider = piece('d', 'divider', { x: -409, height: 2000 })
+    const first = piece('a', 'drawer', { x: -1100, y: 100, width: 400, height: 200, overlay: true })
+    const second = piece('b', 'drawer', { x: -300, y: 100, width: 200, height: 200, overlay: true })
+    const all = [left, right, divider, first, second]
+    expect(fitBetweenSides(first, all)).toEqual({ x: -1200, width: 800 })
+    expect(fitBetweenSides(second, all)).toEqual({ x: -400, width: 447 })
+  })
+
   it('needs a panel on both sides, at the part’s height, on its wall', () => {
     const shelf = piece('s', 'shelf', { x: -600, y: 990, width: 100 })
     expect(fitBetweenSides(shelf, [left, shelf])).toBeNull()
