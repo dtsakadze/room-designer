@@ -302,14 +302,8 @@ export const useDesignStore = create<DesignState>()(
         )
         state.boxes.push(placed)
         state.pieces = rebuildBox(state.pieces, placed, state.thickness)
-        // A box's panels are rebuilt, so carry over their colours, banding
-        // and grain by role (panel ids are `<box id>:<role>`).
-        state.pieces = state.pieces.map((piece) => {
-          if (piece.boxId !== id) return piece
-          pasted.push(piece.id)
-          const source = copied.pieces.find((p) => p.id === piece.id.replace(id, box.id))
-          return source ? withPanelFinish(piece, source, state.thickness) : piece
-        })
+        copyPanelFinishes(state, id, box.id, copied.pieces)
+        for (const piece of state.pieces) if (piece.boxId === id) pasted.push(piece.id)
       }
 
       // Adjustable shelves go on this project's holes (its spacing may differ
@@ -332,8 +326,24 @@ export const useDesignStore = create<DesignState>()(
       state.pieces = rebuildBox(state.pieces, next, state.thickness)
     }
 
-    /** A new box, or a copy, placed clear of everything else and selected. */
-    const placeBox = (state: DesignState, box: Omit<Box, 'id'>) => {
+    /**
+     * Gives a box's rebuilt panels the colours, banding and grain of another
+     * box's panels, matched by role (panel ids are `<box id>:<role>`).
+     */
+    const copyPanelFinishes = (state: DesignState, boxId: string, sourceBoxId: string, sources: Piece[]) => {
+      state.pieces = state.pieces.map((piece) => {
+        if (piece.boxId !== boxId) return piece
+        const source = sources.find((candidate) => candidate.id === piece.id.replace(boxId, sourceBoxId))
+        return source ? withPanelFinish(piece, source, state.thickness) : piece
+      })
+    }
+
+    /**
+     * A new box, or a copy, placed clear of everything else and selected. Its
+     * panels start in the new-part colour, unless `startColor` is false.
+     * Returns its id.
+     */
+    const placeBox = (state: DesignState, box: Omit<Box, 'id'>, startColor = true) => {
       record(state)
       const bounds = wallBounds(state)
       const id = nextId()
@@ -349,10 +359,11 @@ export const useDesignStore = create<DesignState>()(
       )
       state.boxes.push(placed)
       state.pieces = rebuildBox(state.pieces, placed, state.thickness)
-      if (state.defaultColor) {
+      if (startColor && state.defaultColor) {
         for (const piece of state.pieces) if (piece.boxId === id) piece.color = state.defaultColor
       }
       state.selectedIds = [`${id}:left`]
+      return id
     }
 
     /**
@@ -546,18 +557,8 @@ export const useDesignStore = create<DesignState>()(
           const box = state.boxes.find((candidate) => candidate.id === source.boxId)
           if (box) {
             const panels = state.pieces.filter((piece) => piece.boxId === box.id)
-            placeBox(state, box)
-            // Its panels are rebuilt, so they take the original's colours,
-            // banding and grain by role (panel ids are `<box id>:<role>`), not
-            // the new-part colour: a copy should look like what was copied.
-            const copyId = state.boxes.at(-1)!.id
-            state.pieces = state.pieces.map((piece) => {
-              if (piece.boxId !== copyId) return piece
-              const from = panels.find((panel) => panel.id === piece.id.replace(copyId, box.id))
-              if (!from) return piece
-              const { color, bands, grain } = from
-              return normalizePiece({ ...piece, color, bands, grain }, state.thickness)
-            })
+            // Not in the new-part colour: a copy should look like what was copied.
+            copyPanelFinishes(state, placeBox(state, box, false), box.id, panels)
             return
           }
           record(state)
