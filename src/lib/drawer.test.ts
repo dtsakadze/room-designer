@@ -20,6 +20,16 @@ describe('drawers', () => {
     expect(runnerLength(drawer({ depth: 260 }), thickness)).toBeNull()
   })
 
+  it('stay buildable when typed shallower than their front', () => {
+    const parts = drawerParts(drawer({ depth: 10 }), thickness)
+    const front = parts.find((part) => part.role === 'front')!
+    const back = parts.find((part) => part.role === 'back')!
+    const side = parts.find((part) => part.role === 'side')!
+    expect(front.z).toBeGreaterThanOrEqual(0)
+    expect(side.depth).toBeGreaterThan(back.depth)
+    expect(side.z + side.depth).toBeLessThanOrEqual(front.z)
+  })
+
   it('are built from a front and a box that leaves room for the runners', () => {
     const parts = drawerParts(drawer(), thickness)
     const byRole = (role: string) => parts.filter((part) => part.role === role)

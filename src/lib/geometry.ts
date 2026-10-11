@@ -37,6 +37,9 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   }
   const board = BOARD[piece.kind]
   if (board) normalized[board.axis] = atLeast(thickness[board.board])
+  // A drawer has to hold its front and, behind it, a box at least as long as
+  // its back board; any shallower and its parts can't be made.
+  if (piece.kind === 'drawer') normalized.depth = atLeast(normalized.depth, thickness.front + thickness.drawer + 1)
   // Only shelves can be fixed, and "not fixed" is stored as no flag at all.
   if (piece.kind !== 'shelf' || !piece.fixed) delete normalized.fixed
   // Only rails have a side, and front (the default) is stored as no value.

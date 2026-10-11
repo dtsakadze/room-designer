@@ -41,6 +41,13 @@ describe('normalizePiece', () => {
     })
   })
 
+  it('keeps a drawer deep enough for its front and a box behind it', () => {
+    expect(normalizePiece(raw('a', 'drawer', { depth: 10 }), thickness).depth).toBe(
+      thickness.front + thickness.drawer + 1,
+    )
+    expect(normalizePiece(raw('a', 'drawer', { depth: 500 }), thickness).depth).toBe(500)
+  })
+
   it('keeps sizes and positions within 50 m, even when infinite', () => {
     const huge = normalizePiece(raw('a', 'drawer', { x: -1e18, y: 1e300, width: 1e18, height: Infinity, depth: 1e9, z: 1e12 }), thickness)
     expect(huge).toMatchObject({ x: -MAX_LENGTH, y: MAX_LENGTH, height: MAX_LENGTH, depth: MAX_LENGTH, z: MAX_LENGTH })
