@@ -174,7 +174,7 @@ describe('autosave', () => {
     await vi.advanceTimersByTimeAsync(100)
     expect(readStored(projects().currentId!).pieces).toHaveLength(2)
     expect(projects().saveStatus).toBe('saved')
-    expect(projects().projects[0].pieceCount).toBe(2)
+    expect(projects().projects[0].pieces.length).toBe(2)
   })
 
   it('saves at once when the tab is hidden or closed', async () => {
@@ -231,7 +231,7 @@ describe('another tab', () => {
     a.design().addPiece('shelf')
     await vi.advanceTimersByTimeAsync(500)
     expect(b.design().pieces).toHaveLength(1)
-    expect(b.projects().projects[0].pieceCount).toBe(1)
+    expect(b.projects().projects[0].pieces.length).toBe(1)
     b.design().addPiece('divider')
     await vi.advanceTimersByTimeAsync(500)
     expect(readStored(a.projects().currentId!).pieces).toHaveLength(2)

@@ -21,7 +21,6 @@ export type ProjectSummary = {
   name: string
   createdAt: string
   updatedAt: string
-  pieceCount: number
   /** The design's parts, for drawing its thumbnail in the project list. */
   pieces: Piece[]
   /** The design's room, so the thumbnail can show every wall. */
@@ -107,16 +106,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
     set({
       projects: sortByEdited(
         projects.map((project) =>
-          project.id === meta.id
-            ? {
-                ...project,
-                updatedAt,
-                pieceCount: design.pieces.length,
-                pieces: design.pieces,
-                room: design.room,
-                colors: { boardColors: design.boardColors ?? {}, edgeColors: design.edgeColors ?? {} },
-              }
-            : project,
+          project.id === meta.id ? summaryOf({ ...project, updatedAt }, data) : project,
         ),
       ),
     })
@@ -360,20 +350,24 @@ function newRecord(name: string, design: ProjectData, createdAt = new Date().toI
 
 function summarize(record: StoredProject): ProjectSummary {
   const result = readProject(record.design)
-  const pieces = result.ok ? result.project.pieces : []
+  return result.ok ? summaryOf(record, result.project) : summaryOf(record, null, result.problem)
+}
+
+/** What the project list shows of a project; no design for one that can't be read, and why. */
+function summaryOf(
+  { id, name, createdAt, updatedAt }: Pick<ProjectSummary, 'id' | 'name' | 'createdAt' | 'updatedAt'>,
+  design: ProjectData | null,
+  problem: ReadProblem | null = null,
+): ProjectSummary {
   return {
-    id: record.id,
-    name: record.name,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-    pieceCount: pieces.length,
-    pieces,
-    room: result.ok ? result.project.room : DEFAULT_ROOM,
-    colors: {
-      boardColors: (result.ok && result.project.boardColors) || {},
-      edgeColors: (result.ok && result.project.edgeColors) || {},
-    },
-    problem: result.ok ? null : result.problem,
+    id,
+    name,
+    createdAt,
+    updatedAt,
+    pieces: design?.pieces ?? [],
+    room: design?.room ?? DEFAULT_ROOM,
+    colors: { boardColors: design?.boardColors ?? {}, edgeColors: design?.edgeColors ?? {} },
+    problem,
   }
 }
 

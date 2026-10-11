@@ -135,7 +135,7 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
                   ) : (
                     <span className="muted">
                       {isOpen ? 'Open now · ' : ''}
-                      {project.pieceCount} piece{project.pieceCount === 1 ? '' : 's'} · edited{' '}
+                      {project.pieces.length} piece{project.pieces.length === 1 ? '' : 's'} · edited{' '}
                       {formatEdited(project.updatedAt)}
                     </span>
                   )}
