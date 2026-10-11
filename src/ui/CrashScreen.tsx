@@ -5,7 +5,7 @@ type State = { error: Error | null }
 /**
  * Shown instead of a blank page when something in the app throws while
  * drawing. Projects are autosaved in the browser, so a reload is safe. React
- * only catches these with a class component, hence the one class in the app.
+ * only catches these with a class component (as does `Preview3DLoader`).
  */
 export class CrashScreen extends Component<{ children: ReactNode }, State> {
   state: State = { error: null }

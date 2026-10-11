@@ -23,6 +23,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - With Boardcut open in two tabs, each tab now follows what the other saves: a project changed in one tab shows the change in the other instead of being saved over by it, a project deleted in one tab no longer comes back from the other, and new or renamed projects show in both lists.
 - A selection now stays on one wall: ⌘-clicking a part on another wall in the Parts list starts a new selection there, so Delete, copy or a move can no longer reach a part on a wall you aren't looking at. In the Top view, which shows the whole room, you can still select parts on several walls; going back to a wall keeps only the ones on it.
 - Undoing a move to another wall now takes the view back to that wall with the part, instead of leaving it selected but out of sight.
+- If the 3D view can't start (a browser or computer without 3D graphics, or no connection when it first loads), it now says so with a Try again button, and the rest of Boardcut keeps working, instead of the whole app showing "Something went wrong".
 
 ## 1.11.0 — 2026-10-10
 

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
@@ -51,8 +51,7 @@ import {
   sizeLabel,
 } from './views'
 
-// three.js is big, so the 3D preview only downloads when it's first opened.
-const Preview3D = lazy(() => import('./Preview3D'))
+import { Preview3DLoader } from './Preview3DLoader'
 import {
   INITIAL_VIEW,
   MAX_VIEW_WIDTH,
@@ -970,9 +969,7 @@ export function Canvas2D() {
       </svg>
 
       {viewName === '3d' && (
-        <Suspense fallback={<p className="viewport-hint">Loading 3D preview…</p>}>
-          <Preview3D />
-        </Suspense>
+        <Preview3DLoader />
       )}
 
       <EditButtons />
