@@ -371,10 +371,18 @@ function validate(data: Raw): ProjectData | null {
     return [normalizeBox(box, thickness)]
   })
 
+  // Ids pick out what a selection, a move or a delete acts on, and key what's
+  // drawn, so a hand-edited save can't have two of one: the first is kept. A
+  // box's panels are named after it, and win over a loose part with the same id.
+  const uniqueBoxes = firstOfEach(boxes)
+  const built = withBoxPanels(firstOfEach(pieces), uniqueBoxes, thickness)
+  const panelIds = new Set(built.filter((piece) => piece.boxId).map((piece) => piece.id))
+  const allPieces = firstOfEach(built.filter((piece) => piece.boxId || !panelIds.has(piece.id)))
+
   const storedRoom = isRecord(data.room) ? data.room : {}
   // A wall with parts on it is always on, so no part can end up on a wall
   // that isn't shown.
-  const used = new Set([...pieces, ...boxes].map(wallOf))
+  const used = new Set([...allPieces, ...uniqueBoxes].map(wallOf))
   const room: Room = {
     left: storedRoom.left === true || used.has('left'),
     right: storedRoom.right === true || used.has('right'),
@@ -397,8 +405,8 @@ function validate(data: Raw): ProjectData | null {
     ...(Object.keys(boardColors).length > 0 ? { boardColors } : {}),
     ...(Object.keys(edgeColors).length > 0 ? { edgeColors } : {}),
     unitDepth: clampUnitDepth(positive(data.unitDepth) ?? DEFAULT_UNIT_DEPTH),
-    pieces: withBoxPanels(pieces, boxes, thickness),
-    boxes,
+    pieces: allPieces,
+    boxes: uniqueBoxes,
     ...(isHexColor(data.defaultColor) ? { defaultColor: data.defaultColor } : {}),
     room,
   }
@@ -464,6 +472,12 @@ export function cleanBoardName(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const name = value.trim().slice(0, MAX_BOARD_NAME).trim()
   return name || null
+}
+
+/** The list with only the first item of each id. */
+function firstOfEach<T extends { id: string }>(list: T[]) {
+  const seen = new Set<string>()
+  return list.filter((item) => !seen.has(item.id) && Boolean(seen.add(item.id)))
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

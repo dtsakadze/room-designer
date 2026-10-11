@@ -519,6 +519,22 @@ describe('readProject', () => {
     expect(result.project.pieces.find((piece) => piece.id === 'huge')?.height).toBe(MAX_LENGTH)
   })
 
+  it('keeps only the first part or box of each id, and a box’s panels over a loose part', () => {
+    const save = fixture('v3-room') as RawSave & { boxes: Record<string, unknown>[] }
+    const loose = save.pieces.find((piece) => !piece.boxId)!
+    const box = save.boxes[0]
+    save.pieces.push({ ...loose, x: Number(loose.x) + 1000 }, { ...loose, id: `${box.id}:left` })
+    save.boxes.push({ ...box, x: Number(box.x) + 1000 })
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the edited save didn't open")
+    const { pieces, boxes } = result.project
+    expect(new Set(pieces.map((piece) => piece.id)).size).toBe(pieces.length)
+    expect(new Set(boxes.map((b) => b.id)).size).toBe(boxes.length)
+    expect(pieces.find((piece) => piece.id === loose.id)!.x).toBe(loose.x)
+    expect(boxes.find((b) => b.id === box.id)!.x).toBe(box.x)
+    expect(pieces.find((piece) => piece.id === `${box.id}:left`)!.boxId).toBe(box.id)
+  })
+
   it('refuses a save with more parts than any real design has', () => {
     const save = fixture('v1-minimal') as { pieces: Record<string, unknown>[] }
     const part = save.pieces[0]

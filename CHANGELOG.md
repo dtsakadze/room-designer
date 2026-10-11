@@ -19,6 +19,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Closing Settings with Esc while a field was focused no longer makes the next changes undo together as one step.
 - A number too big to be a length (such as 1e308 in cm or inches) is now ignored while you type it, instead of making the part disappear the next time the project opened, or a board thickness taking all its parts with it.
 - Autosave is more careful: if a fault in the app ever left a part broken, the last good save is kept instead of being replaced by one that would open without that part.
+- A damaged project file with two parts or boxes sharing an id now opens with only the first of each, instead of deleting or moving both together and leaving stray lines on the drawing.
 
 ## 1.11.0 — 2026-10-10
 
