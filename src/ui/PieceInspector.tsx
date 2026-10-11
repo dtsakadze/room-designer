@@ -65,7 +65,6 @@ export function PieceInspector() {
   const boxes = useDesignStore((s) => s.boxes)
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
   const boardColors = useDesignStore((s) => s.boardColors)
-  const fitPiece = useDesignStore((s) => s.fitBetweenSides)
   const thickness = useDesignStore((s) => s.thickness)
   const unit = useUnitLabel()
   const { len } = useUnits()
@@ -144,7 +143,7 @@ export function PieceInspector() {
             </div>
           )}
           {FITS_BETWEEN_SIDES.includes(piece.kind) && (
-            <FitButton piece={piece} pieces={pieces} onFit={() => fitPiece(piece.id)} />
+            <FitButton piece={piece} pieces={pieces} onFit={(fit) => updatePiece(piece.id, fit)} />
           )}
         </FieldGroup>
 
@@ -226,7 +225,15 @@ export function PieceInspector() {
  * useful things to do with a shelf or drawer; when it can't, or already
  * fits, it says so in its label.
  */
-function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; onFit: () => void }) {
+function FitButton({
+  piece,
+  pieces,
+  onFit,
+}: {
+  piece: Piece
+  pieces: Piece[]
+  onFit: (fit: Pick<Piece, 'x' | 'width'>) => void
+}) {
   const fit = fitBetweenSides(piece, pieces)
   const fits = !!fit && fit.x === piece.x && fit.width === piece.width
   return (
@@ -243,7 +250,7 @@ function FitButton({ piece, pieces, onFit }: { piece: Piece; pieces: Piece[]; on
               ? 'Sets the width and X so the front covers both sides.'
               : 'Sets the width and X to fill the gap between the sides.'
       }
-      onClick={onFit}
+      onClick={() => fit && onFit(fit)}
     >
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
         <path

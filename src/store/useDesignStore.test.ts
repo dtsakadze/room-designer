@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { findClashes } from '../lib/geometry'
+import { findClashes, fitBetweenSides } from '../lib/geometry'
 import { LOOKS, STANDARD_LOOK } from '../lib/looks'
 import { toProjectData } from '../lib/project'
 import { DEFAULT_THICKNESS, MAX_THICKNESS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
@@ -309,6 +309,12 @@ describe('board colours', () => {
 describe('fit between sides', () => {
   beforeEach(() => store().loadProject(emptyProject()))
 
+  // What the inspector's Fit button does.
+  const fit = (id: string) => {
+    const gap = fitBetweenSides(byId(id), store().pieces)
+    if (gap) store().updatePiece(id, gap)
+  }
+
   it('fills the gap between the sides as one undo step, and does nothing without sides', () => {
     store().addPiece('vertical')
     const left = selected()!
@@ -319,18 +325,18 @@ describe('fit between sides', () => {
     const plinth = selected()!
     store().updatePiece(plinth, { x: -1000, y: 20 })
     const steps = store().past.length
-    store().fitBetweenSides(plinth)
+    fit(plinth)
     expect(byId(plinth)).toMatchObject({ x: -1182, width: 1211 })
     expect(store().past.length).toBe(steps + 1)
     // Already fitting: nothing to undo.
-    store().fitBetweenSides(plinth)
+    fit(plinth)
     expect(store().past.length).toBe(steps + 1)
     store().undo()
     expect(byId(plinth).x).toBe(-1000)
 
     store().removePieces([left])
     const before = store().past.length
-    store().fitBetweenSides(plinth)
+    fit(plinth)
     expect(store().past.length).toBe(before)
   })
 })
