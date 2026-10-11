@@ -1,0 +1,258 @@
+{
+  "formatVersion": 18,
+  "name": "Pull-down lift",
+  "thickness": {
+    "body": 18,
+    "back": 3,
+    "front": 19,
+    "drawer": 15
+  },
+  "boardNames": {
+    "body": "18 mm white melamine",
+    "back": "3 mm white HDF",
+    "front": "19 mm oak-veneer MDF",
+    "drawer": "15 mm birch plywood"
+  },
+  "boardMaterials": {
+    "body": "plywood",
+    "back": "mdf",
+    "front": "solid"
+  },
+  "boardSheets": {
+    "body": {
+      "length": 2800,
+      "width": 2070,
+      "kerf": 3
+    },
+    "front": {
+      "length": 2440,
+      "width": 1220,
+      "kerf": 4
+    }
+  },
+  "joints": "cam",
+  "grainedBoards": [
+    "body",
+    "front"
+  ],
+  "holePitch": 37,
+  "boardColors": {
+    "body": "#f4f4f0",
+    "front": "#b08a5a"
+  },
+  "edgeColors": {
+    "body": "#b08a5a"
+  },
+  "unitDepth": 600,
+  "pieces": [
+    {
+      "kind": "back",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 3,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:back",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2",
+      "z": 40
+    },
+    {
+      "kind": "vertical",
+      "x": -600,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:left",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2",
+      "z": 43
+    },
+    {
+      "kind": "vertical",
+      "x": 582,
+      "y": 0,
+      "width": 18,
+      "height": 2000,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:right",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2",
+      "z": 43
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 0,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:bottom",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2",
+      "z": 43
+    },
+    {
+      "kind": "horizontal",
+      "x": -582,
+      "y": 1982,
+      "width": 1164,
+      "height": 18,
+      "depth": 597,
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2:top",
+      "boxId": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2",
+      "z": 43,
+      "bands": [
+        "front",
+        "left",
+        "right"
+      ]
+    },
+    {
+      "id": "e88f65c8-07a0-4296-9207-4ca2b5825343",
+      "kind": "drawer",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 250,
+      "depth": 550,
+      "extension": "full",
+      "overlay": true,
+      "close": "push",
+      "grain": "height"
+    },
+    {
+      "id": "open-shelf",
+      "kind": "shelf",
+      "x": 700,
+      "y": 400,
+      "width": 800,
+      "height": 18,
+      "depth": 300,
+      "color": "#333333",
+      "bands": [
+        "front",
+        "back",
+        "left",
+        "right"
+      ],
+      "grain": "depth"
+    },
+    {
+      "id": "cornice-1",
+      "kind": "cornice",
+      "x": -600,
+      "y": 2000,
+      "width": 1200,
+      "height": 80,
+      "depth": 19
+    },
+    {
+      "id": "filler-1",
+      "kind": "filler",
+      "x": 600,
+      "y": 0,
+      "width": 40,
+      "height": 2400,
+      "depth": 19,
+      "z": 100
+    },
+    {
+      "id": "door-glass",
+      "kind": "door",
+      "x": -600,
+      "y": 0,
+      "width": 600,
+      "height": 2000,
+      "depth": 4,
+      "pane": "glass"
+    },
+    {
+      "id": "door-mirror",
+      "kind": "door",
+      "x": 0,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 4,
+      "pane": "mirror",
+      "sliding": 2
+    },
+    {
+      "id": "door-board",
+      "kind": "door",
+      "x": 1300,
+      "y": 0,
+      "width": 603,
+      "height": 2000,
+      "depth": 19,
+      "double": true
+    },
+    {
+      "id": "trousers",
+      "kind": "accessory",
+      "x": -500,
+      "y": 400,
+      "width": 500,
+      "height": 100,
+      "depth": 450,
+      "accessory": "trouser"
+    },
+    {
+      "id": "basket-1",
+      "kind": "accessory",
+      "x": 0,
+      "y": 400,
+      "width": 564,
+      "height": 200,
+      "depth": 450,
+      "accessory": "basket"
+    },
+    {
+      "id": "basket-2",
+      "kind": "accessory",
+      "x": 0,
+      "y": 700,
+      "width": 564,
+      "height": 200,
+      "depth": 450,
+      "accessory": "basket"
+    },
+    {
+      "id": "shoes",
+      "kind": "accessory",
+      "x": -500,
+      "y": 100,
+      "width": 564,
+      "height": 150,
+      "depth": 350,
+      "accessory": "shoes-angled"
+    },
+    {
+      "id": "high-rod",
+      "kind": "rod",
+      "x": -582,
+      "y": 1900,
+      "width": 1000,
+      "height": 25,
+      "depth": 25,
+      "lift": true
+    }
+  ],
+  "boxes": [
+    {
+      "id": "c52eac76-12f7-47b9-ba9b-1e19911ec5d2",
+      "x": -600,
+      "y": 0,
+      "width": 1200,
+      "height": 2000,
+      "depth": 600,
+      "joint": "between",
+      "z": 40
+    }
+  ],
+  "room": {
+    "left": false,
+    "right": false,
+    "width": 2400,
+    "depth": 1800,
+    "height": 2400
+  }
+}

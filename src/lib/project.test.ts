@@ -57,6 +57,16 @@ describe('readProject', () => {
     },
   )
 
+  // What each sample opens into today, part by part, so a change to how parts
+  // are cleaned up (`normalizePiece`, `validate`) can't quietly change an old
+  // save. If a change is meant to, look at the diff, then run Vitest with `-u`.
+  it.each(samples)('opens %s into the design it opened into before', async (name) => {
+    const result = readProject(fixture(name))
+    if (!result.ok) throw new Error(`${name} didn't open`)
+    const { savedAt: _savedAt, ...project } = result.project
+    await expect(`${JSON.stringify(project, null, 2)}\n`).toMatchFileSnapshot(`./fixtures/opened/${name}.json`)
+  })
+
   it('keeps each part on its wall', () => {
     const result = readProject(fixture('v3-room'))
     if (!result.ok) throw new Error("v3-room didn't open")
