@@ -8,6 +8,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
 import type { Piece } from '../types'
 import { CutListTables } from './CutListPanel'
+import { useCutListReport } from './useCutListReport'
 
 export type PrintOptions = {
   drawings: boolean
@@ -36,6 +37,7 @@ export function PrintDocument({ options, projectName }: { options: PrintOptions;
   const thickness = useDesignStore((s) => s.thickness)
   const room = useDesignStore((s) => s.room)
   const { unit } = useUnits()
+  const report = useCutListReport()
   const paper = PAPER[options.paper]
   const area = {
     width: paper.width - 2 * PAGE_MARGIN,
@@ -82,7 +84,7 @@ export function PrintDocument({ options, projectName }: { options: PrintOptions;
         <section className="print-page print-flow" style={{ width: `${paper.width}mm` }}>
           <TitleBlock project={projectName} title="Cut list" details={[date]} />
           <div className="cut-list print-cut-list">
-            <CutListTables />
+            <CutListTables report={report} />
           </div>
         </section>
       )}

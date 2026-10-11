@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
-import { cutListCsv, cutListCsvByWall, hardwareCsv, hardwareCsvByWall, toCsv } from './csv'
+import { cutListCsv, hardwareCsv, toCsv } from './csv'
 import { cutList, hardwareList } from './cutList'
 import { DEFAULT_THICKNESS, boardName } from './defaults'
 import { normalizePiece } from './geometry'
@@ -32,7 +32,7 @@ describe('CSV', () => {
       thickness,
       ['front'],
     )
-    const csv = cutListCsv(groups, {
+    const csv = cutListCsv([{ groups }], {
       num: (mm) => formatNumber(mm, 'cm'),
       unit: 'cm',
       boardName: (board) => boardName(board, { front: '19 mm oak, veneered' }),
@@ -48,7 +48,7 @@ describe('CSV', () => {
 
   it('lists the hardware with how many and in what', () => {
     const rows = hardwareList([piece('w', 'drawer', { width: 564, height: 200, depth: 550 })], thickness)
-    expect(lines(hardwareCsv(rows, (mm) => formatLength(mm, 'mm')))).toEqual([
+    expect(lines(hardwareCsv([{ hardware: rows }], (mm) => formatLength(mm, 'mm')))).toEqual([
       'Item,Quantity,Unit',
       '"Drawer runners, standard, 500 mm",1,pairs',
       'Handles or knobs,1,pcs',
@@ -66,7 +66,7 @@ describe('CSV by wall', () => {
   const left = [piece('c', 'vertical', { width: 18, wall: 'left' })]
 
   it('puts the wall first on every cut list row, and keeps the walls apart', () => {
-    const csv = cutListCsvByWall(
+    const csv = cutListCsv(
       [
         { label: 'Back wall', groups: cutList(back, thickness) },
         { label: 'Left wall', groups: cutList(left, thickness) },
@@ -82,10 +82,10 @@ describe('CSV by wall', () => {
   })
 
   it('puts the wall first on every hardware row', () => {
-    const csv = hardwareCsvByWall(
+    const csv = hardwareCsv(
       [
-        { label: 'Back wall', rows: hardwareList([piece('r', 'rod', { width: 1000, height: 25 })], thickness) },
-        { label: 'Left wall', rows: hardwareList([piece('r2', 'rod', { width: 800, height: 25, wall: 'left' })], thickness) },
+        { label: 'Back wall', hardware: hardwareList([piece('r', 'rod', { width: 1000, height: 25 })], thickness) },
+        { label: 'Left wall', hardware: hardwareList([piece('r2', 'rod', { width: 800, height: 25, wall: 'left' })], thickness) },
       ],
       (mm) => `${mm}`,
     )
