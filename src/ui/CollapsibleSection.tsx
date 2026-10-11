@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react'
+import { readPref, writePref } from '../lib/prefs'
 
 type CollapsibleSectionProps = {
   /** Remembers whether it's open, per section, in this browser. */
@@ -15,14 +16,8 @@ type CollapsibleSectionProps = {
 const storageKey = (id: string) => `room-designer:section:${id}`
 
 function storedOpen(id: string, fallback: boolean) {
-  try {
-    const stored = localStorage.getItem(storageKey(id))
-    if (stored === 'open') return true
-    if (stored === 'closed') return false
-  } catch {
-    // Blocked storage: use the default.
-  }
-  return fallback
+  const stored = readPref(storageKey(id))
+  return stored === 'open' ? true : stored === 'closed' ? false : fallback
 }
 
 /** A sidebar section that folds open and shut. New sections are just new ones of these. */
@@ -38,11 +33,7 @@ export function CollapsibleSection({
 
   const toggle = () => {
     setOpen(!open)
-    try {
-      localStorage.setItem(storageKey(id), open ? 'closed' : 'open')
-    } catch {
-      // Still toggles for this visit.
-    }
+    writePref(storageKey(id), open ? 'closed' : 'open')
   }
 
   return (

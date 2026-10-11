@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { HANGING_GUIDES, type HangingGuide, MAX_HANGING_GUIDES } from '../lib/defaults'
 import { type Unit, UNITS, formatLength, formatNumber, isUnit } from '../lib/units'
+import { readPref, writePref } from '../lib/prefs'
 
 const UNIT_KEY = 'room-designer:unit'
 const SHOW_DOORS_KEY = 'room-designer:show-doors'
@@ -30,19 +31,14 @@ type SettingsState = {
 }
 
 function storedUnit(): Unit {
-  try {
-    const stored = localStorage.getItem(UNIT_KEY)
-    if (isUnit(stored)) return stored
-  } catch {
-    // Blocked storage (private windows): fall back to millimetres.
-  }
-  return 'mm'
+  const stored = readPref(UNIT_KEY)
+  return isUnit(stored) ? stored : 'mm'
 }
 
 /** Whatever isn't a usable list of guides is replaced by the standard two. */
 function storedGuides(): HangingGuide[] {
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(GUIDES_KEY) ?? 'null')
+    const parsed: unknown = JSON.parse(readPref(GUIDES_KEY) ?? 'null')
     if (!Array.isArray(parsed) || parsed.length > MAX_HANGING_GUIDES) return HANGING_GUIDES
     const guides = parsed.filter(
       (g): g is HangingGuide =>
@@ -56,46 +52,33 @@ function storedGuides(): HangingGuide[] {
 
 /** A stored on/off setting: only the opposite of the default, stored as such, changes it. */
 function storedBoolean(key: string, otherwise: boolean) {
-  try {
-    return localStorage.getItem(key) === String(!otherwise) ? !otherwise : otherwise
-  } catch {
-    return otherwise
-  }
-}
-
-/** Keeps a setting for next time; if storage is blocked, it still applies for this visit. */
-function persist(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    // Still applies for this visit.
-  }
+  return readPref(key) === String(!otherwise) ? !otherwise : otherwise
 }
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
   unit: storedUnit(),
   setUnit: (unit) => {
-    persist(UNIT_KEY, unit)
+    writePref(UNIT_KEY, unit)
     set({ unit })
   },
   showDoors: storedBoolean(SHOW_DOORS_KEY, true),
   setShowDoors: (showDoors) => {
-    persist(SHOW_DOORS_KEY, String(showDoors))
+    writePref(SHOW_DOORS_KEY, String(showDoors))
     set({ showDoors })
   },
   cutListByWall: storedBoolean(BY_WALL_KEY, false),
   setCutListByWall: (cutListByWall) => {
-    persist(BY_WALL_KEY, String(cutListByWall))
+    writePref(BY_WALL_KEY, String(cutListByWall))
     set({ cutListByWall })
   },
   showHangingGuides: storedBoolean(SHOW_GUIDES_KEY, true),
   setShowHangingGuides: (showHangingGuides) => {
-    persist(SHOW_GUIDES_KEY, String(showHangingGuides))
+    writePref(SHOW_GUIDES_KEY, String(showHangingGuides))
     set({ showHangingGuides })
   },
   hangingGuides: storedGuides(),
   setHangingGuides: (hangingGuides) => {
-    persist(GUIDES_KEY, JSON.stringify(hangingGuides))
+    writePref(GUIDES_KEY, JSON.stringify(hangingGuides))
     set({ hangingGuides })
   },
 }))

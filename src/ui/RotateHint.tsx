@@ -1,14 +1,9 @@
 import { useState } from 'react'
+import { readPref, writePref } from '../lib/prefs'
 
 const DISMISSED_KEY = 'room-designer:rotate-hint-dismissed'
 
-function dismissed() {
-  try {
-    return localStorage.getItem(DISMISSED_KEY) === 'yes'
-  } catch {
-    return false
-  }
-}
+const dismissed = () => readPref(DISMISSED_KEY) === 'yes'
 
 /**
  * On a phone held upright, suggests turning it sideways, where the drawing
@@ -21,11 +16,8 @@ export function RotateHint() {
 
   const close = () => {
     setHidden(true)
-    try {
-      localStorage.setItem(DISMISSED_KEY, 'yes')
-    } catch {
-      // Shows again next visit, which is harmless.
-    }
+    // With storage blocked it shows again next visit, which is harmless.
+    writePref(DISMISSED_KEY, 'yes')
   }
 
   return (

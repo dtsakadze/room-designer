@@ -3,26 +3,16 @@ import { Modal, ModalHeader } from './Modal'
 import changelog from '../../CHANGELOG.md?raw'
 import { parseChangelog } from '../lib/changelog'
 import { GitHubLink } from './GitHubLink'
+import { readPref, writePref } from '../lib/prefs'
 
 const RELEASES = parseChangelog(changelog)
 const SEEN_KEY = 'room-designer:seen-version'
 
 /** The version this browser last showed, or null on a first visit. */
-function seenVersion() {
-  try {
-    return localStorage.getItem(SEEN_KEY)
-  } catch {
-    return null
-  }
-}
+const seenVersion = () => readPref(SEEN_KEY)
 
-function markSeen() {
-  try {
-    localStorage.setItem(SEEN_KEY, __APP_VERSION__)
-  } catch {
-    // Blocked storage: the notice may show again next visit, which is harmless.
-  }
-}
+// With storage blocked the notice may show again next visit, which is harmless.
+const markSeen = () => writePref(SEEN_KEY, __APP_VERSION__)
 
 /**
  * The app's version, with a "What's new" panel from CHANGELOG.md. After an

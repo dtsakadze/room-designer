@@ -6,25 +6,14 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { type PrintOptions, PrintDocument } from './PrintDocument'
 import { Segmented } from './Segmented'
+import { readPref, writePref } from '../lib/prefs'
 
 const PAPER_KEY = 'room-designer:print-paper'
 const LINES_KEY = 'room-designer:print-lines-only'
 
-const storedLinesOnly = () => {
-  try {
-    return localStorage.getItem(LINES_KEY) === 'true'
-  } catch {
-    return false
-  }
-}
+const storedLinesOnly = () => readPref(LINES_KEY) === 'true'
 
-const storedPaper = (): PaperSize => {
-  try {
-    return localStorage.getItem(PAPER_KEY) === 'a3' ? 'a3' : 'a4'
-  } catch {
-    return 'a4'
-  }
-}
+const storedPaper = (): PaperSize => (readPref(PAPER_KEY) === 'a3' ? 'a3' : 'a4')
 
 /**
  * Asks what to print (the drawings, the cut list or both) and on which paper,
@@ -82,11 +71,7 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
             disabled={!options.drawings}
             onChange={(event) => {
               choose({ linesOnly: event.target.checked })
-              try {
-                localStorage.setItem(LINES_KEY, String(event.target.checked))
-              } catch {
-                // Still used for this print.
-              }
+              writePref(LINES_KEY, String(event.target.checked))
             }}
           />
           Lines only, no shading (saves ink)
@@ -103,11 +88,7 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
             options={(Object.keys(PAPER) as PaperSize[]).map((size) => ({ value: size, text: PAPER[size].label }))}
             onChange={(size) => {
               choose({ paper: size })
-              try {
-                localStorage.setItem(PAPER_KEY, size)
-              } catch {
-                // Still used for this print.
-              }
+              writePref(PAPER_KEY, size)
             }}
           />
         </div>

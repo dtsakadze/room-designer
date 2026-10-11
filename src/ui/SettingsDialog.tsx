@@ -3,6 +3,7 @@ import { Modal, ModalHeader } from './Modal'
 import { BoardSettings, ConstructionSettings, NewPartSettings, UnitSettings } from './BoardSettings'
 import { HangingGuideSettings } from './HangingGuideSettings'
 import { LookPicker } from './LookPicker'
+import { readPref, writePref } from '../lib/prefs'
 
 export type SettingsPage = 'boards' | 'look' | 'construction' | 'new-parts' | 'preferences'
 
@@ -29,13 +30,8 @@ const PAGES: { id: SettingsPage; title: string; content: () => ReactNode }[] = [
 const PAGE_KEY = 'room-designer:settings-page'
 
 function storedPage(): SettingsPage {
-  try {
-    const stored = localStorage.getItem(PAGE_KEY)
-    if (PAGES.some((page) => page.id === stored)) return stored as SettingsPage
-  } catch {
-    // Blocked storage: start on the first page.
-  }
-  return 'boards'
+  const stored = readPref(PAGE_KEY)
+  return PAGES.some((page) => page.id === stored) ? (stored as SettingsPage) : 'boards'
 }
 
 /**
@@ -50,11 +46,7 @@ export function SettingsDialog({ page: initialPage, onClose }: { page?: Settings
 
   const choose = (id: SettingsPage) => {
     setPage(id)
-    try {
-      localStorage.setItem(PAGE_KEY, id)
-    } catch {
-      // Remembered for this visit only.
-    }
+    writePref(PAGE_KEY, id)
   }
 
   return (
