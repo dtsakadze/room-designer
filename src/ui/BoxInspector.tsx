@@ -8,7 +8,7 @@ import { NumberField } from './NumberField'
 import { InspectorHeader } from './InspectorHeader'
 import { ChoiceRow, FieldGroup, PositionFields } from './InspectorFields'
 import { CollapsibleSection } from './CollapsibleSection'
-import { OverhangNote } from './PieceInspector'
+import { OverhangNote } from './PieceWarnings'
 import { wallOf } from '../lib/room'
 import { pieceLabel } from '../lib/defaults'
 

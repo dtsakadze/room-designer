@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { useLayoutStore } from '../store/useLayoutStore'
+import { BoxInspector } from './BoxInspector'
 import { MultiInspector } from './MultiInspector'
 import { PieceInspector } from './PieceInspector'
 
@@ -11,6 +12,11 @@ import { PieceInspector } from './PieceInspector'
 export function Inspector() {
   const selectedId = useDesignStore(selectedIdOf)
   const selectedIds = useDesignStore((s) => s.selectedIds)
+  const pieces = useDesignStore((s) => s.pieces)
+  const boxes = useDesignStore((s) => s.boxes)
+  const piece = pieces.find((candidate) => candidate.id === selectedId)
+  // A box's panel is edited through its box.
+  const box = piece?.boxId ? boxes.find((candidate) => candidate.id === piece.boxId) : undefined
 
   // A newly selected part shows its panel in full, even if the last one was folded.
   useEffect(() => useLayoutStore.getState().setInspectorFolded(false), [selectedId])
@@ -20,8 +26,10 @@ export function Inspector() {
       {/* Keyed by the selection, so a message like "Saved as block" doesn't carry over. */}
       {selectedIds.length > 1 ? (
         <MultiInspector key={selectedIds.join()} />
-      ) : selectedId ? (
-        <PieceInspector key={selectedId} />
+      ) : piece && box ? (
+        <BoxInspector key={piece.id} box={box} panelId={piece.id} />
+      ) : piece ? (
+        <PieceInspector key={piece.id} piece={piece} />
       ) : (
         <div className="inspector-body">
           <h2 className="inspector-empty-title">Selected</h2>

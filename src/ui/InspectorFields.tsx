@@ -134,6 +134,36 @@ export function ChoiceRow<T extends string>({
   )
 }
 
+/** A yes-or-no option as a two-way switch: `off` first, then `on`. */
+export function BoolChoice({
+  label,
+  info,
+  value,
+  off = 'No',
+  on = 'Yes',
+  onChange,
+}: {
+  label: string
+  info?: string
+  value: boolean
+  off?: string
+  on?: string
+  onChange: (value: boolean) => void
+}) {
+  return (
+    <ChoiceRow
+      label={label}
+      info={info}
+      value={value ? 'on' : 'off'}
+      options={[
+        { value: 'off', text: off },
+        { value: 'on', text: on },
+      ]}
+      onChange={(choice) => onChange(choice === 'on')}
+    />
+  )
+}
+
 /** One of many options (too many, or too long, for a switch), as a dropdown. */
 export function SelectRow<T extends string>({
   label,
