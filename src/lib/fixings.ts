@@ -1,4 +1,4 @@
-import type { JointType, Piece } from '../types'
+import type { HandleType, JointType, Piece } from '../types'
 import { doorFronts } from './geometry'
 import { wallOf } from './room'
 
@@ -230,6 +230,16 @@ export const hasHandle = (piece: Piece) => {
   const opener = openerOf(piece)
   return opener === 'handle' || opener === 'bar' || opener === 'knob'
 }
+
+/** What the inspector offers to open a door or drawer with: `handle` is "a handle or knob" (not chosen yet). */
+export type HandleChoice = HandleType | 'handle' | 'none'
+
+/** A door's or drawer's handle choice, from how it's stored. */
+export const handleChoice = (piece: Piece): HandleChoice => (piece.noHandle ? 'none' : (piece.handle ?? 'handle'))
+
+/** How a handle choice is stored: none as `noHandle`, a handle or knob (the default) as no `handle`. */
+export const handlePatch = (choice: HandleChoice): Pick<Piece, 'noHandle' | 'handle'> =>
+  choice === 'none' ? { noHandle: true, handle: undefined } : { noHandle: false, handle: choice === 'handle' ? undefined : choice }
 
 type OpenerRow =
   | { item: 'handles' | 'bar-handles' | 'knobs' | 'push-latches'; quantity: number }

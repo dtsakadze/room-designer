@@ -1,5 +1,4 @@
 import { DOOR_OPEN_ANGLE, MATERIAL_LABELS, RUNNER_LENGTHS, pieceLabel } from '../lib/defaults'
-import { swingConflicts } from '../lib/swing'
 import { runnerLength } from '../lib/drawer'
 import { hasHandle } from '../lib/fixings'
 import { setBack } from '../lib/clearance'
@@ -11,6 +10,7 @@ import type { Piece } from '../types'
 import { useClearanceWarnings } from './useClearanceWarnings'
 import { useRoomOverhangs } from './useRoomOverhangs'
 import { useSpanWarnings } from './useSpanWarnings'
+import { useSwingConflicts } from './useSwingConflicts'
 import { usePatch } from './usePatch'
 
 /** A part's problems, at the top of the Selected panel so they're seen before anything else. */
@@ -112,9 +112,7 @@ function RunnerWarning({ piece }: { piece: Piece }) {
 /** What the door runs into as it opens, if anything (only in a room with side walls). */
 function SwingWarning({ door }: { door: Piece }) {
   const pieces = useDesignStore((s) => s.pieces)
-  const thickness = useDesignStore((s) => s.thickness)
-  const room = useDesignStore((s) => s.room)
-  const hits = swingConflicts(pieces, thickness, room).get(door.id)
+  const hits = useSwingConflicts().get(door.id)
   if (!hits) return null
 
   const names = hits.map((hit) => {

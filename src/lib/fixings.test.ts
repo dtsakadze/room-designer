@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Box, Piece, PieceKind } from '../types'
 import { boxPanels } from './box'
 import { DEFAULT_THICKNESS } from './defaults'
-import { backFixings, carcassScrews, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets, feetNeeded } from './fixings'
+import { backFixings, carcassScrews, handleChoice, handlePatch, hasHandle, jointHardware, openerHardware, tippingUnits, antiTipBrackets, feetNeeded } from './fixings'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -223,5 +223,18 @@ describe('adjustable feet', () => {
       { height: 100, quantity: 6 },
       { height: 100, quantity: 6 },
     ])
+  })
+})
+
+describe('handle choice', () => {
+  it('stores a handle or knob as nothing, a chosen one by type, and none as taken off', () => {
+    const door = piece('d', 'door')
+    expect(handleChoice(door)).toBe('handle')
+    expect(handlePatch('handle')).toEqual({ noHandle: false, handle: undefined })
+    expect(handlePatch('bar')).toEqual({ noHandle: false, handle: 'bar' })
+    expect(handlePatch('none')).toEqual({ noHandle: true, handle: undefined })
+    for (const choice of ['handle', 'bar', 'knob', 'profile', 'push', 'none'] as const) {
+      expect(handleChoice({ ...door, ...handlePatch(choice) })).toBe(choice)
+    }
   })
 })

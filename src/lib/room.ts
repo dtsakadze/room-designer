@@ -41,6 +41,18 @@ export const LAYOUT_LABELS: Record<Layout, string> = {
 export const layoutOf = (room: Room): Layout =>
   room.left && room.right ? 'u' : room.left || room.right ? 'l' : 'one'
 
+/** The side walls a layout has: both for a U, the `corner` one for an L, none for one wall. */
+export const layoutWalls = (layout: Layout, corner: SideWall): Pick<Room, 'left' | 'right'> =>
+  layout === 'u'
+    ? { left: true, right: true }
+    : layout === 'l'
+      ? { left: corner === 'left', right: corner === 'right' }
+      : { left: false, right: false }
+
+/** The side walls a change to the room switches off. */
+export const wallsSwitchedOff = (room: Room, next: Pick<Room, 'left' | 'right'>): SideWall[] =>
+  (['left', 'right'] as const).filter((wall) => room[wall] && !next[wall])
+
 export const clampRoomSize = (mm: number) =>
   Math.min(MAX_ROOM_SIZE, Math.max(MIN_ROOM_SIZE, Math.round(mm) || MIN_ROOM_SIZE))
 

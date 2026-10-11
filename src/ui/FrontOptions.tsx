@@ -12,6 +12,7 @@ import {
 } from '../lib/defaults'
 import { HINGE_FIT_LABELS, doorHinges } from '../lib/hinges'
 import { drawerParts, runnerLength } from '../lib/drawer'
+import { type HandleChoice, handleChoice, handlePatch } from '../lib/fixings'
 import { slidingPanels } from '../lib/geometry'
 import { useUnits } from '../store/useSettingsStore'
 import { useDesignStore } from '../store/useDesignStore'
@@ -131,7 +132,7 @@ function SlidingOptions({ piece }: { piece: Piece }) {
  */
 function HandleRow({ piece }: { piece: Piece }) {
   const patch = usePatch(piece)
-  const options: (keyof typeof HANDLE_LABELS)[] = [
+  const options: HandleChoice[] = [
     'handle',
     'bar',
     'knob',
@@ -139,13 +140,7 @@ function HandleRow({ piece }: { piece: Piece }) {
     ...(piece.kind === 'door' && !piece.sliding ? (['push'] as const) : []),
     'none',
   ]
-  const value = piece.noHandle ? 'none' : (piece.handle ?? 'handle')
-  const choose = (option: keyof typeof HANDLE_LABELS) =>
-    patch(
-      option === 'none'
-        ? { noHandle: true, handle: undefined }
-        : { noHandle: false, handle: option === 'handle' ? undefined : option },
-    )
+  const value = handleChoice(piece)
 
   return (
     <SelectRow
@@ -157,7 +152,7 @@ function HandleRow({ piece }: { piece: Piece }) {
       }
       value={value}
       options={options.map((option) => ({ value: option, text: HANDLE_LABELS[option] }))}
-      onChange={choose}
+      onChange={(choice) => patch(handlePatch(choice))}
     />
   )
 }

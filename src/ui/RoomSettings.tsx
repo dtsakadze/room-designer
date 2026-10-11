@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DEFAULT_CEILING_HEIGHT, LAYOUT_LABELS, type Layout, WALL_LABELS, layoutOf, wallOf } from '../lib/room'
+import { DEFAULT_CEILING_HEIGHT, LAYOUT_LABELS, type Layout, WALL_LABELS, layoutOf, layoutWalls, wallOf, wallsSwitchedOff } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import type { Room, SideWall, Wall } from '../types'
 import { NumberField } from './NumberField'
@@ -18,28 +18,19 @@ export function RoomSettings() {
   // An L keeps its corner side when switching back from a U or one wall.
   const [side, setSide] = useState<SideWall>(room.right && !room.left ? 'right' : 'left')
 
-  /** The side walls a change switches off that have parts on them. */
-  const losing = (next: Pick<Room, 'left' | 'right'>) =>
-    (['left', 'right'] as const).filter((wall) => room[wall] && !next[wall])
-
   const partsOn = (walls: Wall[]) => pieces.filter((piece) => walls.includes(wallOf(piece))).length
 
   const change = (next: Pick<Room, 'left' | 'right'>) => {
-    if (partsOn(losing(next)) > 0) setPending(next)
+    if (partsOn(wallsSwitchedOff(room, next)) > 0) setPending(next)
     else {
       setPending(null)
       setRoom(next)
     }
   }
 
-  const walls = (next: Layout, corner = side): Pick<Room, 'left' | 'right'> =>
-    next === 'u'
-      ? { left: true, right: true }
-      : next === 'l'
-        ? { left: corner === 'left', right: corner === 'right' }
-        : { left: false, right: false }
+  const walls = (next: Layout, corner = side) => layoutWalls(next, corner)
 
-  const pendingWalls = pending ? losing(pending) : []
+  const pendingWalls = pending ? wallsSwitchedOff(room, pending) : []
   const pendingCount = partsOn(pendingWalls)
 
   return (

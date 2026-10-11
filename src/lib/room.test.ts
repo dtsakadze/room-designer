@@ -2,20 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Piece, Room } from '../types'
 import { DEFAULT_THICKNESS } from './defaults'
 import { findClashes } from './geometry'
-import {
-  adjacentWalls,
-  activeWalls,
-  clampRoomSize,
-  fromWall,
-  hasSideWalls,
-  isSideWall,
-  layoutOf,
-  roomBox,
-  unfold,
-  wallLength,
-  wallOf,
-  wallRuns,
-} from './room'
+import { adjacentWalls, activeWalls, clampRoomSize, fromWall, hasSideWalls, isSideWall, layoutOf, roomBox, unfold, wallLength, wallOf, wallRuns, layoutWalls, wallsSwitchedOff } from './room'
 
 const room: Room = { left: true, right: true, width: 2000, depth: 1600 }
 
@@ -149,5 +136,19 @@ describe('wallRuns', () => {
     expect(wallRuns([part('a')], room(true, true)).map((r) => r.wall)).toEqual(['back'])
     expect(wallRuns([part('a', 'left')], room(true, false)).map((r) => r.wall)).toEqual(['left'])
     expect(wallRuns([], room(false, false))).toEqual([])
+  })
+})
+
+describe('layout walls', () => {
+  it('gives a U both side walls, an L its corner one, and one wall none', () => {
+    expect(layoutWalls('u', 'left')).toEqual({ left: true, right: true })
+    expect(layoutWalls('l', 'right')).toEqual({ left: false, right: true })
+    expect(layoutWalls('one', 'left')).toEqual({ left: false, right: false })
+  })
+
+  it('finds the side walls a change switches off', () => {
+    const room = { left: true, right: true, width: 2400, depth: 1800 }
+    expect(wallsSwitchedOff(room, { left: false, right: true })).toEqual(['left'])
+    expect(wallsSwitchedOff(room, { left: true, right: true })).toEqual([])
   })
 })
