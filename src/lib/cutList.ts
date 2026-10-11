@@ -367,51 +367,103 @@ export function hardwareList(
   ] as const
   for (const row of fixings) if (row.quantity > 0) add(row)
 
-  const order: HardwareRow['item'][] = [
-    'runners',
-    'hinges',
-    'rod',
-    'rod-supports',
-    'rod-centre-supports',
-    'rod-lift',
-    'track',
-    'panes',
-    'accessories',
-    'shelf-pins',
-    'shelf-screws',
-    'carcass-screws',
-    'confirmat-screws',
-    'cam-locks',
-    'cam-bolts',
-    'dowels',
-    'back-fixings',
-    'feet',
-    'anti-tip-brackets',
-    'wall-anchors',
-    'handles',
-    'bar-handles',
-    'knobs',
-    'j-profile',
-    'push-latches',
-  ]
   return [...rows.values()].sort(
     (a, b) =>
-      order.indexOf(a.item) - order.indexOf(b.item) ||
-      ('extension' in a && 'extension' in b
-        ? a.extension.localeCompare(b.extension) ||
-          CLOSES.indexOf(a.close) - CLOSES.indexOf(b.close)
-        : 0) ||
-      ('fit' in a && 'fit' in b
-        ? HINGE_FITS.indexOf(a.fit) - HINGE_FITS.indexOf(b.fit) ||
-          a.angle - b.angle ||
-          Number(a.softClose) - Number(b.softClose)
-        : 0) ||
-      ('position' in a && 'position' in b ? a.position.localeCompare(b.position) : 0) ||
-      ('accessory' in a && 'accessory' in b ? a.accessory.localeCompare(b.accessory) || b.width - a.width : 0) ||
-      ('pane' in a && 'pane' in b ? a.pane.localeCompare(b.pane) || b.height - a.height || b.width - a.width : 0) ||
-      ('diameter' in a && 'diameter' in b ? a.diameter - b.diameter : 0) ||
-      ('length' in a && 'length' in b ? b.length - a.length : 0),
+      ITEMS.indexOf(a.item) - ITEMS.indexOf(b.item) ||
+      compareKeys(entryOf(a).sortKey?.(a) ?? [], entryOf(b).sortKey?.(b) ?? []),
   )
+}
+
+type Item = HardwareRow['item']
+type RowOf<K extends Item> = Extract<HardwareRow, { item: K }>
+type Len = (mm: number) => string
+
+/**
+ * How an item is listed: its name (`len` shows a length in the project's
+ * units), how rows of it sort among themselves (by `sortKey`, ascending; a
+ * row without one keeps the order it was found in), and whether it's bought
+ * in pairs.
+ */
+type Entry<R extends HardwareRow> = {
+  name: (row: R, len: Len) => string
+  sortKey?: (row: R) => (string | number)[]
+  pairs?: true
+}
+
+/** Every item, in the order the hardware list gives them. */
+const HARDWARE: { [K in Item]: Entry<RowOf<K>> } = {
+  runners: {
+    name: (row, len) =>
+      `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}${row.close === 'ordinary' ? '' : `, ${CLOSE_LABELS[row.close].toLowerCase()}`}, ${len(row.length)}`,
+    sortKey: (row) => [row.extension, CLOSES.indexOf(row.close), -row.length],
+    pairs: true,
+  },
+  hinges: {
+    name: (row) => `Cup hinges, ${HINGE_FIT_LABELS[row.fit]}, ${row.angle}°${row.softClose ? ', soft-close' : ''}`,
+    sortKey: (row) => [HINGE_FITS.indexOf(row.fit), row.angle, Number(row.softClose)],
+  },
+  rod: {
+    name: (row, len) => `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`,
+    sortKey: (row) => [row.diameter, -row.length],
+  },
+  'rod-supports': {
+    name: (row, len) => `Rod end supports, ⌀${len(row.diameter)}`,
+    sortKey: (row) => [row.diameter],
+  },
+  'rod-centre-supports': {
+    name: (row, len) => `Rod centre support brackets, ⌀${len(row.diameter)}`,
+    sortKey: (row) => [row.diameter],
+  },
+  'rod-lift': {
+    name: (row, len) => `Pull-down wardrobe lift, for a ${len(row.length)} rod`,
+    sortKey: (row) => [-row.length],
+  },
+  track: {
+    name: (row, len) => `Sliding door track, ${row.position}, ${len(row.length)}`,
+    sortKey: (row) => [row.position, -row.length],
+  },
+  panes: {
+    name: (row, len) => `${PANE_LABELS[row.pane]} pane, ${len(row.width)} × ${len(row.height)} × ${len(row.thickness)}`,
+    sortKey: (row) => [row.pane, -row.height, -row.width],
+  },
+  accessories: {
+    name: (row, len) => `${ACCESSORY_LABELS[row.accessory]}, ${len(row.width)} wide × ${len(row.depth)} deep`,
+    sortKey: (row) => [row.accessory, -row.width],
+  },
+  'shelf-pins': { name: () => 'Shelf pins' },
+  'shelf-screws': { name: () => 'Screws for fixed shelves' },
+  'carcass-screws': { name: () => 'Carcass screws (tops, bottoms, rails to sides)' },
+  'confirmat-screws': { name: () => 'Confirmat screws, 7 × 50 mm (carcass joints and fixed shelves)' },
+  'cam-locks': { name: () => 'Cam locks (carcass joints and fixed shelves)' },
+  'cam-bolts': { name: () => 'Cam bolts' },
+  dowels: { name: () => 'Dowels' },
+  'back-fixings': { name: () => 'Nails or screws for back panels' },
+  feet: { name: (row, len) => `Adjustable feet, ${len(row.height)} high` },
+  'anti-tip-brackets': { name: () => 'Anti-tip brackets (units over 700 mm tall)' },
+  'wall-anchors': { name: () => 'Wall anchors and screws for the brackets (choose for your wall)' },
+  handles: { name: () => 'Handles or knobs' },
+  'bar-handles': { name: () => 'Bar handles' },
+  knobs: { name: () => 'Knobs' },
+  'j-profile': {
+    name: (row, len) => `J-profile grip, ${len(row.length)} long`,
+    sortKey: (row) => [-row.length],
+  },
+  'push-latches': { name: () => 'Push-to-open latches' },
+}
+
+const ITEMS = Object.keys(HARDWARE) as Item[]
+
+/** A row's entry; TypeScript can't tie the entry's row type to the row by itself. */
+const entryOf = (row: HardwareRow) => HARDWARE[row.item] as Entry<HardwareRow>
+
+/** Compares sort keys item by item: text alphabetically, numbers ascending. */
+function compareKeys(a: (string | number)[], b: (string | number)[]) {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const [x, y] = [a[i], b[i]]
+    const order = typeof x === 'string' && typeof y === 'string' ? x.localeCompare(y) : Number(x) - Number(y)
+    if (order !== 0) return order
+  }
+  return 0
 }
 
 /**
@@ -419,74 +471,9 @@ export function hardwareList(
  * unit to buy it in (runners come in pairs). `len` shows a length in the
  * project's units.
  */
-export function describeHardware(row: HardwareRow, len: (mm: number) => string) {
-  const each = { unit: 'pcs' }
-  switch (row.item) {
-    case 'runners':
-      return {
-        name: `Drawer runners, ${EXTENSION_LABELS[row.extension].toLowerCase()}${row.close === 'ordinary' ? '' : `, ${CLOSE_LABELS[row.close].toLowerCase()}`}, ${len(row.length)}`,
-        count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`,
-        unit: 'pairs',
-      }
-    case 'hinges':
-      return {
-        name: `Cup hinges, ${HINGE_FIT_LABELS[row.fit]}, ${row.angle}°${row.softClose ? ', soft-close' : ''}`,
-        count: `${row.quantity}`,
-        ...each,
-      }
-    case 'rod':
-      return { name: `Hanging rod, ⌀${len(row.diameter)}, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
-    case 'rod-supports':
-      return { name: `Rod end supports, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
-    case 'rod-lift':
-      return { name: `Pull-down wardrobe lift, for a ${len(row.length)} rod`, count: `${row.quantity}`, ...each }
-    case 'rod-centre-supports':
-      return { name: `Rod centre support brackets, ⌀${len(row.diameter)}`, count: `${row.quantity}`, ...each }
-    case 'accessories':
-      return {
-        name: `${ACCESSORY_LABELS[row.accessory]}, ${len(row.width)} wide × ${len(row.depth)} deep`,
-        count: `${row.quantity}`,
-        ...each,
-      }
-    case 'panes':
-      return {
-        name: `${PANE_LABELS[row.pane]} pane, ${len(row.width)} × ${len(row.height)} × ${len(row.thickness)}`,
-        count: `${row.quantity}`,
-        ...each,
-      }
-    case 'track':
-      return { name: `Sliding door track, ${row.position}, ${len(row.length)}`, count: `${row.quantity}`, ...each }
-    case 'shelf-pins':
-      return { name: 'Shelf pins', count: `${row.quantity}`, ...each }
-    case 'shelf-screws':
-      return { name: 'Screws for fixed shelves', count: `${row.quantity}`, ...each }
-    case 'carcass-screws':
-      return { name: 'Carcass screws (tops, bottoms, rails to sides)', count: `${row.quantity}`, ...each }
-    case 'confirmat-screws':
-      return { name: 'Confirmat screws, 7 × 50 mm (carcass joints and fixed shelves)', count: `${row.quantity}`, ...each }
-    case 'cam-locks':
-      return { name: 'Cam locks (carcass joints and fixed shelves)', count: `${row.quantity}`, ...each }
-    case 'cam-bolts':
-      return { name: 'Cam bolts', count: `${row.quantity}`, ...each }
-    case 'dowels':
-      return { name: 'Dowels', count: `${row.quantity}`, ...each }
-    case 'feet':
-      return { name: `Adjustable feet, ${len(row.height)} high`, count: `${row.quantity}`, ...each }
-    case 'anti-tip-brackets':
-      return { name: 'Anti-tip brackets (units over 700 mm tall)', count: `${row.quantity}`, ...each }
-    case 'wall-anchors':
-      return { name: 'Wall anchors and screws for the brackets (choose for your wall)', count: `${row.quantity}`, ...each }
-    case 'back-fixings':
-      return { name: 'Nails or screws for back panels', count: `${row.quantity}`, ...each }
-    case 'handles':
-      return { name: 'Handles or knobs', count: `${row.quantity}`, ...each }
-    case 'bar-handles':
-      return { name: 'Bar handles', count: `${row.quantity}`, ...each }
-    case 'knobs':
-      return { name: 'Knobs', count: `${row.quantity}`, ...each }
-    case 'j-profile':
-      return { name: `J-profile grip, ${len(row.length)} long`, count: `${row.quantity}`, ...each }
-    case 'push-latches':
-      return { name: 'Push-to-open latches', count: `${row.quantity}`, ...each }
-  }
+export function describeHardware(row: HardwareRow, len: Len) {
+  const { name, pairs } = entryOf(row)
+  return pairs
+    ? { name: name(row, len), count: `${row.quantity} pair${row.quantity === 1 ? '' : 's'}`, unit: 'pairs' }
+    : { name: name(row, len), count: `${row.quantity}`, unit: 'pcs' }
 }
