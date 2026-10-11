@@ -178,7 +178,7 @@ export type Piece = {
   color?: string
   /**
    * Where the part starts front to back: mm from its wall to its back face.
-   * Absent means automatic (see `depthStart`): against the back panel, or in
+   * Absent means automatic (see `wallDepthStart`): against the back panel, or in
    * front of the unit for doors, drawer fronts, the plinth and trim.
    */
   z?: number

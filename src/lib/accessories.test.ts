@@ -3,7 +3,7 @@ import type { Piece } from '../types'
 import { ACCESSORIES, ACCESSORY_LABELS, DEFAULT_THICKNESS, accessoryDefaults, pieceLabel } from './defaults'
 import { cutList, describeHardware, hardwareList } from './cutList'
 import { faceColor } from '../canvas/colors'
-import { depthStart, findClashes, normalizePiece } from './geometry'
+import { findClashes, normalizePiece, wallDepthStart } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
 const piece = (id: string, kind: Piece['kind'], rect: Partial<Piece>): Piece =>
@@ -36,7 +36,7 @@ describe('accessories', () => {
 
   it('start at the front of the unit, and clash only with what they overlap', () => {
     const basket = accessory('a', 'basket', { y: 100 })
-    const zStart = depthStart([...unit, basket], thickness)
+    const zStart = wallDepthStart([...unit, basket], thickness)
     // Flush with the front of a 500 deep unit, not against the back.
     expect(zStart(basket)).toBe(500 - basket.depth)
     const above = accessory('b', 'basket', { y: 400 })

@@ -3,7 +3,7 @@ import type { Piece } from '../types'
 import { cutList, hardwareList } from './cutList'
 import { DEFAULT_THICKNESS, DRAWER_BOX_CLEARANCE, FRONT_GAP, RUNNER_GAP } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
-import { depthStart, findClashes, normalizePiece } from './geometry'
+import { findClashes, normalizePiece, wallDepthStart } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
 const drawer = (rect: Partial<Piece> = {}): Piece =>
@@ -115,7 +115,7 @@ describe('drawers', () => {
       { id: 's', kind: 'vertical', x: -300, y: 0, width: 18, height: 1000, depth: 600 },
       thickness,
     )
-    const zStart = depthStart([side, drawer()], thickness)
+    const zStart = wallDepthStart([side, drawer()], thickness)
     expect(zStart(drawer()) + drawer().depth).toBe(600)
   })
 
@@ -146,7 +146,7 @@ describe('drawers', () => {
     })
 
     it('stand in front of the unit, covering its edges without clashing', () => {
-      const zStart = depthStart([...unit, overlay], thickness)
+      const zStart = wallDepthStart([...unit, overlay], thickness)
       const [front] = drawerParts(overlay, thickness)
       expect(zStart(overlay) + front.z).toBe(600)
       expect(findClashes([...unit, overlay], thickness).size).toBe(0)

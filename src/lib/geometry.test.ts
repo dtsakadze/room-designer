@@ -4,7 +4,6 @@ import { DEFAULT_THICKNESS, DOOR_LEAF_GAP, MAX_LENGTH, PLINTH_RECESS } from './d
 import {
   clearanceBelow,
   contentBounds,
-  depthStart,
   doorFronts,
   doorLeaves,
   findClashes,
@@ -141,25 +140,25 @@ describe('neighbourGaps', () => {
   })
 })
 
-describe('depthStart', () => {
+describe('wallDepthStart, on one wall', () => {
   const back = piece('back', 'back', { width: 600, height: 1000 })
   const side = piece('side', 'vertical', { height: 1000, depth: 597 })
 
   it('stands parts in front of the back panel, and the back panel against the wall', () => {
-    const z = depthStart([back, side], thickness)
+    const z = wallDepthStart([back, side], thickness)
     expect(z(back)).toBe(0)
     expect(z(side)).toBe(3)
   })
 
   it('stands parts against the wall when there’s no back panel', () => {
-    expect(depthStart([side], thickness)(side)).toBe(0)
+    expect(wallDepthStart([side], thickness)(side)).toBe(0)
   })
 
   it('sets the plinth back from the front and runs front rails along it', () => {
     const plinth = piece('p', 'plinth', { height: 80 })
     const front = piece('f', 'rail', {})
     const backRail = piece('br', 'rail', { railAt: 'back' })
-    const z = depthStart([back, side, plinth, front, backRail], thickness)
+    const z = wallDepthStart([back, side, plinth, front, backRail], thickness)
     expect(z(plinth)).toBe(600 - PLINTH_RECESS - 18)
     expect(z(front)).toBe(600 - 100)
     expect(z(backRail)).toBe(3)
@@ -167,15 +166,15 @@ describe('depthStart', () => {
 
   it('hangs a rod halfway between the back panel and the front', () => {
     const rod = piece('rod', 'rod', { height: 25 })
-    const z = depthStart([back, side, rod], thickness)
+    const z = wallDepthStart([back, side, rod], thickness)
     expect(z(rod)).toBe(3 + (600 - 3 - 25) / 2)
-    expect(depthStart([rod], thickness)(rod)).toBe(0)
+    expect(wallDepthStart([rod], thickness)(rod)).toBe(0)
   })
 
   it('places overlay doors in front of the unit and inset doors flush inside it', () => {
     const overlay = piece('o', 'door', {})
     const inset = piece('i', 'door', { inset: true })
-    const z = depthStart([back, side, overlay, inset], thickness)
+    const z = wallDepthStart([back, side, overlay, inset], thickness)
     expect(z(overlay)).toBe(600)
     expect(z(inset)).toBe(600 - 18)
   })

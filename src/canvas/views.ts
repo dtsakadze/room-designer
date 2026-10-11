@@ -1,5 +1,5 @@
 import { BOARD } from '../lib/defaults'
-import { type Rect, depthSpan, depthStart, footprint, wallDepthStart } from '../lib/geometry'
+import { type Rect, depthSpan, footprint, wallDepthStart } from '../lib/geometry'
 import { adjacentWalls, fromWall, wallLength, wallOf } from '../lib/room'
 import type { Piece, Room, Thickness, Wall } from '../types'
 
@@ -18,12 +18,12 @@ export const VIEWS: { name: ViewName; label: string }[] = [
  * Pieces as seen from one side, as flat rectangles in the same 2D space the
  * front view uses (x right, y up), ordered so nearer pieces draw on top. Only
  * the front view is edited; the others are read-only projections.
- * Front-to-back placement comes from `depthStart`.
+ * Front-to-back placement comes from `wallDepthStart`.
  */
 export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickness): Piece[] {
   // The 3D preview draws the pieces themselves.
   if (view === 'front' || view === '3d') return pieces
-  const zStart = depthStart(pieces, thickness)
+  const zStart = wallDepthStart(pieces, thickness)
 
   switch (view) {
     // From the left: the wall on the left, the front of the unit on the right.

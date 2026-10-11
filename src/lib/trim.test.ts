@@ -6,11 +6,11 @@ import { autoBands, autoGrain } from './edges'
 import { DEFAULT_ROOM } from './room'
 import {
   depthSpan,
-  depthStart,
   findClashes,
   normalizePiece,
   pieceSolids,
   slidingLaneSpacing,
+  wallDepthStart,
 } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -35,7 +35,7 @@ describe('trim', () => {
     const cornice = piece('c', 'cornice', { x: -300, y: 1000, width: 600, height: 80 })
     const filler = piece('f', 'filler', { x: 300, width: 40, height: 1000 })
     const all = [...unit, cornice, filler]
-    const zStart = depthStart(all, thickness)
+    const zStart = wallDepthStart(all, thickness)
     expect(zStart(cornice)).toBe(500 - thickness.front)
     expect(zStart(filler)).toBe(500 - thickness.front)
     expect(findClashes(all, thickness).size).toBe(0)
@@ -59,9 +59,9 @@ describe('front-to-back position (z)', () => {
   const shelf = (z?: number) => piece('s', 'shelf', { x: -282, y: 400, width: 564, depth: 400, ...(z === undefined ? {} : { z }) })
 
   it('puts a part where it says, and leaves the rest automatic', () => {
-    const zStart = depthStart([...unit, shelf(120)], thickness)
+    const zStart = wallDepthStart([...unit, shelf(120)], thickness)
     expect(zStart(shelf(120))).toBe(120)
-    expect(depthStart([...unit, shelf()], thickness)(shelf())).toBe(thickness.back)
+    expect(wallDepthStart([...unit, shelf()], thickness)(shelf())).toBe(thickness.back)
   })
 
   it('keeps it a whole number, not below the wall, and drops it when absent', () => {
@@ -73,7 +73,7 @@ describe('front-to-back position (z)', () => {
   it('moves the front of the unit, so doors follow a box moved forward', () => {
     const forward = unit.map((p) => ({ ...p, z: (p.z ?? (p.kind === 'back' ? 0 : thickness.back)) + 50 }))
     const door = piece('d', 'door', { x: -300, width: 600, height: 1000 })
-    expect(depthStart([...forward, door], thickness)(door)).toBe(550)
+    expect(wallDepthStart([...forward, door], thickness)(door)).toBe(550)
   })
 
   it('clashes only where the parts really meet front to back', () => {

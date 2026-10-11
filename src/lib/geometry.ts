@@ -284,7 +284,7 @@ const overlaps = (a: Edges, b: Edges) =>
  * front of the unit (overlay) or just inside its front edge (inset), and so
  * does a drawer's front, its box behind it inside the unit.
  */
-export function depthStart(pieces: Piece[], thickness: Thickness) {
+function depthStart(pieces: Piece[], thickness: Thickness) {
   const hasBack = pieces.some((piece) => piece.kind === 'back')
   const behind = (piece: Piece) => (piece.kind === 'back' || !hasBack ? 0 : thickness.back)
   // A part given its own front-to-back position goes there; the rest are automatic.
@@ -316,8 +316,9 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
 }
 
 /**
- * `depthStart` for a design on several walls: each wall's unit is placed on
- * its own, so one run's plinth and front rails follow that run's depth.
+ * Where each part starts front to back (see `depthStart`), with each wall's
+ * unit placed on its own, so one run's plinth and front rails follow that
+ * run's depth. Everything that places parts front to back goes through this.
  */
 export function wallDepthStart(pieces: Piece[], thickness: Thickness) {
   const byWall = new Map<Wall, (piece: Piece) => number>()

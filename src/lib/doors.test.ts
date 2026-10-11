@@ -12,7 +12,7 @@ import { cutList, describeHardware, hardwareList } from './cutList'
 import { PANE_FILLS, faceColor } from '../canvas/colors'
 import { bandsOf } from './edges'
 import { openerHardware } from './fixings'
-import { depthStart, findClashes, neighbourGaps, normalizePiece, slidingPanels } from './geometry'
+import { findClashes, neighbourGaps, normalizePiece, slidingPanels, wallDepthStart } from './geometry'
 import { doorHinges } from './hinges'
 
 const thickness = DEFAULT_THICKNESS
@@ -39,7 +39,7 @@ describe('doors', () => {
   it('stand in front of the unit (overlay) or flush inside it (inset)', () => {
     const overlay = piece('o', 'door', { x: -300, width: 600, height: 1000 })
     const inset = piece('i', 'door', { x: -280, y: 20, width: 560, height: 960, inset: true })
-    const zStart = depthStart([...unit, overlay, inset], thickness)
+    const zStart = wallDepthStart([...unit, overlay, inset], thickness)
     expect(zStart(overlay)).toBe(500)
     expect(zStart(inset)).toBe(500 - thickness.body)
   })
