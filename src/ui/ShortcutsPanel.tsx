@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useDialog } from './useDialog'
 import { SNAP } from '../lib/defaults'
 import { useUnits } from '../store/useSettingsStore'
 import {
@@ -36,16 +36,8 @@ const SHORTCUTS: [string, string][] = [
 export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
   const { len } = useUnits()
 
-  // Escape closes it, unless a dialog over it (Projects, …) takes the key.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      if (document.querySelector('[role="dialog"]:not(.cut-list)')) return
-      onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  // Beside the drawing, for trying shortcuts out, so not modal.
+  const dialog = useDialog<HTMLDivElement>(onClose, { modal: false })
 
   const rows: [string, string][] = [
     ...SHORTCUTS.slice(0, -3),
@@ -56,7 +48,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
   ]
   return (
     // A dialog, so Escape closes it rather than deselecting (see the canvas's keys).
-    <div className="cut-list shortcuts-panel" role="dialog" aria-label="Keyboard shortcuts">
+    <div className="cut-list shortcuts-panel" role="dialog" aria-label="Keyboard shortcuts" ref={dialog}>
       <header className="cut-list-header">
         <h2>Keyboard shortcuts</h2>
         <button

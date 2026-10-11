@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDialog } from './useDialog'
 import changelog from '../../CHANGELOG.md?raw'
 import { parseChangelog } from '../lib/changelog'
 import { GitHubLink } from './GitHubLink'
@@ -79,20 +80,14 @@ export function VersionInfo() {
 }
 
 function WhatsNewPanel({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  const dialog = useDialog<HTMLDivElement>(onClose)
 
   return (
     <div
       className="overlay"
       onPointerDown={(event) => event.target === event.currentTarget && onClose()}
     >
-      <div className="projects-panel whats-new" role="dialog" aria-label="What's new">
+      <div className="projects-panel whats-new" role="dialog" aria-modal="true" aria-label="What's new" ref={dialog}>
         <header className="projects-header">
           <h2>What's new</h2>
           <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>

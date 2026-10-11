@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useDialog } from './useDialog'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { useDesignStore } from '../store/useDesignStore'
 import { EditableName } from './EditableName'
@@ -23,17 +24,12 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
   // Built once: each template is worked out only when someone looks at the picker.
   const templates = useMemo(() => (choosing ? TEMPLATES.map((template) => ({ template, project: template.build() })) : []), [choosing])
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !renamingId) onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose, renamingId])
+  // Escape while renaming cancels the rename only (`EditableName` keeps the key).
+  const dialog = useDialog<HTMLDivElement>(onClose)
 
   return (
     <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="projects-panel" role="dialog" aria-label="Projects">
+      <div className="projects-panel" role="dialog" aria-modal="true" aria-label="Projects" ref={dialog}>
         <header className="projects-header">
           <h2>{choosing ? 'New project' : 'Projects'}</h2>
           {choosing ? (

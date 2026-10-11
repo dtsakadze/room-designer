@@ -47,7 +47,11 @@ export function EditableName({ name, onRename, className, editing, onDone }: Edi
       onBlur={() => finish(true)}
       onKeyDown={(event) => {
         if (event.key === 'Enter') finish(true)
-        if (event.key === 'Escape') finish(false)
+        if (event.key === 'Escape') {
+          // So a dialog it's in (Projects) doesn't close as well.
+          event.preventDefault()
+          finish(false)
+        }
       }}
     />
   )

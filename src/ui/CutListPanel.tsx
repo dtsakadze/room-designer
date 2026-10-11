@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useDialog } from './useDialog'
 import {
   CUT_LIST_SECTIONS,
   type CutListRow,
@@ -37,16 +37,8 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
   const setByWall = useSettingsStore((s) => s.setCutListByWall)
   const { len } = useUnits()
 
-  // Escape closes it, unless a dialog over it (Projects, …) takes the key.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      if (document.querySelector('[role="dialog"]:not(.cut-list)')) return
-      onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  // Beside the drawing rather than over a dimmed page, so not modal.
+  const dialog = useDialog<HTMLDivElement>(onClose, { modal: false })
 
   const rows = groups.flatMap((group) => group.rows)
   const total = rows.reduce((sum, row) => sum + row.quantity, 0)
@@ -62,7 +54,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
 
   return (
     // A dialog, so Escape closes it rather than deselecting (see the canvas's keys).
-    <div className="cut-list cut-list-view" role="dialog" aria-label="Cut list">
+    <div className="cut-list cut-list-view" role="dialog" aria-label="Cut list" ref={dialog}>
       <header className="cut-list-view-header">
         <div className="cut-list-view-title">
           <h2>Cut list</h2>

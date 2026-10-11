@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDialog } from './useDialog'
 import { createPortal } from 'react-dom'
 import { PAPER, type PaperSize } from '../lib/drawing'
 import { useDesignStore } from '../store/useDesignStore'
@@ -43,13 +44,7 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
   }))
   const [printing, setPrinting] = useState(false)
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  const dialog = useDialog<HTMLDivElement>(onClose)
 
   // Once the pages are in the document, open the browser's print dialog;
   // when it's done (printed or cancelled), take them out again.
@@ -74,7 +69,7 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="projects-panel print-dialog" role="dialog" aria-label="Print">
+      <div className="projects-panel print-dialog" role="dialog" aria-modal="true" aria-label="Print" ref={dialog}>
         <h2>Print</h2>
         <div className="stack">
           <label className="checkbox">

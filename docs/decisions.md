@@ -457,3 +457,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **Hanging rods hang mid-depth** (2026-10-11)
 *Decision*: `depthStart` places a rod without its own Z halfway between the back panel's front face and the front of the unit (rounded to whole mm), and rods no longer count towards where the front of the unit is. A Z typed in the Selected panel still wins.
 *Why*: rods had no case of their own, so they sat flush against the back panel like a shelf, where no hanger fits, and the side, top and 3D views and the clash check all showed them there. A wardrobe rail is fitted near the middle of the depth so hangers clear the back and the doors.
+
+**Dialogs share `useDialog` for Escape and focus** (2026-10-11)
+*Decision*: every dialog and side panel puts the ref from `useDialog(onClose, { modal })` on its `role="dialog"` element instead of its own window Escape listener. Escape closes only the newest open one (a module-level stack), and a field that uses Escape itself (`EditableName`) keeps it with `preventDefault`. Modal dialogs (Settings, Projects, What's new, Print, Open file) are `aria-modal`, take focus when they open unless something in them has `autoFocus`, keep Tab inside, and give focus back when they close. The cut list and the Shortcuts panel pass `modal: false`.
+*Why*: dialogs didn't move focus into themselves, so Tab and the keyboard reached the page behind them, and each listened for Escape on `window`, so Escape closed Print and the Settings under it together.
+*Instead of*: the per-dialog Escape listeners and the cut list's and Shortcuts panel's "is another dialog open" checks.

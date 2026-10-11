@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useDialog } from './useDialog'
 import { UNDO_SHORTCUT } from './shortcuts'
 
 type OpenFileDialogProps = {
@@ -20,13 +20,7 @@ export function OpenFileDialog({
   onReplace,
   onCancel,
 }: OpenFileDialogProps) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onCancel])
+  const dialog = useDialog<HTMLDivElement>(onCancel)
 
   return (
     <div
@@ -36,6 +30,8 @@ export function OpenFileDialog({
       <div
         className="projects-panel open-file-dialog"
         role="dialog"
+        aria-modal="true"
+        ref={dialog}
         aria-label={`Open ${fileName}`}
       >
         <h2>Open {fileName}</h2>

@@ -1,4 +1,5 @@
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useState } from 'react'
+import { useDialog } from './useDialog'
 import { BoardSettings, ConstructionSettings, NewPartSettings, UnitSettings } from './BoardSettings'
 import { HangingGuideSettings } from './HangingGuideSettings'
 import { LookPicker } from './LookPicker'
@@ -46,13 +47,7 @@ function storedPage(): SettingsPage {
 export function SettingsDialog({ page: initialPage, onClose }: { page?: SettingsPage; onClose: () => void }) {
   const [page, setPage] = useState<SettingsPage>(() => initialPage ?? storedPage())
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  const dialog = useDialog<HTMLDivElement>(onClose)
 
   const choose = (id: SettingsPage) => {
     setPage(id)
@@ -65,7 +60,7 @@ export function SettingsDialog({ page: initialPage, onClose }: { page?: Settings
 
   return (
     <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="projects-panel settings-dialog" role="dialog" aria-label="Settings">
+      <div className="projects-panel settings-dialog" role="dialog" aria-modal="true" aria-label="Settings" ref={dialog}>
         <header className="projects-header">
           <h2>Settings</h2>
           <button type="button" className="icon-button" aria-label="Close settings" onClick={onClose}>
