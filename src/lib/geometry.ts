@@ -211,6 +211,18 @@ export function snapToMiddle(piece: Piece, pieces: Piece[], obstacles: Rect[], t
   return { x: piece.x + x.offset, y: piece.y + y.offset, centredX: x.centred, centredY: y.centred }
 }
 
+/**
+ * The equal gaps to show around a part dragged to the middle of its space,
+ * on the axes where it really ended up there (`placed`): an adjustable shelf
+ * goes to the nearest pin hole after, which may not be the middle.
+ */
+export function centredGaps(middle: ReturnType<typeof snapToMiddle>, placed: Pick<Piece, 'x' | 'y'>): Gap[] {
+  return [
+    ...(Math.abs(placed.x - middle.x) <= 0.5 ? (middle.centredX ?? []) : []),
+    ...(Math.abs(placed.y - middle.y) <= 0.5 ? (middle.centredY ?? []) : []),
+  ]
+}
+
 type Side = 'up' | 'down' | 'left' | 'right'
 
 function sideGaps(box: Edges, others: Edges[], side: Side): Gap[] {

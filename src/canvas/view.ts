@@ -1,3 +1,5 @@
+import { type Rect, contentBounds } from '../lib/geometry'
+
 /** The visible window onto the drawing, in mm, in SVG coordinates (y grows down). */
 export type ViewBox = { x: number; y: number; w: number; h: number }
 
@@ -6,6 +8,31 @@ export const INITIAL_VIEW: ViewBox = { x: -1600, y: -2300, w: 3200, h: 2600 }
 
 export const MIN_VIEW_WIDTH = 200
 export const MAX_VIEW_WIDTH = 40000
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
+/**
+ * The view zoomed by `factor` (above 1 shows more), keeping `anchor` (an SVG
+ * point, such as the cursor) where it is on screen. The width stays within
+ * the zoom limits.
+ */
+export function zoomAround(view: ViewBox, anchor: { x: number; y: number }, factor: number): ViewBox {
+  const w = clamp(view.w * factor, MIN_VIEW_WIDTH, MAX_VIEW_WIDTH)
+  const ratio = w / view.w
+  return { w, h: view.h * ratio, x: anchor.x - (anchor.x - view.x) * ratio, y: anchor.y - (anchor.y - view.y) * ratio }
+}
+
+/** A view framing these rectangles (in design coordinates) with `margin` mm around them; the starting view for none. */
+export function fitView(rects: Rect[], margin = 300): ViewBox {
+  const bounds = contentBounds(rects)
+  if (!bounds) return INITIAL_VIEW
+  return {
+    x: bounds.minX - margin,
+    y: toSvgY(bounds.minY, bounds.maxY - bounds.minY) - margin,
+    w: Math.max(MIN_VIEW_WIDTH, bounds.maxX - bounds.minX + margin * 2),
+    h: Math.max(MIN_VIEW_WIDTH, bounds.maxY - bounds.minY + margin * 2),
+  }
+}
 
 /**
  * Design coordinates count y UP from the floor, SVG counts y down. Every

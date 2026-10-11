@@ -8,6 +8,7 @@ import {
   endWalls,
   isHollow,
   piecesAt,
+  piecesInRect,
   projectPieces,
   roomPlan,
   showsEdge,
@@ -130,5 +131,15 @@ describe('labels and looks', () => {
     expect(showsEdge(piece('b', 'back'), 'left')).toBe(true)
     expect(showsEdge(piece('r', 'rod'), 'front')).toBe(false)
     expect(showsEdge(piece('s', 'shelf'), '3d')).toBe(false)
+  })
+})
+
+describe('piecesInRect', () => {
+  it('finds the parts a dragged rectangle touches, whichever way it was dragged', () => {
+    const low = piece('low', 'shelf', { x: 0, y: 0, width: 100, height: 18 })
+    const high = piece('high', 'shelf', { x: 0, y: 1000, width: 100, height: 18 })
+    // SVG y grows down: from y = 50 to 10 up off the floor.
+    const hit = piecesInRect([low, high], { x: 50, y: -50 }, { x: -10, y: -10 })
+    expect(hit.map((p) => p.id)).toEqual(['low'])
   })
 })

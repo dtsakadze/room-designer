@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Piece } from '../types'
 import { DEFAULT_THICKNESS, DOOR_LEAF_GAP, MAX_LENGTH, PLINTH_RECESS } from './defaults'
 import {
+  centredGaps,
   clearanceBelow,
   contentBounds,
   doorFronts,
@@ -374,5 +375,15 @@ describe('snapToMiddle', () => {
     expect(snap.centredY!.map((gap) => gap.to - gap.from)).toEqual([491, 491])
     // Nothing above: no middle to find.
     expect(snapToMiddle(shelf, [...others, shelf], [], 20).centredY).toBeNull()
+  })
+})
+
+describe('centredGaps', () => {
+  const gap = { axis: 'x' as const, from: 0, to: 10, at: 0 }
+  const middle = { x: 100, y: 200, centredX: [gap, gap], centredY: null }
+
+  it('shows the gaps on an axis only where the part ended up in the middle', () => {
+    expect(centredGaps(middle, { x: 100, y: 0 })).toEqual([gap, gap])
+    expect(centredGaps(middle, { x: 132, y: 0 })).toEqual([])
   })
 })

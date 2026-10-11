@@ -2,8 +2,18 @@ import { BOARD } from '../lib/defaults'
 import { type Rect, depthSpan, footprint, wallDepthStart } from '../lib/geometry'
 import { adjacentWalls, fromWall, wallLength, wallOf } from '../lib/room'
 import type { Piece, Room, Thickness, Wall } from '../types'
+import { toDesignY } from './view'
 
 export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
+
+/** The parts a rectangle dragged between two SVG points touches, in the order given. */
+export function piecesInRect<T extends Rect>(pieces: T[], a: { x: number; y: number }, b: { x: number; y: number }) {
+  const left = Math.min(a.x, b.x)
+  const right = Math.max(a.x, b.x)
+  const bottom = toDesignY(Math.max(a.y, b.y))
+  const top = toDesignY(Math.min(a.y, b.y))
+  return pieces.filter((p) => p.x < right && p.x + p.width > left && p.y < top && p.y + p.height > bottom)
+}
 
 export const VIEWS: { name: ViewName; label: string }[] = [
   { name: 'front', label: 'Front' },

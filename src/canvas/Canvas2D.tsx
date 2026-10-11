@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
-import { type Gap, type Rect, contentBounds, snapToMiddle } from '../lib/geometry'
+import { type Gap, type Rect, centredGaps, snapToMiddle } from '../lib/geometry'
 import { WALL_LABELS, activeWalls, hasSideWalls, wallLength, wallOf } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
@@ -45,6 +45,7 @@ import {
   drawOrder,
   isHollow,
   piecesAt,
+  piecesInRect,
   projectPieces,
   roomPlan,
   showsEdge,
@@ -54,13 +55,13 @@ import {
 import { Preview3DLoader } from './Preview3DLoader'
 import {
   INITIAL_VIEW,
-  MAX_VIEW_WIDTH,
-  MIN_VIEW_WIDTH,
   type ViewBox,
+  fitView,
   screenToSvgMatrix,
   svgPoint,
   toDesignY,
   wheelZoomFactor,
+  zoomAround,
 } from './view'
 
 type Gesture =
@@ -457,18 +458,11 @@ export function Canvas2D() {
       if (touches.current.size < 2) return
       const [a, b] = [...touches.current.values()]
       const { startView, startMid } = active
-      const w = clamp(
-        (startView.w * active.startDistance) / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
-        MIN_VIEW_WIDTH,
-        MAX_VIEW_WIDTH,
-      )
-      const h = startView.h * (w / startView.w)
-      // Where the fingers' middle is now, as a share of the view they started on:
-      // the design point that was between them stays between them.
+      // Zoomed by the fingers' spread around where their middle is now, then
+      // moved so the design point that was between them stays between them.
       const mid = svgPoint(active.inverse, (a.x + b.x) / 2, (a.y + b.y) / 2)
-      const fx = (mid.x - startView.x) / startView.w
-      const fy = (mid.y - startView.y) / startView.h
-      setView({ w, h, x: startMid.x - fx * w, y: startMid.y - fy * h })
+      const zoomed = zoomAround(startView, mid, active.startDistance / Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)))
+      setView({ ...zoomed, x: zoomed.x + startMid.x - mid.x, y: zoomed.y + startMid.y - mid.y })
       return
     }
     const point = svgPoint(active.inverse, event.clientX, event.clientY)
@@ -528,13 +522,8 @@ export function Canvas2D() {
     }
     const middle = snapToMiddle({ ...target, ...placed }, shown, obstacles, unit * MIDDLE_SNAP)
     updatePiece(active.id, { x: middle.x, y: middle.y })
-    // Shown only where the part really ended up centred: an adjustable shelf
-    // then goes to the nearest pin hole, which may not be the middle.
     const moved = useDesignStore.getState().pieces.find((piece) => piece.id === active.id)
-    const centred = [
-      ...(moved && Math.abs(moved.x - middle.x) <= 0.5 ? (middle.centredX ?? []) : []),
-      ...(moved && Math.abs(moved.y - middle.y) <= 0.5 ? (middle.centredY ?? []) : []),
-    ]
+    const centred = moved ? centredGaps(middle, moved) : []
     setCentred(centred.length > 0 ? centred : null)
   }
 
@@ -550,14 +539,7 @@ export function Canvas2D() {
     }
     if (active.mode === 'marquee') {
       if (active.moved) {
-        // Everything the rectangle touches, in design coordinates (y up).
-        const left = Math.min(active.startX, active.endX)
-        const right = Math.max(active.startX, active.endX)
-        const bottom = toDesignY(Math.max(active.startY, active.endY))
-        const top = toDesignY(Math.min(active.startY, active.endY))
-        const hit = drawn.filter(
-          (p) => p.x < right && p.x + p.width > left && p.y < top && p.y + p.height > bottom,
-        )
+        const hit = piecesInRect(drawn, { x: active.startX, y: active.startY }, { x: active.endX, y: active.endY })
         selectMany(
           hit.map((piece) => piece.id),
           true,
@@ -592,19 +574,8 @@ export function Canvas2D() {
       if (!inverse) return
       const cursor = svgPoint(inverse, event.clientX, event.clientY)
 
-      setView((current) => {
-        const factor = wheelZoomFactor(event)
-        const w = clamp(current.w * factor, MIN_VIEW_WIDTH, MAX_VIEW_WIDTH)
-        const ratio = w / current.w
-        const h = current.h * ratio
-        return {
-          w,
-          h,
-          // Keep whatever is under the cursor pinned in place.
-          x: cursor.x - (cursor.x - current.x) * ratio,
-          y: cursor.y - (cursor.y - current.y) * ratio,
-        }
-      })
+      // Whatever is under the cursor stays pinned in place.
+      setView((current) => zoomAround(current, cursor, wheelZoomFactor(event)))
     }
 
     svg.addEventListener('wheel', onWheel, { passive: false })
@@ -759,22 +730,7 @@ export function Canvas2D() {
     if (doorSelected && !showDoors) setShowDoors(true)
   }, [doorSelected, showDoors, setShowDoors])
 
-  const fitTo = (list: Rect[]) => {
-    const bounds = contentBounds(list)
-    if (!bounds) {
-      setView(INITIAL_VIEW)
-      return
-    }
-    const margin = 300
-    const w = Math.max(MIN_VIEW_WIDTH, bounds.maxX - bounds.minX + margin * 2)
-    const h = Math.max(MIN_VIEW_WIDTH, bounds.maxY - bounds.minY + margin * 2)
-    setView({
-      x: bounds.minX - margin,
-      y: -(bounds.maxY + margin),
-      w,
-      h,
-    })
-  }
+  const fitTo = (list: Rect[]) => setView(fitView(list))
 
   /** What a view should frame: its parts, and in a room, the wall or room around them. */
   const framed = (name: ViewName, wall = activeWall) => {
@@ -1100,4 +1056,3 @@ const snap = (mm: number) => Math.round(mm / SNAP) * SNAP
 const MIDDLE_SNAP = 8
 /** How near a part's corner or edge a measured point catches on it, in screen pixels (times `unit`). */
 const MEASURE_SNAP = 10
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
