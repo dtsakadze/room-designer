@@ -18,18 +18,21 @@ import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
 import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
 
 /**
- * The version saves are written in. To change the saved shape:
- *
- * 1. bump this,
- * 2. add a step to `MIGRATIONS` that turns the previous version into this one,
- * 3. add a sample of the previous version to `fixtures/` and a test that it
- *    still opens (see `project.test.ts`).
- *
- * Never edit an existing step: saves in that version are out there.
+ * The version saves are written in. To change the saved shape, follow the
+ * checklist in docs/save-format.md. Never edit an existing step in
+ * `MIGRATIONS`: saves in that version are out there.
  */
 export const FORMAT_VERSION = 18
 
 type Raw = Record<string, unknown>
+
+/**
+ * A step for a version that only adds something optional, whose absence
+ * means the old behaviour: the data stays as it is, and the bump makes an
+ * older app refuse the save rather than drop what's new. For new steps only;
+ * the released ones above it stay as they were written.
+ */
+export const versionOnly = (next: number) => (data: Raw): Raw => ({ ...data, formatVersion: next })
 
 /**
  * Step `n` turns version `n` into version `n + 1`. Loading runs every step

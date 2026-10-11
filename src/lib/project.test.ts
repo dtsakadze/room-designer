@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FORMAT_VERSION, designOf, newDesign, opensIntact, readProject, toProjectData } from './project'
+import { FORMAT_VERSION, designOf, newDesign, opensIntact, readProject, toProjectData, versionOnly } from './project'
 import { DEFAULT_ROOM } from './room'
 import { MAX_LENGTH, MAX_PIECES, MAX_THICKNESS } from './defaults'
 import type { Piece } from '../types'
@@ -611,5 +611,13 @@ describe('opensIntact', () => {
     const project = opened()
     const broken = { ...project.pieces.find((piece) => !piece.boxId)!, id: 'broken', x: Number.NaN }
     expect(opensIntact(toProjectData({ ...project, pieces: [...project.pieces, broken] }))).toBe(false)
+  })
+})
+
+describe('versionOnly', () => {
+  it('makes a step that changes nothing but the version, and leaves its input alone', () => {
+    const save = { formatVersion: 18, pieces: [], name: 'Hall' }
+    expect(versionOnly(19)(save)).toEqual({ formatVersion: 19, pieces: [], name: 'Hall' })
+    expect(save.formatVersion).toBe(18)
   })
 })
