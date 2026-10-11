@@ -14,7 +14,7 @@ import { useClashes } from './useClashes'
 import { VersionInfo } from './WhatsNew'
 import { PrintDialog } from './PrintDialog'
 import { SettingsDialog, type SettingsPage } from './SettingsDialog'
-import { PRINT_EVENT, hasModifier } from './shortcuts'
+import { hasModifier } from './shortcuts'
 
 // The everyday states are a word next to the app name; the problems get a
 // line of their own, since they need doing something about.
@@ -32,7 +32,8 @@ export function Sidebar() {
   const current = useProjectsStore((s) => s.projects.find((project) => project.id === s.currentId))
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [showProjects, setShowProjects] = useState(false)
-  const [showPrint, setShowPrint] = useState(false)
+  const printOpen = useLayoutStore((s) => s.printOpen)
+  const setPrintOpen = useLayoutStore((s) => s.setPrintOpen)
   /** The settings page open, or 'last' for wherever they were left. */
   const [settings, setSettings] = useState<SettingsPage | 'last' | null>(null)
 
@@ -43,16 +44,11 @@ export function Sidebar() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!hasModifier(event) || event.shiftKey || event.altKey || event.key.toLowerCase() !== 'p') return
       event.preventDefault()
-      setShowPrint(true)
+      setPrintOpen(true)
     }
-    const onPrint = () => setShowPrint(true)
     window.addEventListener('keydown', onKeyDown)
-    window.addEventListener(PRINT_EVENT, onPrint)
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener(PRINT_EVENT, onPrint)
-    }
-  }, [])
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [setPrintOpen])
   const hasClashes = useClashes().size > 0
   const count = useDesignStore((s) => s.pieces.length)
   const layout = useDesignStore((s) => layoutOf(s.room))
@@ -85,7 +81,7 @@ export function Sidebar() {
               onRename={(name) => renameProject(current.id, name)}
             />
           )}
-          <ProjectMenu onProjects={() => setShowProjects(true)} onPrint={() => setShowPrint(true)} />
+          <ProjectMenu onProjects={() => setShowProjects(true)} onPrint={() => setPrintOpen(true)} />
           <button
             type="button"
             className="ghost-button settings-button"
@@ -137,7 +133,7 @@ export function Sidebar() {
       </footer>
 
       {showProjects && <ProjectsPanel onClose={() => setShowProjects(false)} />}
-      {showPrint && <PrintDialog onClose={() => setShowPrint(false)} />}
+      {printOpen && <PrintDialog onClose={() => setPrintOpen(false)} />}
       {settings && (
         <SettingsDialog page={settings === 'last' ? undefined : settings} onClose={() => setSettings(null)} />
       )}

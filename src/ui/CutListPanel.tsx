@@ -14,9 +14,10 @@ import { UNITS } from '../lib/units'
 import { cutListCsv, cutListCsvByWall, hardwareCsv, hardwareCsvByWall } from '../lib/csv'
 import { downloadFile, fileBase } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
-import { PRINT_EVENT, PRINT_SHORTCUT } from './shortcuts'
+import { PRINT_SHORTCUT } from './shortcuts'
 import { hasSideWalls, wallRuns } from '../lib/room'
 import type { BoardKey, Piece } from '../types'
 
@@ -87,7 +88,7 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
             disabled={pieces.length === 0}
             title={`Print drawings and the cut list, or save them as a PDF (${PRINT_SHORTCUT})`}
             // The print dialog belongs to the sidebar, which also opens it on ⌘P.
-            onClick={() => window.dispatchEvent(new Event(PRINT_EVENT))}
+            onClick={() => useLayoutStore.getState().setPrintOpen(true)}
           >
             Print…
           </button>
