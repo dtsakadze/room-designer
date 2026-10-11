@@ -38,6 +38,6 @@ describe('units', () => {
 
   it('knows its units', () => {
     expect(['mm', 'cm', 'm', 'in'].every(isUnit)).toBe(true)
-    expect(['ft', '', null, 3].some(isUnit)).toBe(false)
+    expect(['ft', '', null, 3, 'toString', '__proto__', 'constructor'].some(isUnit)).toBe(false)
   })
 })

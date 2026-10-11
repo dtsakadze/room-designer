@@ -14,8 +14,9 @@ export const UNITS: Record<Unit, { label: string; mm: number; decimals: number }
 
 export const UNIT_ORDER: Unit[] = ['mm', 'cm', 'm', 'in']
 
+// `Object.hasOwn` so inherited names such as `toString` aren't units.
 export const isUnit = (value: unknown): value is Unit =>
-  typeof value === 'string' && value in UNITS
+  typeof value === 'string' && Object.hasOwn(UNITS, value)
 
 /** A typed number in `unit`, as millimetres. */
 export const fromUnit = (value: number, unit: Unit) => value * UNITS[unit].mm

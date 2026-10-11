@@ -448,11 +448,14 @@ export function cleanBoardName(value: unknown): string | null {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
+// `Object.hasOwn`, not `in`: `in` also accepts inherited names such as
+// `__proto__` or `toString`, which a hand-edited save could use as a kind and
+// crash the app on every load.
 const isMaterial = (value: unknown): value is BoardMaterial =>
-  typeof value === 'string' && value in MATERIAL_LABELS
+  typeof value === 'string' && Object.hasOwn(MATERIAL_LABELS, value)
 
 const isKind = (value: unknown): value is PieceKind =>
-  typeof value === 'string' && value in PIECE_LABELS
+  typeof value === 'string' && Object.hasOwn(PIECE_LABELS, value)
 
 const positive = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined

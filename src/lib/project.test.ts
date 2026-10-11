@@ -507,4 +507,16 @@ describe('readProject', () => {
     if (!result.ok) throw new Error("the damaged save didn't open")
     expect(result.project.pieces).toHaveLength(7)
   })
+
+  it('drops parts and materials named after built-in object keys', () => {
+    const save = fixture('v12-materials') as { pieces: unknown[]; boardMaterials: unknown }
+    const count = save.pieces.length
+    const names = ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'valueOf']
+    save.pieces.push(...names.map((kind, i) => ({ id: `p${i}`, kind, x: 0, y: 0, width: 100, height: 100, depth: 100 })))
+    save.boardMaterials = { body: '__proto__', front: 'toString', back: 'mdf' }
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the edited save didn't open")
+    expect(result.project.pieces).toHaveLength(count)
+    expect(result.project.boardMaterials).toEqual({ back: 'mdf' })
+  })
 })
