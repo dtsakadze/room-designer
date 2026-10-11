@@ -1,6 +1,6 @@
 # Docs
 
-- [decisions.md](decisions.md): architecture and design decisions, and why they were made.
+- [decisions.md](decisions.md): architecture and save format decisions, and why they were made.
 - [save-format.md](save-format.md): how projects are saved, format versions and converters, and how to change what's saved without breaking existing projects.
 - [releasing.md](releasing.md): version numbers, keeping the changelog, and publishing a release.
 

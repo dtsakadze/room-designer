@@ -1,6 +1,6 @@
 # Decisions
 
-Architecture and design decisions, newest last, with the reason for each. Add an entry whenever an important decision is made or changed; when one is reversed, add a new entry rather than deleting the old one.
+Architecture and save format decisions, newest last, with the reason for each: how the code is structured, how data is stored, saved or loaded, and how the app is built and served. Ordinary features, fixes and refactors don't get an entry. When a decision is reversed, add a new entry rather than deleting the old one. Older entries also cover design choices, from before this was narrowed on 2026-10-11.
 
 Entry format: **title** (date), then *Decision* and *Why*, and *Instead of* when alternatives were weighed.
 
