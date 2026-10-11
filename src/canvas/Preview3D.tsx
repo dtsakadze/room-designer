@@ -29,6 +29,8 @@ export default function Preview3D() {
     parts: THREE.Group
     walls: THREE.Group
     frame: () => void
+    /** Asks for a new picture on the next frame. */
+    invalidate: () => void
   } | null>(null)
 
   const pieces = useDesignStore((s) => s.pieces)
@@ -93,6 +95,14 @@ export default function Preview3D() {
       )
       controls.target.copy(center)
       controls.update()
+      invalidate()
+    }
+
+    // Drawn only when something changed (the camera, the parts, the size),
+    // not 60 times a second while nobody touches it, which drains batteries.
+    let dirty = true
+    const invalidate = () => {
+      dirty = true
     }
 
     const resize = () => {
@@ -100,7 +110,11 @@ export default function Preview3D() {
       renderer.setSize(w, h)
       camera.aspect = w / Math.max(h, 1)
       camera.updateProjectionMatrix()
+      invalidate()
     }
+    // Every camera move, whether from the loop's damping or the controls' own
+    // pointer and wheel handlers, which move the camera themselves.
+    controls.addEventListener('change', invalidate)
     const observer = new ResizeObserver(resize)
     observer.observe(host)
     resize()
@@ -108,19 +122,29 @@ export default function Preview3D() {
 
     let raf = 0
     const loop = () => {
+      // Keeps the glide after letting go going; a move marks the picture dirty.
       controls.update()
-      renderer.render(scene, camera)
+      if (dirty) {
+        renderer.render(scene, camera)
+        dirty = false
+      }
       raf = requestAnimationFrame(loop)
     }
     loop()
 
-    sceneRef.current = { scene, parts, walls, frame }
+    sceneRef.current = { scene, parts, walls, frame, invalidate }
     return () => {
       cancelAnimationFrame(raf)
       observer.disconnect()
       controls.dispose()
       disposeChildren(parts)
       disposeChildren(walls)
+      floor.geometry.dispose()
+      floor.material.dispose()
+      // dispose() alone leaves the WebGL context alive until garbage
+      // collection, and browsers allow only about 16: switching to 3D and
+      // back again and again would make them drop old ones with a warning.
+      renderer.forceContextLoss()
       renderer.dispose()
       renderer.domElement.remove()
       sceneRef.current = null
@@ -150,6 +174,7 @@ export default function Preview3D() {
         current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, room, grainAxis)))
       })
     }
+    current.invalidate()
   }, [pieces, thickness, room, selectedId, clashes, showDoors, boardColors, edgeColors, grainedBoards])
 
   // The room's outline on the floor, once there's more than one wall.
@@ -158,6 +183,7 @@ export default function Preview3D() {
     if (!current) return
     disposeChildren(current.walls)
     if (hasSideWalls(room)) current.walls.add(buildRoomOutline(room))
+    current.invalidate()
   }, [room])
 
   return (

@@ -43,6 +43,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - A drag can no longer get stuck: if the mouse button is let go somewhere Boardcut doesn't hear it (over another window, or during a system gesture), the drag ends as soon as the pointer moves again, instead of the part following the pointer with no button held.
 - Right-dragging that starts on a blue resize handle now pans the drawing, as it does everywhere else, instead of resizing the part.
 - Fixed a drawing glitch that could leave stray marks behind on a very narrow fixed shelf (its screw marks) or a very small set of sliding doors (its tracks and panels).
+- The 3D view uses less power: it only redraws when something changes (you turn the view, or edit the design) instead of all the time, and closing it frees its graphics memory straight away, so switching to 3D and back many times no longer piles up.
 
 ## 1.11.0 — 2026-10-10
 
