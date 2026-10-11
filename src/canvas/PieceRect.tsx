@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { ACCESSORIES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
-import { doorLeaves, slidingPanels } from '../lib/geometry'
+import { doorFronts, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
 import { ACCESSORY_FILLS, CLASH, PANE_FILLS, SELECTED, SPAN_WARNING } from './colors'
 import { toSvgY } from './view'
@@ -161,10 +161,9 @@ export function PieceRect({
  */
 function DoorMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
   if (piece.sliding) return <SlidingMarks piece={piece} y={y} unit={unit} />
-  const leaves = doorLeaves(piece, piece.double)
+  const leaves = doorFronts(piece)
   const mid = y + piece.height / 2
   const bottom = y + piece.height
-  const hingedLeft = (index: number) => (piece.double ? index === 0 : piece.hinge !== 'right')
   return (
     <g
       fill="none"
@@ -174,7 +173,7 @@ function DoorMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }
       style={{ pointerEvents: 'none' }}
     >
       {leaves.map((leaf, index) => {
-        const [hinge, open] = hingedLeft(index)
+        const [hinge, open] = leaf.hingeSide === 'left'
           ? [leaf.x, leaf.x + leaf.width]
           : [leaf.x + leaf.width, leaf.x]
         return (
@@ -232,7 +231,7 @@ function SlidingMarks({ piece, y, unit }: { piece: Piece; y: number; unit: numbe
 function PaneSheen({ piece, y }: { piece: Piece; y: number }) {
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {doorLeaves(piece, piece.double).map((leaf, index) => (
+      {doorFronts(piece).map((leaf, index) => (
         <Sheen
           key={index}
           id={`${piece.id}-${index}`}

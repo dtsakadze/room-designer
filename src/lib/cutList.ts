@@ -2,8 +2,8 @@ import type { AccessoryType, BoardKey, Dimension, Edge, JointType, PaneType, Pie
 import { BOARD, BOARDS, CLOSE_LABELS, ACCESSORY_LABELS, EXTENSION_LABELS, PANE_LABELS, PANE_THICKNESS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
-import { doorLeaves, slidingPanels } from './geometry'
-import { antiTipBrackets, backFixings, doorFronts, feetNeeded, jointHardware, openerHardware } from './fixings'
+import { doorFronts } from './geometry'
+import { antiTipBrackets, backFixings, feetNeeded, jointHardware, openerHardware } from './fixings'
 import { HINGE_FITS, HINGE_FIT_LABELS, type HingeFit, doorHinges } from './hinges'
 import { PINS_PER_SHELF, isAdjustable } from './shelfPins'
 import { rodCentreSupports } from './spans'
@@ -198,16 +198,10 @@ function boardsOf(piece: Piece, thickness: Thickness): Board[] {
     grain: grainOf(piece)!,
     order: kindOrder(piece.kind),
   }
-  if (piece.kind === 'door' && piece.sliding) {
-    return slidingPanels({ ...piece, sliding: piece.sliding }).map((panel) => ({
-      ...kind,
-      label: 'Sliding door panel',
-      size: panel,
-    }))
-  }
-  if (piece.kind === 'door' && piece.double) {
-    // One row per leaf, so "2 × Double door" can't read as two pairs.
-    return doorLeaves(piece, true).map((leaf) => ({ ...kind, label: 'Double door leaf', size: leaf }))
+  if (piece.kind === 'door' && (piece.sliding || piece.double)) {
+    // One row per panel or leaf, so "2 × Double door" can't read as two pairs.
+    const label = piece.sliding ? 'Sliding door panel' : 'Double door leaf'
+    return doorFronts(piece).map((front) => ({ ...kind, label, size: front }))
   }
   return [{ ...kind, label: pieceLabel(piece), size: piece }]
 }

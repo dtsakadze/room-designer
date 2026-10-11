@@ -1,6 +1,6 @@
 import type { Piece, Room, Thickness, Wall } from '../types'
 import { DOOR_OPEN_ANGLE } from './defaults'
-import { type Rect, depthSpan, doorLeaves, wallDepthStart } from './geometry'
+import { type Rect, depthSpan, doorFronts, wallDepthStart } from './geometry'
 import { hasSideWalls, roomBox, wallOf } from './room'
 
 /**
@@ -53,9 +53,8 @@ export function doorSwings(pieces: Piece[], thickness: Thickness, room: Room): D
     .flatMap((door) => {
       const wall = wallOf(door)
       const face = zStart(door) + door.depth
-      return doorLeaves(door, door.double).map((leaf, index) => {
-        const hingedLeft = door.double ? index === 0 : door.hinge !== 'right'
-        const [hinge, end] = hingedLeft ? [leaf.x, leaf.x + leaf.width] : [leaf.x + leaf.width, leaf.x]
+      return doorFronts(door).map((leaf) => {
+        const [hinge, end] = leaf.hingeSide === 'left' ? [leaf.x, leaf.x + leaf.width] : [leaf.x + leaf.width, leaf.x]
         return {
           id: door.id,
           wall,

@@ -5,6 +5,7 @@ import {
   clearanceBelow,
   contentBounds,
   depthStart,
+  doorFronts,
   doorLeaves,
   findClashes,
   fitBetweenSides,
@@ -242,6 +243,24 @@ describe('doorLeaves', () => {
     const leaves = doorLeaves({ x: -600, width: 1200 }, true)
     expect(leaves.map((leaf) => leaf.width)).toEqual([598, 598])
     expect(leaves[1].x + leaves[1].width).toBe(600)
+  })
+})
+
+describe('doorFronts', () => {
+  it('hinges a single door on its hinge side, and a double door’s leaves on their outer sides', () => {
+    const side = (door: Piece) => doorFronts(door).map((front) => front.hingeSide)
+    expect(side(piece('a', 'door'))).toEqual(['left'])
+    expect(side(piece('b', 'door', { hinge: 'right' }))).toEqual(['right'])
+    const double = piece('c', 'door', { double: true, width: 1200 })
+    expect(side(double)).toEqual(['left', 'right'])
+    expect(doorFronts(double).map(({ x, width }) => ({ x, width }))).toEqual(doorLeaves(double, true).map(({ x, width }) => ({ x, width })))
+  })
+
+  it('gives sliding panels their lanes and no hinge, and a drawer as its own front', () => {
+    const fronts = doorFronts(piece('s', 'door', { sliding: 3, width: 1800 }))
+    expect(fronts.map((front) => [front.lane, front.hingeSide])).toEqual([[0, undefined], [1, undefined], [0, undefined]])
+    const drawer = piece('d', 'drawer', { height: 200 })
+    expect(doorFronts(drawer)).toEqual([drawer])
   })
 })
 

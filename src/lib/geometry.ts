@@ -339,8 +339,8 @@ const CLASH_TOLERANCE = 0.5
 /**
  * The solid boxes a piece is made of in the room, given where it starts front
  * to back: a drawer's boards (its space is mostly empty, and an overlay front
- * reaches over the unit's edges), a double door's two leaves, sliding door
- * panels each in their lane, or the piece itself.
+ * reaches over the unit's edges), a door's fronts (sliding panels each in
+ * their lane), or the piece itself.
  */
 export function pieceSolids(piece: Piece, z: number, thickness: Thickness, room: Room): RoomBox[] {
   if (piece.kind === 'drawer') {
@@ -348,24 +348,10 @@ export function pieceSolids(piece: Piece, z: number, thickness: Thickness, room:
       roomBox({ ...piece, ...part }, z + part.z, room),
     )
   }
-  if (piece.kind === 'door' && piece.sliding) {
-    // Each panel in its lane: the front lane stands one lane spacing ahead of the back one.
-    return slidingPanels({ ...piece, sliding: piece.sliding }).map((panel) =>
-      roomBox(panel, z + (panel.lane === 0 ? slidingLaneSpacing(piece) : 0), room),
-    )
-  }
-  const box = roomBox(piece, z, room)
-  if (piece.kind !== 'door' || !piece.double) return [box]
-  // Split along the wall: across the room on the back wall, front to back on a side wall.
-  const axis = wallOf(piece) === 'back' ? 0 : 2
-  const span = { x: box.min[axis], width: box.max[axis] - box.min[axis] }
-  return doorLeaves(span, true).map((leaf) => {
-    const min = [...box.min] as RoomBox['min']
-    const max = [...box.max] as RoomBox['max']
-    min[axis] = leaf.x
-    max[axis] = leaf.x + leaf.width
-    return { min, max }
-  })
+  // A sliding panel in the front lane stands one lane spacing ahead of the back one.
+  return doorFronts(piece).map((front) =>
+    roomBox(front, z + (front.lane === 0 ? slidingLaneSpacing(piece) : 0), room),
+  )
 }
 
 /**
@@ -470,6 +456,27 @@ export function slidingPanels<T extends { x: number; y: number; width: number; h
  * panel's thickness and a small gap, so the panels slide past each other.
  */
 export const slidingLaneSpacing = (piece: Pick<Piece, 'depth'>) => piece.depth + SLIDING_LANE_GAP
+
+/**
+ * One front of a door or drawer: a sliding panel with its `lane` (0 is the
+ * front one), or a hinged leaf with the side it's hinged on.
+ */
+export type Front = Piece & { lane?: number; hingeSide?: 'left' | 'right' }
+
+/**
+ * The fronts a door or drawer is made of, left to right, each opened on its
+ * own: a set of sliding doors' panels, a double door's leaves (each hinged on
+ * its outer side), or the door itself (hinged on its hinge side). A drawer
+ * is its own single front.
+ */
+export function doorFronts(piece: Piece): Front[] {
+  if (piece.kind !== 'door') return [piece]
+  if (piece.sliding) return slidingPanels({ ...piece, sliding: piece.sliding })
+  if (piece.double) {
+    return doorLeaves(piece, true).map((leaf, index) => ({ ...leaf, hingeSide: index === 0 ? 'left' : 'right' }))
+  }
+  return [{ ...piece, hingeSide: piece.hinge ?? 'left' }]
+}
 
 /**
  * How deep a part is from where it starts, front to back: its depth, or for a

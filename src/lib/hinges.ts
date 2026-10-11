@@ -1,6 +1,6 @@
 import type { Piece, Thickness } from '../types'
 import { DOOR_OPEN_ANGLE } from './defaults'
-import { doorLeaves } from './geometry'
+import { doorFronts } from './geometry'
 import { wallOf } from './room'
 
 /**
@@ -53,10 +53,9 @@ type HingedEdge = { door: Piece; x: number; side: 'left' | 'right' }
 export function doorHinges(pieces: Piece[], thickness: Thickness): LeafHinges[] {
   const doors = pieces.filter((piece) => piece.kind === 'door' && !piece.sliding)
   const edges: HingedEdge[] = doors.flatMap((door) =>
-    doorLeaves(door, door.double).map((leaf, index) => {
-      const side = door.double ? (index === 0 ? 'left' : 'right') : (door.hinge ?? 'left')
-      return { door, side, x: side === 'left' ? leaf.x : leaf.x + leaf.width }
-    }),
+    doorFronts(door).flatMap(({ x, width, hingeSide: side }) =>
+      side ? [{ door, side, x: side === 'left' ? x : x + width }] : [],
+    ),
   )
 
   const sharesPanel = (edge: HingedEdge) =>

@@ -1,5 +1,5 @@
 import type { JointType, Piece } from '../types'
-import { doorLeaves, slidingPanels } from './geometry'
+import { doorFronts } from './geometry'
 import { wallOf } from './room'
 
 /**
@@ -229,13 +229,6 @@ function openerOf(piece: Piece): Opener | null {
 export const hasHandle = (piece: Piece) => {
   const opener = openerOf(piece)
   return opener === 'handle' || opener === 'bar' || opener === 'knob'
-}
-
-/** The fronts a door or drawer is made of, each opened by its own handle: a double door's leaves, sliding panels. */
-export function doorFronts(piece: Piece): { width: number; height: number }[] {
-  if (piece.kind === 'door' && piece.sliding) return slidingPanels({ ...piece, sliding: piece.sliding })
-  if (piece.kind === 'door' && piece.double) return doorLeaves(piece, true)
-  return [piece]
 }
 
 type OpenerRow =
