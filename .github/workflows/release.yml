@@ -57,7 +57,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          node scripts/release-notes.mjs "$GITHUB_REF_NAME" > notes.md
+          node --experimental-strip-types scripts/release-notes.mjs "$GITHUB_REF_NAME" > notes.md
           gh release create "$GITHUB_REF_NAME" \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md \

@@ -1,16 +1,32 @@
-import { describe, expect, inject, it } from 'vitest'
+import { execFileSync } from 'node:child_process'
+import { describe, expect, it } from 'vitest'
 import changelog from '../../CHANGELOG.md?raw'
 import { parseChangelog } from './changelog'
 
-declare module 'vitest' {
-  export interface ProvidedContext {
-    /** CHANGELOG.md at each release tag, read with git by the Vite config. */
-    releasedChangelogs: Record<string, string>
+const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+
+/**
+ * Each release tag (v1.2.3) with CHANGELOG.md as it had it. None without git
+ * or tags (a release zip, a shallow clone); tags from before the changelog
+ * are left out.
+ */
+function releasedChangelogs(): [string, string][] {
+  let tags: string[]
+  try {
+    tags = git('tag', '--list', 'v*.*.*').split('\n').filter(Boolean)
+  } catch {
+    return []
   }
+  return tags.flatMap((tag): [string, string][] => {
+    try {
+      return [[tag, git('show', `${tag}:CHANGELOG.md`)]]
+    } catch {
+      return []
+    }
+  })
 }
 
-/** Release tags with their changelog then; none without git or tags (a release zip, a shallow clone). */
-const released = Object.entries(inject('releasedChangelogs'))
+const released = releasedChangelogs()
 
 describe('parseChangelog', () => {
   it('reads releases newest first and skips Unreleased', () => {

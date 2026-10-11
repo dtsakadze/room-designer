@@ -1,13 +1,14 @@
 // Prints one version's notes from CHANGELOG.md, for the GitHub release.
-// Usage: node scripts/release-notes.mjs 1.1.0
+// Usage: node --experimental-strip-types scripts/release-notes.mjs 1.1.0
+// (the flag lets Node load the app's own changelog reader, which is TypeScript;
+// Node 22.18 and later do that without it)
 import { readFileSync } from 'node:fs'
+import { parseChangelog } from '../src/lib/changelog.ts'
 
 export function releaseNotes(changelog, version) {
-  const section = changelog
-    .split(/^## /m)
-    .find((part) => part.split('\n')[0].split('—')[0].trim() === version)
-  if (!section) return null
-  return section.split('\n').slice(1).join('\n').trim()
+  const release = parseChangelog(changelog).find((entry) => entry.version === version)
+  if (!release || (!release.summary && release.changes.length === 0)) return null
+  return [release.summary, release.changes.map((change) => `- ${change}`).join('\n')].filter(Boolean).join('\n\n')
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
