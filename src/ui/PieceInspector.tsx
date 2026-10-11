@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { ACCESSORIES, BOARD, PANE_THICKNESS, pieceLabel } from '../lib/defaults'
+import { ACCESSORIES, KINDS, PANE_THICKNESS, pieceLabel } from '../lib/defaults'
 import { useUnitLabel, useUnits } from '../store/useSettingsStore'
 import type { Piece, PieceKind } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
@@ -10,7 +10,7 @@ import { NumberField } from './NumberField'
 import { InspectorHeader } from './InspectorHeader'
 import { BoolChoice, ChoiceRow, Facts, FieldGroup, PositionFields, SelectRow } from './InspectorFields'
 import { wallOf } from '../lib/room'
-import { FITS_BETWEEN_SIDES, fitBetweenSides, wallDepthStart } from '../lib/geometry'
+import { fitBetweenSides, wallDepthStart } from '../lib/geometry'
 import { maxRodSpan, rodCentreSupports } from '../lib/spans'
 import { DoorOptions, DrawerOptions } from './FrontOptions'
 import { PieceWarnings } from './PieceWarnings'
@@ -37,7 +37,7 @@ export function PieceInspector({ piece }: { piece: Piece }) {
   // A rod is round: one length along the wall, one diameter for the section.
   const isRod = piece.kind === 'rod'
   // A glass or mirror door isn't board: no thickness from the project, colour or banding.
-  const board = piece.pane ? undefined : BOARD[piece.kind]
+  const board = piece.pane ? undefined : KINDS[piece.kind].board
   const options = KIND_OPTIONS[piece.kind]
 
   return (
@@ -93,7 +93,7 @@ export function PieceInspector({ piece }: { piece: Piece }) {
               })}
             </div>
           )}
-          {FITS_BETWEEN_SIDES.includes(piece.kind) && (
+          {KINDS[piece.kind].spans && (
             <FitButton piece={piece} pieces={pieces} onFit={(fit) => patch(fit)} />
           )}
         </FieldGroup>

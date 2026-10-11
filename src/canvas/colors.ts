@@ -1,4 +1,4 @@
-import { BOARD } from '../lib/defaults'
+import { KINDS } from '../lib/defaults'
 import { bandsOf } from '../lib/edges'
 import type { AccessoryType, BoardColors, BoardKey, Edge, Piece, PieceKind } from '../types'
 
@@ -51,7 +51,7 @@ function darken(hex: string, amount: number) {
 
 /** The board a part is cut from: a drawer counts as its front, and a rod isn't a board. */
 export const boardOf = (kind: PieceKind): BoardKey | null =>
-  BOARD[kind]?.board ?? (kind === 'drawer' ? 'front' : null)
+  KINDS[kind].board?.board ?? (kind === 'drawer' ? 'front' : null)
 
 /** A board's colour when it has none set: the standard look of a part cut from it. */
 export const BOARD_FILLS: Record<BoardKey, string> = {
@@ -100,7 +100,7 @@ export function edgeOnColor(piece: Piece, view: EdgeView, colors: DesignColors) 
   if (piece.pane) return darken(PANE_FILLS[piece.pane], 0.2)
   const board = boardOf(piece.kind)
   const banding = board && colors.edgeColors[board]
-  if (banding && BOARD[piece.kind] && bandsOf(piece).includes(view)) return banding
+  if (banding && KINDS[piece.kind].board && bandsOf(piece).includes(view)) return banding
   if (piece.color) return piece.color
   const boardColor = board && colors.boardColors[board]
   return boardColor ? darken(boardColor, 0.18) : piece.accessory ? darken(kindFill(piece), 0.18) : EDGE_FILLS[piece.kind]

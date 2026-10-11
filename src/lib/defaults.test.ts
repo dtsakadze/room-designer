@@ -1,17 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { PieceKind } from '../types'
 import {
-  BOARD,
   BOARDS,
   DEFAULT_THICKNESS,
+  KINDS,
   PIECE_GROUPS,
-  PIECE_LABELS,
   boardName,
   createPiece,
   pieceLabel,
 } from './defaults'
 
-const kinds = Object.keys(PIECE_LABELS) as PieceKind[]
+const kinds = Object.keys(KINDS) as PieceKind[]
 
 describe('createPiece', () => {
   it.each(kinds)('makes a %s centred on x = 0, on the floor', (kind) => {
@@ -58,6 +57,22 @@ describe('boards', () => {
   it('lists every board a part can be cut from', () => {
     const keys = BOARDS.map((board) => board.key)
     expect(keys).toEqual(Object.keys(DEFAULT_THICKNESS))
-    for (const board of Object.values(BOARD)) expect(keys).toContain(board.board)
+    for (const { board } of Object.values(KINDS)) if (board) expect(keys).toContain(board.board)
+  })
+})
+
+describe('KINDS', () => {
+  it('stands uprights on edge and lays what spans the unit flat', () => {
+    for (const kind of kinds) {
+      const { board, upright, spans } = KINDS[kind]
+      if (upright) expect(board?.axis).toBe('width')
+      if (spans && board) expect(['height', 'depth']).toContain(board.axis)
+      expect(upright && spans).toBeFalsy()
+    }
+  })
+
+  it('sets the unit depth only from boards flush with the back', () => {
+    const setting = kinds.filter((kind) => KINDS[kind].setsDepth)
+    expect(setting).toEqual(['vertical', 'horizontal', 'back', 'shelf', 'divider'])
   })
 })

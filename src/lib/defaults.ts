@@ -1,4 +1,4 @@
-import type { AccessoryType, BoardKey, BoardMaterial, HandleType, PaneType, JointType, Dimension, Piece, PieceKind, Thickness } from '../types'
+import type { AccessoryType, BoardKey, BoardMaterial, Dimension, Edge, HandleType, JointType, PaneType, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -194,22 +194,6 @@ export const PLACEMENT_GAP = 100
 /** Dragging and nudging snap to this grid, in mm. */
 export const SNAP = 10
 
-export const PIECE_LABELS: Record<PieceKind, string> = {
-  vertical: 'Side panel',
-  horizontal: 'Top / bottom',
-  back: 'Back panel',
-  shelf: 'Shelf',
-  divider: 'Divider',
-  rod: 'Hanging rod',
-  drawer: 'Drawer',
-  plinth: 'Plinth',
-  rail: 'Rail',
-  door: 'Door',
-  filler: 'Filler strip',
-  cornice: 'Cornice',
-  accessory: 'Accessory',
-}
-
 /**
  * A piece's name: tells fixed shelves from adjustable ones, front rails from
  * back, single doors from double.
@@ -219,7 +203,7 @@ export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'dou
   if (piece.kind === 'shelf') return piece.fixed ? 'Fixed shelf' : 'Adjustable shelf'
   if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
   if (piece.kind === 'door') return piece.sliding ? 'Sliding doors' : piece.double ? 'Double door' : 'Door'
-  return PIECE_LABELS[piece.kind]
+  return KINDS[piece.kind].label
 }
 
 export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
@@ -230,70 +214,154 @@ export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Accessories', kinds: ['accessory'] },
 ]
 
-/**
- * Which dimension of a board is its thickness, and which project thickness it
- * follows. Rods and drawers aren't flat boards, so they have none.
- */
-export const BOARD: Partial<Record<PieceKind, { axis: Dimension; board: keyof Thickness }>> = {
-  vertical: { axis: 'width', board: 'body' },
-  divider: { axis: 'width', board: 'body' },
-  horizontal: { axis: 'height', board: 'body' },
-  shelf: { axis: 'height', board: 'body' },
-  back: { axis: 'depth', board: 'back' },
-  // The base board the unit stands on, facing forward like the back panel.
-  plinth: { axis: 'depth', board: 'body' },
-  // A narrow strip joining the sides, used instead of a full top.
-  rail: { axis: 'height', board: 'body' },
-  // Faces forward, in front of the unit (overlay) or inside its opening (inset).
-  door: { axis: 'depth', board: 'front' },
-  // Trim boards face forward like a door, cut from the front board.
-  filler: { axis: 'depth', board: 'front' },
-  cornice: { axis: 'depth', board: 'front' },
+/** What a part is as a whole, the same for every part of its kind. */
+type KindInfo = {
+  label: string
+  /**
+   * Which dimension of the board is its thickness, and which project board it
+   * follows. Rods, drawers and accessories aren't flat boards, so they have none.
+   */
+  board?: { axis: Dimension; board: BoardKey }
+  /**
+   * Starting size, for a unit `inside` wide between its sides and `depth`
+   * deep. A board's thickness is left at 0 here: it always comes from the
+   * project thickness (see `normalizePiece`).
+   */
+  size: (inside: number, depth: number) => Pick<Piece, Dimension>
+  /**
+   * The edges usually banded: the ones that show once it's built. Back
+   * rails and glass doors have none (see `autoBands`).
+   */
+  bands: Edge[]
+  /**
+   * The way the grain usually runs: along the part as it stands, so it
+   * follows the unit's lines. Drawers have their front's. Null for parts
+   * that aren't boards.
+   */
+  grain: Dimension | null
+  /** Sides and dividers: shelves rest on them and are screwed to them, and the openings are between them. */
+  upright?: true
+  /** Runs across the unit from one side to the other, so it can be fitted between its sides. */
+  spans?: true
+  /** The carcass and what's inside it, flush with its back: these set how deep the unit is (see `wallDepthStart`). */
+  setsDepth?: true
 }
 
-/**
- * Starting sizes. A board's thickness axis is left out here: it always comes
- * from the project thickness (see `normalizePiece`). Depths follow the
- * project's unit depth, so a bookshelf project starts with shallow parts.
- */
-function dimensions(
-  kind: PieceKind,
-  thickness: Thickness,
-  unitDepth: number,
-): Pick<Piece, Dimension> {
-  const inside = UNIT_WIDTH - 2 * thickness.body
-  const shelfDepth = Math.max(1, unitDepth - SHELF_SETBACK)
-  switch (kind) {
-    case 'vertical':
-      return { width: 0, height: 2000, depth: unitDepth }
-    case 'horizontal':
-      return { width: UNIT_WIDTH, height: 0, depth: unitDepth }
-    case 'back':
-      return { width: UNIT_WIDTH, height: 2000, depth: 0 }
-    case 'shelf':
-      return { width: inside, height: 0, depth: shelfDepth }
-    case 'divider':
-      return { width: 0, height: 1000, depth: shelfDepth }
-    case 'rod':
-      return { width: inside, height: ROD_DIAMETER, depth: ROD_DIAMETER }
-    case 'drawer':
-      return { width: inside, height: 200, depth: Math.max(1, unitDepth - DRAWER_SETBACK) }
-    case 'rail':
-      return { width: inside, height: 0, depth: RAIL_DEPTH }
-    case 'plinth':
-      return { width: inside, height: PLINTH_HEIGHT, depth: 0 }
+/** Depth of a shelf or divider in a unit this deep. */
+const shelfDepth = (depth: number) => Math.max(1, depth - SHELF_SETBACK)
+
+/** Every kind of part, and the facts that hold for all of that kind. Depths follow the project's unit depth, so a bookshelf project starts with shallow parts. */
+export const KINDS: Record<PieceKind, KindInfo> = {
+  vertical: {
+    label: 'Side panel',
+    board: { axis: 'width', board: 'body' },
+    size: (_inside, depth) => ({ width: 0, height: 2000, depth }),
+    bands: ['front'],
+    grain: 'height',
+    upright: true,
+    setsDepth: true,
+  },
+  horizontal: {
+    label: 'Top / bottom',
+    board: { axis: 'height', board: 'body' },
+    size: (_inside, depth) => ({ width: UNIT_WIDTH, height: 0, depth }),
+    bands: ['front'],
+    grain: 'width',
+    spans: true,
+    setsDepth: true,
+  },
+  back: {
+    label: 'Back panel',
+    board: { axis: 'depth', board: 'back' },
+    size: () => ({ width: UNIT_WIDTH, height: 2000, depth: 0 }),
+    bands: [],
+    grain: 'height',
+    setsDepth: true,
+  },
+  shelf: {
+    label: 'Shelf',
+    board: { axis: 'height', board: 'body' },
+    size: (inside, depth) => ({ width: inside, height: 0, depth: shelfDepth(depth) }),
+    bands: ['front'],
+    grain: 'width',
+    spans: true,
+    setsDepth: true,
+  },
+  divider: {
+    label: 'Divider',
+    board: { axis: 'width', board: 'body' },
+    size: (_inside, depth) => ({ width: 0, height: 1000, depth: shelfDepth(depth) }),
+    bands: ['front'],
+    grain: 'height',
+    upright: true,
+    setsDepth: true,
+  },
+  rod: {
+    label: 'Hanging rod',
+    size: (inside) => ({ width: inside, height: ROD_DIAMETER, depth: ROD_DIAMETER }),
+    bands: [],
+    grain: null,
+    spans: true,
+  },
+  drawer: {
+    label: 'Drawer',
+    size: (inside, depth) => ({ width: inside, height: 200, depth: Math.max(1, depth - DRAWER_SETBACK) }),
+    bands: [],
+    // Left to right, so a stack of drawers reads as a row of boards.
+    grain: 'width',
+    spans: true,
+  },
+  plinth: {
+    label: 'Plinth',
+    // The base board the unit stands on, facing forward like the back panel.
+    board: { axis: 'depth', board: 'body' },
+    size: (inside) => ({ width: inside, height: PLINTH_HEIGHT, depth: 0 }),
+    bands: [],
+    grain: 'width',
+    spans: true,
+  },
+  rail: {
+    label: 'Rail',
+    // A narrow strip joining the sides, used instead of a full top.
+    board: { axis: 'height', board: 'body' },
+    size: (inside) => ({ width: inside, height: 0, depth: RAIL_DEPTH }),
+    bands: ['front'],
+    grain: 'width',
+    spans: true,
+  },
+  door: {
+    label: 'Door',
+    // Faces forward, in front of the unit (overlay) or inside its opening (inset).
+    board: { axis: 'depth', board: 'front' },
     // Half the default unit: one of a pair of single doors, or resized to fit.
-    case 'door':
-      return { width: UNIT_WIDTH / 2, height: 2000, depth: 0 }
-    // A narrow strip beside the unit, cut to the gap to the wall on site.
-    case 'filler':
-      return { width: FILLER_WIDTH, height: 2000, depth: 0 }
-    case 'cornice':
-      return { width: UNIT_WIDTH, height: CORNICE_HEIGHT, depth: 0 }
+    size: () => ({ width: UNIT_WIDTH / 2, height: 2000, depth: 0 }),
+    bands: ['top', 'bottom', 'left', 'right'],
+    grain: 'height',
+  },
+  filler: {
+    label: 'Filler strip',
+    // Trim boards face forward like a door, cut from the front board.
+    board: { axis: 'depth', board: 'front' },
+    // A narrow strip beside the unit, cut to the gap to the wall on site, so not banded.
+    size: () => ({ width: FILLER_WIDTH, height: 2000, depth: 0 }),
+    bands: [],
+    grain: 'height',
+  },
+  cornice: {
+    label: 'Cornice',
+    board: { axis: 'depth', board: 'front' },
+    size: () => ({ width: UNIT_WIDTH, height: CORNICE_HEIGHT, depth: 0 }),
+    // Its top is against the ceiling.
+    bands: ['bottom', 'left', 'right'],
+    grain: 'width',
+  },
+  accessory: {
+    label: 'Accessory',
     // Sized by its type when added from Accessories; a basket otherwise.
-    case 'accessory':
-      return { width: inside, height: 200, depth: Math.max(1, unitDepth - SHELF_SETBACK) }
-  }
+    size: (inside, depth) => ({ width: inside, height: 200, depth: shelfDepth(depth) }),
+    bands: [],
+    grain: null,
+  },
 }
 
 /** Starting values for a set of sliding doors: two panels filling a unit's width. */
@@ -308,8 +376,8 @@ export function createPiece(
   thickness: Thickness,
   unitDepth = DEFAULT_UNIT_DEPTH,
 ): Piece {
-  const size = dimensions(kind, thickness, unitDepth)
-  const board = BOARD[kind]
+  const size = KINDS[kind].size(UNIT_WIDTH - 2 * thickness.body, unitDepth)
+  const board = KINDS[kind].board
   if (board) size[board.axis] = thickness[board.board]
   return { id, kind, x: -size.width / 2, y: 0, ...size }
 }

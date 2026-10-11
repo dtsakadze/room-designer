@@ -1,4 +1,5 @@
 import type { Piece } from '../types'
+import { KINDS } from './defaults'
 
 /** Drawing scales, as 1:n, in the order they're tried: the largest that fits wins. */
 const SCALES = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]
@@ -29,7 +30,7 @@ type Span = { from: number; to: number }
 /** Gaps too small to label on a drawing: the slit between two drawer fronts, say. */
 const MIN_LABELLED = 20
 
-const isUpright = (piece: Piece) => piece.kind === 'vertical' || piece.kind === 'divider'
+const isUpright = (piece: Piece) => KINDS[piece.kind].upright
 const isAcross = (piece: Piece) =>
   ['horizontal', 'shelf', 'rail', 'plinth', 'drawer'].includes(piece.kind)
 

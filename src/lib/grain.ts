@@ -1,5 +1,5 @@
 import type { BoardKey, Dimension, Piece, Wall } from '../types'
-import { BOARD } from './defaults'
+import { KINDS } from './defaults'
 import { grainOf } from './edges'
 
 /** The views grain lines can be drawn in: the flat ones, where a part's face is a rectangle. */
@@ -29,7 +29,7 @@ export function grainDirection(
   grainedBoards: readonly BoardKey[],
 ): 'horizontal' | 'vertical' | null {
   if (!(view in FACE) || piece.pane) return null
-  const board = BOARD[piece.kind]?.board ?? (piece.kind === 'drawer' ? 'front' : null)
+  const board = KINDS[piece.kind].board?.board ?? (piece.kind === 'drawer' ? 'front' : null)
   const grain = grainOf(piece)
   if (!board || !grain || !grainedBoards.includes(board)) return null
   const [across, up] = FACE[view as GrainView]

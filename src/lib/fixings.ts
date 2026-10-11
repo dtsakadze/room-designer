@@ -1,4 +1,5 @@
 import type { HandleType, JointType, Piece } from '../types'
+import { KINDS } from './defaults'
 import { doorFronts } from './geometry'
 import { wallOf } from './room'
 
@@ -16,7 +17,7 @@ const BACK_FIXING_SPACING = 150
 
 /** Boards that run across the unit, and the upright ones they're screwed to. */
 const isAcross = (piece: Piece) => piece.kind === 'horizontal' || piece.kind === 'rail'
-const isUpright = (piece: Piece) => piece.kind === 'vertical' || piece.kind === 'divider'
+const isUpright = (piece: Piece) => KINDS[piece.kind].upright
 
 /** The two overlap along their shared edge, rather than only touching at a corner. */
 const overlaps = (from1: number, to1: number, from2: number, to2: number) =>

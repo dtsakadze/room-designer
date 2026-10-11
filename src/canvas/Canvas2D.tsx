@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BOARD } from '../lib/defaults'
+import { KINDS } from '../lib/defaults'
 import type { Rect } from '../lib/geometry'
 import { WALL_LABELS, hasSideWalls, wallLength } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
@@ -332,7 +332,7 @@ export function Canvas2D() {
         {isFront && single && selected && !selected.boxId && (
           <ResizeHandles
             piece={selected}
-            locked={BOARD[selected.kind]?.axis}
+            locked={KINDS[selected.kind].board?.axis}
             unit={unit}
             onPointerDown={(event, handle) =>
               gestures.beginResize(event, handle, { id: selected.id, boxId: null, origin: selected })

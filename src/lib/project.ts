@@ -5,13 +5,13 @@ import {
   BOARDS,
   DEFAULT_THICKNESS,
   DEFAULT_UNIT_DEPTH,
+  KINDS,
   MAX_BOARD_NAME,
   MAX_PIECES,
   MAX_THICKNESS,
   MATERIAL_LABELS,
   MAX_UNIT_DEPTH,
   MIN_UNIT_DEPTH,
-  PIECE_LABELS,
 } from './defaults'
 import { isDimension, isEdge } from './edges'
 import { isHexColor, normalizePiece } from './geometry'
@@ -530,7 +530,7 @@ const isMaterial = (value: unknown): value is BoardMaterial =>
   typeof value === 'string' && Object.hasOwn(MATERIAL_LABELS, value)
 
 const isKind = (value: unknown): value is PieceKind =>
-  typeof value === 'string' && Object.hasOwn(PIECE_LABELS, value)
+  typeof value === 'string' && Object.hasOwn(KINDS, value)
 
 const positive = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined

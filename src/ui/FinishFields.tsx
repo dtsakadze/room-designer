@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import { BOARD } from '../lib/defaults'
+import { KINDS } from '../lib/defaults'
 import { EDGE_LABELS, GRAIN_LABELS, bandsOf, boardEdges, faceDimensions, grainOf } from '../lib/edges'
 import { useDesignStore } from '../store/useDesignStore'
 import type { Piece } from '../types'
@@ -61,7 +61,7 @@ export function FinishFields({ piece }: { piece: Piece }) {
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)
   const [info, setInfo] = useState(false)
-  const board = BOARD[piece.kind]
+  const board = KINDS[piece.kind].board
   const isDrawer = piece.kind === 'drawer'
   // Glass and mirror aren't board, so there's no banding or grain.
   if ((!board && !isDrawer) || piece.pane) return null

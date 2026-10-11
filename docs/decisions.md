@@ -484,3 +484,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 **One `Design` shape, defaults dropped in one place** (2026-10-11)
 *Decision*: `lib/project.ts` defines `Design`, a design with every setting present (the shape the store keeps), with `newDesign()` for the defaults and `designOf` to fill in what a save leaves out. Leaving defaults out of a save happens only in `compact`, which both `toProjectData` and `validate` use. The save format and its key order are unchanged.
 *Why*: each project setting was listed by hand in about eight places (the saved type, `toProjectData`'s parameter and body, `validate`, both store load paths, the undo snapshot and the autosave check), and the "leave out when empty" test was repeated seven times. Missing one place could silently stop a setting from being saved.
+
+**One table for what each kind of part is** (2026-10-11)
+*Decision*: `KINDS` in `lib/defaults.ts` holds every per-kind fact: the label, the board and thickness axis, the starting size, the usually banded edges, the usual grain, and three flags: `upright` (sides and dividers), `spans` (fits between the sides) and `setsDepth` (sets how deep the unit is). `autoBands` and `autoGrain` read it and keep only the exceptions (back rails, glass doors).
+*Why*: the same facts were spread over `PIECE_LABELS`, `BOARD`, a `dimensions()` switch, two switches in `edges.ts`, `FITS_BETWEEN_SIDES`, a kind list in `depthStart`, and "side or divider" written out in four files. A new kind had to be added to each, and missing one went unnoticed.
+*Instead of*: `PIECE_LABELS`, `BOARD`, `FITS_BETWEEN_SIDES` and the separate switches. How a part is placed front to back stays in `depthStart`, which depends on the part's own options as well as its kind.

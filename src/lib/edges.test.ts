@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
-import { BOARD, DEFAULT_THICKNESS } from './defaults'
+import { DEFAULT_THICKNESS, KINDS } from './defaults'
 import { autoBands, autoGrain, bandsOf, boardEdges, edgeRunsAlong, grainOf } from './edges'
 import { normalizePiece } from './geometry'
 
@@ -36,7 +36,8 @@ describe('usual banding and grain', () => {
   })
 
   it('gives every board an edge of its own and a grain along its face', () => {
-    for (const [kind, board] of Object.entries(BOARD)) {
+    for (const [kind, { board }] of Object.entries(KINDS)) {
+      if (!board) continue
       const edges = boardEdges(board.axis)
       for (const edge of autoBands({ kind: kind as PieceKind })) expect(edges).toContain(edge)
       expect(autoGrain(kind as PieceKind)).not.toBe(board.axis)

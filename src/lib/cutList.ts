@@ -1,5 +1,5 @@
 import type { AccessoryType, BoardKey, Dimension, Edge, JointType, PaneType, Piece, PieceKind, Thickness } from '../types'
-import { BOARD, BOARDS, CLOSE_LABELS, ACCESSORY_LABELS, EXTENSION_LABELS, PANE_LABELS, PANE_THICKNESS, pieceLabel } from './defaults'
+import { KINDS, BOARDS, CLOSE_LABELS, ACCESSORY_LABELS, EXTENSION_LABELS, PANE_LABELS, PANE_THICKNESS, pieceLabel } from './defaults'
 import { drawerParts, runnerLength } from './drawer'
 import { bandsOf, edgeRunsAlong, faceDimensions, grainOf } from './edges'
 import { doorFronts } from './geometry'
@@ -73,7 +73,7 @@ export type CutListGroup =
  * thickness and which edges to band, with identical parts of the same kind
  * counted together.
  *
- * A board's thickness axis comes from `BOARD`; the other two dimensions are its
+ * A board's thickness axis comes from `KINDS`; the other two dimensions are its
  * face. On a board with grain (`grained`), length is the size along the grain,
  * as shops read it, so a part can't be cut turned; on others it's the longer
  * size, so the shop can turn parts to fit. Rods aren't flat boards, so they aren't here. A
@@ -188,7 +188,7 @@ function boardsOf(piece: Piece, thickness: Thickness): Board[] {
   }
   // Glass and mirror panes are bought to size, not cut from board: they're in the hardware list.
   if (piece.kind === 'door' && piece.pane) return []
-  const board = BOARD[piece.kind]
+  const board = KINDS[piece.kind].board
   if (!board) return []
   const kind = {
     kind: piece.kind,

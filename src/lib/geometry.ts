@@ -1,6 +1,6 @@
-import type { Piece, PieceKind, Room, Thickness, Wall } from '../types'
+import type { Piece, Room, Thickness, Wall } from '../types'
 import {
-  BOARD,
+  KINDS,
   DOOR_ANGLES,
   DOOR_LEAF_GAP,
   ACCESSORY_TYPES,
@@ -35,7 +35,7 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
     x: Math.min(MAX_LENGTH, Math.max(-MAX_LENGTH, round(piece.x))),
     y: Math.min(MAX_LENGTH, Math.max(0, round(piece.y))),
   }
-  const board = BOARD[piece.kind]
+  const board = KINDS[piece.kind].board
   if (board) normalized[board.axis] = atLeast(thickness[board.board])
   // A drawer has to hold its front and, behind it, a box at least as long as
   // its back board; any shallower and its parts can't be made.
@@ -303,7 +303,7 @@ function depthStart(pieces: Piece[], thickness: Thickness) {
   const front = Math.max(
     0,
     ...pieces
-      .filter((piece) => !['plinth', 'rail', 'rod', 'door', 'drawer', 'filler', 'cornice', 'accessory'].includes(piece.kind))
+      .filter((piece) => KINDS[piece.kind].setsDepth)
       .map((piece) => (piece.z ?? behind(piece)) + piece.depth),
   )
   return (piece: Piece) => {
@@ -517,9 +517,6 @@ export function roomBounds(pieces: Piece[], thickness: Thickness, room: Room): R
     }))
 }
 
-/** Parts that run across a unit, from one side to the other, and can be fitted between its sides. */
-export const FITS_BETWEEN_SIDES: readonly PieceKind[] = ['shelf', 'horizontal', 'plinth', 'rail', 'drawer', 'rod']
-
 /**
  * Where a part goes to fill the gap between the side panels or dividers left
  * and right of it, on its wall: the nearest one each side of its middle that
@@ -535,7 +532,7 @@ export function fitBetweenSides(piece: Piece, pieces: Piece[]): { x: number; wid
   const panels = pieces.filter(
     (p) =>
       p.id !== piece.id &&
-      (p.kind === 'vertical' || p.kind === 'divider') &&
+      KINDS[p.kind].upright &&
       wallOf(p) === wall &&
       p.y < piece.y + piece.height &&
       piece.y < p.y + p.height,

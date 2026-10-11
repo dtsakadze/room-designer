@@ -1,4 +1,4 @@
-import { ACCESSORIES, PIECE_GROUPS, PIECE_LABELS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
+import { ACCESSORIES, KINDS, PIECE_GROUPS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { closeSidebar } from '../store/useLayoutStore'
 import { useUnits } from '../store/useSettingsStore'
@@ -67,8 +67,8 @@ export function ComponentPalette({ onNewPartSettings }: { onNewPartSettings: () 
                     <AddTile
                       key={kind}
                       icon={kind}
-                      label={PIECE_LABELS[kind]}
-                      title={PIECE_LABELS[kind]}
+                      label={KINDS[kind].label}
+                      title={KINDS[kind].label}
                       onClick={() => addPiece(kind)}
                     />,
                     // Sliding doors are a door with a panel count, so they sit with the other fronts.

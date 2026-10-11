@@ -1,4 +1,5 @@
 import type { Dimension, Edge, Piece, PieceKind } from '../types'
+import { KINDS } from './defaults'
 
 /** Every edge name, in the order they're listed and stored. */
 const EDGES: Edge[] = ['front', 'back', 'top', 'bottom', 'left', 'right']
@@ -45,57 +46,18 @@ export const edgeRunsAlong = (edge: Edge, axis: Dimension) =>
   DIMENSIONS.find((d) => d !== axis && d !== FACING[edge])!
 
 /**
- * The edges a part usually gets banded: the ones that show once it's built.
- * That's the front edge of the carcass, shelves, dividers and front rails,
- * and every edge of a door. Back panels, plinths and back rails are hidden.
+ * The edges a part usually gets banded: the ones that show once it's built
+ * (see `KINDS`). A back rail is hidden, and glass and mirror edges are
+ * ground, not banded.
  */
 export function autoBands(piece: Pick<Piece, 'kind' | 'railAt' | 'pane'>): Edge[] {
-  switch (piece.kind) {
-    case 'vertical':
-    case 'divider':
-    case 'horizontal':
-    case 'shelf':
-      return ['front']
-    case 'rail':
-      return piece.railAt === 'back' ? [] : ['front']
-    case 'door':
-      // Glass and mirror edges are ground, not banded.
-      return piece.pane ? [] : ['top', 'bottom', 'left', 'right']
-    // The edges that show: a cornice's top is against the ceiling, and a
-    // filler is cut to the wall on site, so it gets none by default.
-    case 'cornice':
-      return ['bottom', 'left', 'right']
-    default:
-      return []
-  }
+  if (piece.kind === 'rail' && piece.railAt === 'back') return []
+  if (piece.kind === 'door' && piece.pane) return []
+  return KINDS[piece.kind].bands
 }
 
-/**
- * The way a part's grain usually runs: along the part's length as it stands,
- * so it follows the unit's lines. Up and down on sides, dividers, backs and
- * doors; left to right on tops, shelves, plinths and rails, and on drawer
- * fronts, so a stack of drawers reads as a row of boards. Null for parts that
- * aren't boards.
- */
-export function autoGrain(kind: PieceKind): Dimension | null {
-  switch (kind) {
-    case 'vertical':
-    case 'divider':
-    case 'back':
-    case 'door':
-    case 'filler':
-      return 'height'
-    case 'cornice':
-    case 'horizontal':
-    case 'shelf':
-    case 'plinth':
-    case 'rail':
-    case 'drawer':
-      return 'width'
-    default:
-      return null
-  }
-}
+/** The way a part's grain usually runs (see `KINDS`), or null for parts that aren't boards. */
+export const autoGrain = (kind: PieceKind): Dimension | null => KINDS[kind].grain
 
 /** A board part's banded edges: its own choice, or the usual ones. */
 export const bandsOf = (piece: Pick<Piece, 'kind' | 'railAt' | 'bands' | 'pane'>) =>

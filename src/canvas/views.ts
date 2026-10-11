@@ -1,4 +1,4 @@
-import { BOARD } from '../lib/defaults'
+import { KINDS } from '../lib/defaults'
 import { type Rect, depthSpan, footprint, wallDepthStart } from '../lib/geometry'
 import { adjacentWalls, fromWall, wallLength, wallOf } from '../lib/room'
 import type { Piece, Room, Thickness, Wall } from '../types'
@@ -202,7 +202,7 @@ const LOOKING_ALONG = { front: 'depth', back: 'depth', left: 'width', right: 'wi
  * differently from a board's face. Rods and drawers aren't boards.
  */
 export function showsEdge(piece: Piece, view: ViewName) {
-  const board = BOARD[piece.kind]
+  const board = KINDS[piece.kind].board
   if (!board || view === '3d') return false
   return board.axis !== LOOKING_ALONG[view]
 }

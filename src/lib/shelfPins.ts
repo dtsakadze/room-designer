@@ -1,4 +1,5 @@
 import type { Piece } from '../types'
+import { KINDS } from './defaults'
 import { wallOf } from './room'
 
 /** The usual spacing of the holes shelf pins go in ("System 32"), in mm. */
@@ -29,9 +30,6 @@ export const clampHolePitch = (mm: number) =>
 /** A shelf that rests on pins rather than being screwed in. */
 export const isAdjustable = (piece: Piece) => piece.kind === 'shelf' && !piece.fixed
 
-/** Panels drilled for shelf pins: sides and dividers. */
-const isDrilled = (piece: Piece) => piece.kind === 'vertical' || piece.kind === 'divider'
-
 /** Whether a panel stands at a shelf's height, so the shelf can rest on its holes. */
 const reaches = (panel: Piece, shelf: Piece) => panel.y <= shelf.y && shelf.y < panel.y + panel.height
 
@@ -47,7 +45,7 @@ const reaches = (panel: Piece, shelf: Piece) => panel.y <= shelf.y && shelf.y < 
 export function shelfPanels(shelf: Piece, pieces: Piece[]) {
   const wall = wallOf(shelf)
   const drilled = pieces.filter(
-    (piece) => piece.id !== shelf.id && isDrilled(piece) && wallOf(piece) === wall,
+    (piece) => piece.id !== shelf.id && KINDS[piece.kind].upright && wallOf(piece) === wall,
   )
   const best = (candidates: Piece[]) => candidates.find((p) => reaches(p, shelf)) ?? candidates[0] ?? null
   const left = best(drilled.filter((p) => Math.abs(p.x + p.width - shelf.x) <= REACH))

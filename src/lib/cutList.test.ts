@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece, PieceKind } from '../types'
 import { CUT_LIST_SECTIONS, bandingTotals, cutList, describeHardware, hardwareList } from './cutList'
-import { BOARD, DEFAULT_THICKNESS } from './defaults'
+import { DEFAULT_THICKNESS, KINDS } from './defaults'
 import { normalizePiece } from './geometry'
 
 const thickness = DEFAULT_THICKNESS
@@ -15,7 +15,7 @@ const piece = (kind: PieceKind, rect: Partial<Piece> = {}): Piece =>
 describe('cut list', () => {
   it('has a section for every kind of board, so none is left out', () => {
     const inSections = CUT_LIST_SECTIONS.flatMap((section): readonly PieceKind[] => section.kinds)
-    for (const kind of Object.keys(BOARD)) expect(inSections).toContain(kind)
+    for (const [kind, { board }] of Object.entries(KINDS)) if (board) expect(inSections).toContain(kind)
   })
 
   it('groups boards into sections, parts of a kind together, biggest first', () => {
