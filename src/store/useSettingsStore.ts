@@ -39,14 +39,6 @@ function storedUnit(): Unit {
   return 'mm'
 }
 
-function storedShowDoors() {
-  try {
-    return localStorage.getItem(SHOW_DOORS_KEY) !== 'false'
-  } catch {
-    return true
-  }
-}
-
 /** Whatever isn't a usable list of guides is replaced by the standard two. */
 function storedGuides(): HangingGuide[] {
   try {
@@ -62,67 +54,48 @@ function storedGuides(): HangingGuide[] {
   }
 }
 
+/** A stored on/off setting: only the opposite of the default, stored as such, changes it. */
 function storedBoolean(key: string, otherwise: boolean) {
   try {
-    const stored = localStorage.getItem(key)
-    return stored === null ? otherwise : stored === 'true'
+    return localStorage.getItem(key) === String(!otherwise) ? !otherwise : otherwise
   } catch {
     return otherwise
   }
 }
 
-function storedShowGuides() {
+/** Keeps a setting for next time; if storage is blocked, it still applies for this visit. */
+function persist(key: string, value: string) {
   try {
-    return localStorage.getItem(SHOW_GUIDES_KEY) !== 'false'
+    localStorage.setItem(key, value)
   } catch {
-    return true
+    // Still applies for this visit.
   }
 }
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
   unit: storedUnit(),
   setUnit: (unit) => {
-    try {
-      localStorage.setItem(UNIT_KEY, unit)
-    } catch {
-      // Still applies for this visit.
-    }
+    persist(UNIT_KEY, unit)
     set({ unit })
   },
-  showDoors: storedShowDoors(),
+  showDoors: storedBoolean(SHOW_DOORS_KEY, true),
   setShowDoors: (showDoors) => {
-    try {
-      localStorage.setItem(SHOW_DOORS_KEY, String(showDoors))
-    } catch {
-      // Still applies for this visit.
-    }
+    persist(SHOW_DOORS_KEY, String(showDoors))
     set({ showDoors })
   },
   cutListByWall: storedBoolean(BY_WALL_KEY, false),
   setCutListByWall: (cutListByWall) => {
-    try {
-      localStorage.setItem(BY_WALL_KEY, String(cutListByWall))
-    } catch {
-      // Still applies for this visit.
-    }
+    persist(BY_WALL_KEY, String(cutListByWall))
     set({ cutListByWall })
   },
-  showHangingGuides: storedShowGuides(),
+  showHangingGuides: storedBoolean(SHOW_GUIDES_KEY, true),
   setShowHangingGuides: (showHangingGuides) => {
-    try {
-      localStorage.setItem(SHOW_GUIDES_KEY, String(showHangingGuides))
-    } catch {
-      // Still applies for this visit.
-    }
+    persist(SHOW_GUIDES_KEY, String(showHangingGuides))
     set({ showHangingGuides })
   },
   hangingGuides: storedGuides(),
   setHangingGuides: (hangingGuides) => {
-    try {
-      localStorage.setItem(GUIDES_KEY, JSON.stringify(hangingGuides))
-    } catch {
-      // Still applies for this visit.
-    }
+    persist(GUIDES_KEY, JSON.stringify(hangingGuides))
     set({ hangingGuides })
   },
 }))

@@ -24,6 +24,13 @@ describe('settings', () => {
     expect(stored.get('room-designer:unit')).toBe('cm')
   })
 
+  it('keeps an on/off setting at its default unless the opposite is stored', async () => {
+    stored.set('room-designer:show-doors', 'yes')
+    stored.set('room-designer:cut-list-by-wall', 'yes')
+    const { useSettingsStore } = await import('./useSettingsStore')
+    expect(useSettingsStore.getState()).toMatchObject({ showDoors: true, cutListByWall: false })
+  })
+
   it('ignores a stored unit it doesn’t know', async () => {
     stored.set('room-designer:unit', 'furlong')
     const { useSettingsStore } = await import('./useSettingsStore')
