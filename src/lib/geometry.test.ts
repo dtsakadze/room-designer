@@ -34,6 +34,18 @@ const piece = (id: string, kind: Piece['kind'], rect: Partial<Piece> = {}) =>
   normalizePiece(raw(id, kind, rect), thickness)
 
 describe('normalizePiece', () => {
+  it('drops options of the wrong type, as a hand-edited save can have', () => {
+    const shelf = normalizePiece({ ...raw('a', 'shelf'), fixed: 'yes', z: '40', boxId: 7, color: 'red' } as unknown as Piece, thickness)
+    for (const key of ['fixed', 'z', 'boxId', 'color']) expect(shelf).not.toHaveProperty(key)
+    const door = normalizePiece({ ...raw('d', 'door'), double: 1, overlap: '60', handle: 'lever' } as unknown as Piece, thickness)
+    for (const key of ['double', 'overlap', 'handle']) expect(door).not.toHaveProperty(key)
+  })
+
+  it('keeps only the fields a part has, in one order', () => {
+    const piece = normalizePiece({ ...raw('a', 'shelf'), fixed: true, stray: 1 } as unknown as Piece, thickness)
+    expect(Object.keys(piece)).toEqual(['id', 'kind', 'x', 'y', 'width', 'height', 'depth', 'fixed'])
+  })
+
   it('rounds to whole mm, keeps sizes at least 1 and parts above the floor', () => {
     expect(normalizePiece(raw('a', 'drawer', { x: 10.6, y: -40, width: 0, height: -5 }), thickness)).toMatchObject({
       x: 11,

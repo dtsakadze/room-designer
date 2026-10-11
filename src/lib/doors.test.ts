@@ -89,6 +89,8 @@ describe('sliding doors', () => {
     for (const key of ['double', 'inset', 'softClose', 'hinge', 'openAngle'] as const) {
       expect(door).not.toHaveProperty(key)
     }
+    // Not even the hinge side of a single door, which is forgotten like the rest.
+    expect(sliding({ hinge: 'right' })).not.toHaveProperty('hinge')
     expect(sliding({ sliding: 7 })).not.toHaveProperty('sliding')
     expect(sliding({ overlap: SLIDING_OVERLAP })).not.toHaveProperty('overlap')
     expect(sliding({ overlap: 80 }).overlap).toBe(80)

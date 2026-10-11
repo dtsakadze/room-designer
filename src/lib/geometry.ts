@@ -20,108 +20,110 @@ import { drawerParts } from './drawer'
 import { autoBands, autoGrain, boardEdges, faceDimensions } from './edges'
 import { DEFAULT_ROOM, type RoomBox, isSideWall, roomBox, wallOf } from './room'
 
+/** A part's optional fields: everything but what it is, where and how big. */
+type OptionKey = Exclude<keyof Piece, 'id' | 'kind' | 'x' | 'y' | 'width' | 'height' | 'depth'>
+
+const isDoor = (piece: Piece) => piece.kind === 'door'
+const isHingedDoor = (piece: Piece) => piece.kind === 'door' && !piece.sliding
+/** Doors and drawers: they have something to open them with. */
+const opens = (piece: Piece) => piece.kind === 'door' || piece.kind === 'drawer'
+const isGlass = (piece: Piece) => piece.pane !== undefined
+
 /**
- * Keeps a piece a sane size and stops it sinking through the floor. A board's
- * thickness is always reset to the project thickness, so it can't drift.
+ * What's kept of each optional field: its value when it's valid and applies
+ * to this kind of part, otherwise nothing. A field at its default is stored as
+ * nothing too, so a part that's never been changed follows a better default
+ * later. Each rule gets the raw value (`raw`, which may come from a hand-edited
+ * save, so of any type) and the fields kept so far (`kept`, filled in this
+ * order); it only ever looks at other fields through `kept`. Every optional
+ * field of `Piece` must be listed, so a new one can't skip being checked.
+ */
+const OPTIONS: { [K in OptionKey]: (raw: Piece, kept: Piece) => Piece[K] | undefined } = {
+  // The back wall (the default) and automatic front-to-back placement are stored as nothing.
+  wall: (raw) => (isSideWall(raw.wall) ? raw.wall : undefined),
+  z: (raw) => (typeof raw.z === 'number' && Number.isFinite(raw.z) ? clamp(round(raw.z), 0, MAX_LENGTH) : undefined),
+  boxId: (raw) => (typeof raw.boxId === 'string' && raw.boxId !== '' ? raw.boxId : undefined),
+  fixed: (raw) => (raw.kind === 'shelf' && raw.fixed === true) || undefined,
+  railAt: (raw) => (raw.kind === 'rail' && raw.railAt === 'back' ? 'back' : undefined),
+  // Sliding doors are a set of panels, not leaves on hinges: none of the hinge options apply.
+  sliding: (raw) => (isDoor(raw) && SLIDING_PANELS.includes(raw.sliding!) ? raw.sliding : undefined),
+  overlap: (raw, kept) => {
+    if (!kept.sliding) return undefined
+    const overlap = typeof raw.overlap === 'number' ? clamp(round(raw.overlap), 0, MAX_SLIDING_OVERLAP) : SLIDING_OVERLAP
+    return overlap === SLIDING_OVERLAP ? undefined : overlap
+  },
+  double: (raw, kept) => (isHingedDoor(kept) && raw.double === true) || undefined,
+  // A double door is hinged on both sides.
+  hinge: (raw, kept) => (isHingedDoor(kept) && !kept.double && raw.hinge === 'right' ? 'right' : undefined),
+  inset: (raw, kept) => (isHingedDoor(kept) && raw.inset === true) || undefined,
+  openAngle: (raw, kept) =>
+    isHingedDoor(kept) && raw.openAngle !== DOOR_OPEN_ANGLE && DOOR_ANGLES.includes(raw.openAngle!) ? raw.openAngle : undefined,
+  softClose: (raw, kept) => (isHingedDoor(kept) && raw.softClose === true) || undefined,
+  pane: (raw) => (isDoor(raw) && PANE_TYPES.includes(raw.pane!) ? raw.pane : undefined),
+  noHandle: (raw) => (opens(raw) && raw.noHandle === true) || undefined,
+  close: (raw) => (raw.kind === 'drawer' && (raw.close === 'soft' || raw.close === 'push') ? raw.close : undefined),
+  // What it's opened with only matters when it has something to open it: push
+  // is for hinged doors (a drawer's is its runners, and sliding doors have none).
+  handle: (raw, kept) => {
+    if (!opens(raw) || kept.noHandle || !HANDLE_TYPES.includes(raw.handle!)) return undefined
+    if (raw.handle === 'push' && !isHingedDoor(kept)) return undefined
+    return kept.close === 'push' ? undefined : raw.handle
+  },
+  // Standard runners are the default.
+  extension: (raw) => (raw.kind === 'drawer' && raw.extension === 'full' ? 'full' : undefined),
+  overlay: (raw) => (raw.kind === 'drawer' && raw.overlay === true) || undefined,
+  lift: (raw) => (raw.kind === 'rod' && raw.lift === true) || undefined,
+  // An accessory is always one of the known kinds; anything else is a basket.
+  accessory: (raw) =>
+    raw.kind !== 'accessory' ? undefined : ACCESSORY_TYPES.includes(raw.accessory!) ? raw.accessory : 'basket',
+  // Glass and mirror aren't board: none of a board's finish.
+  bands: (raw, kept) => {
+    const board = KINDS[raw.kind].board
+    if (!board || isGlass(kept) || !Array.isArray(raw.bands)) return undefined
+    const bands = boardEdges(board.axis).filter((edge) => raw.bands!.includes(edge))
+    return bands.join() === autoBands(kept).join() ? undefined : bands
+  },
+  grain: (raw, kept) => {
+    const board = KINDS[raw.kind].board
+    // A drawer's grain is its front's, which faces forward.
+    const faces = board ? faceDimensions(board.axis) : raw.kind === 'drawer' ? faceDimensions('depth') : []
+    if (isGlass(kept) || !faces.includes(raw.grain!) || raw.grain === autoGrain(raw.kind)) return undefined
+    return raw.grain
+  },
+  color: (raw, kept) => (!isGlass(kept) && isHexColor(raw.color) ? raw.color : undefined),
+}
+
+const OPTION_KEYS = Object.keys(OPTIONS) as OptionKey[]
+
+/**
+ * Keeps a piece a sane size and stops it sinking through the floor, and keeps
+ * only the options that apply to it (see `OPTIONS`). A board's thickness is
+ * always reset to the project thickness, so it can't drift. Saves go through
+ * it too, so it takes fields of any type.
  */
 export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
   const height = atLeast(piece.height)
-  const normalized = {
-    ...piece,
+  const normalized: Piece = {
+    id: piece.id,
+    kind: piece.kind,
+    x: clamp(round(piece.x), -MAX_LENGTH, MAX_LENGTH),
+    y: clamp(round(piece.y), 0, MAX_LENGTH),
     width: atLeast(piece.width),
     height,
     // A rod is round, so its height and depth are one number: the diameter.
     depth: piece.kind === 'rod' ? height : atLeast(piece.depth),
-    x: Math.min(MAX_LENGTH, Math.max(-MAX_LENGTH, round(piece.x))),
-    y: Math.min(MAX_LENGTH, Math.max(0, round(piece.y))),
+  }
+  for (const key of OPTION_KEYS) {
+    const value = OPTIONS[key](piece, normalized)
+    if (value !== undefined) (normalized as Record<OptionKey, unknown>)[key] = value
   }
   const board = KINDS[piece.kind].board
   if (board) normalized[board.axis] = atLeast(thickness[board.board])
   // A drawer has to hold its front and, behind it, a box at least as long as
   // its back board; any shallower and its parts can't be made.
   if (piece.kind === 'drawer') normalized.depth = atLeast(normalized.depth, thickness.front + thickness.drawer + 1)
-  // Only shelves can be fixed, and "not fixed" is stored as no flag at all.
-  if (piece.kind !== 'shelf' || !piece.fixed) delete normalized.fixed
-  // Only rails have a side, and front (the default) is stored as no value.
-  if (piece.kind !== 'rail' || piece.railAt !== 'back') delete normalized.railAt
-  // Door options, each stored only when it isn't the default (single, hinged
-  // on the left, overlay). A double door is hinged on both sides.
-  // Sliding doors are a set of panels, not leaves on hinges: none of the hinge options apply.
-  const sliding = piece.kind === 'door' && SLIDING_PANELS.includes(piece.sliding!)
-  if (!sliding) {
-    delete normalized.sliding
-    delete normalized.overlap
-  } else {
-    delete normalized.double
-    delete normalized.inset
-    delete normalized.softClose
-    const overlap = Math.min(MAX_SLIDING_OVERLAP, Math.max(0, round(piece.overlap ?? SLIDING_OVERLAP)))
-    if (overlap === SLIDING_OVERLAP) delete normalized.overlap
-    else normalized.overlap = overlap
-  }
-  if (piece.kind !== 'door' || !piece.double) delete normalized.double
-  if (piece.kind !== 'door' || piece.double || piece.hinge !== 'right') delete normalized.hinge
-  if (piece.kind !== 'door' || !piece.inset) delete normalized.inset
-  if (
-    piece.kind !== 'door' || sliding ||
-    piece.openAngle === DOOR_OPEN_ANGLE ||
-    !DOOR_ANGLES.includes(piece.openAngle!)
-  ) {
-    delete normalized.openAngle
-  }
-  if (piece.kind !== 'door' || sliding || !piece.softClose) delete normalized.softClose
-  const opens = piece.kind === 'door' || piece.kind === 'drawer'
-  if (!opens || !piece.noHandle) delete normalized.noHandle
-  // What it's opened with only matters when it has something to open it: push
-  // is for hinged doors (a drawer's is its runners, and sliding doors have none).
-  const pushable = piece.kind === 'door' && !piece.sliding
-  if (
-    !opens ||
-    piece.noHandle ||
-    !HANDLE_TYPES.includes(piece.handle!) ||
-    (piece.handle === 'push' && !pushable) ||
-    (piece.kind === 'drawer' && piece.close === 'push')
-  ) {
-    delete normalized.handle
-  }
-  // Standard runners are the default, stored as no value.
-  if (piece.kind !== 'drawer' || piece.extension !== 'full') delete normalized.extension
-  if (piece.kind !== 'drawer' || !piece.overlay) delete normalized.overlay
-  if (piece.kind !== 'drawer' || (piece.close !== 'soft' && piece.close !== 'push')) {
-    delete normalized.close
-  }
-  // Automatic front-to-back placement is stored as no value.
-  if (typeof piece.z === 'number' && Number.isFinite(piece.z)) normalized.z = Math.min(MAX_LENGTH, Math.max(0, round(piece.z)))
-  else delete normalized.z
-  if (!piece.boxId) delete normalized.boxId
-  // The back wall (the default) is stored as no value.
-  if (!isSideWall(piece.wall)) delete normalized.wall
-  if (!isHexColor(piece.color)) delete normalized.color
-  // Banding and grain are stored only where they differ from the part's usual
-  // ones, so a part that's never been changed follows any better default later.
-  const bands = board && Array.isArray(piece.bands)
-    ? boardEdges(board.axis).filter((edge) => piece.bands!.includes(edge))
-    : null
-  if (bands && bands.join() !== autoBands(normalized).join()) normalized.bands = bands
-  else delete normalized.bands
-  // A drawer's grain is its front's, which faces forward.
-  const faces = board ? faceDimensions(board.axis) : piece.kind === 'drawer' ? faceDimensions('depth') : []
-  if (!piece.grain || !faces.includes(piece.grain) || piece.grain === autoGrain(piece.kind)) {
-    delete normalized.grain
-  }
-  // Only rods can have a lift, and "no lift" is stored as no flag at all.
-  if (piece.kind !== 'rod' || !piece.lift) delete normalized.lift
-  // An accessory is always one of the known kinds; anything else is a basket.
-  if (piece.kind === 'accessory') {
-    normalized.accessory = ACCESSORY_TYPES.includes(piece.accessory!) ? piece.accessory : 'basket'
-  } else delete normalized.accessory
-  // Glass and mirror aren't board: their own thickness, and none of a board's finish.
-  if (piece.kind === 'door' && PANE_TYPES.includes(piece.pane!)) {
-    normalized.depth = PANE_THICKNESS
-    delete normalized.bands
-    delete normalized.grain
-    delete normalized.color
-  } else delete normalized.pane
+  // Glass and mirror have a thickness of their own, whatever the front board is.
+  if (normalized.pane) normalized.depth = PANE_THICKNESS
   return normalized
 }
 
@@ -141,6 +143,7 @@ export function contentBounds(pieces: Rect[]) {
 
 const round = (value: number) => (Number.isNaN(value) ? 0 : Math.round(value))
 const atLeast = (value: number, min = 1) => Math.min(MAX_LENGTH, Math.max(min, round(value)))
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 /**
  * A measured gap in the front view: from `from` to `to` along `axis`, drawn at

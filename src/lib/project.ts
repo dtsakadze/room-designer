@@ -1,4 +1,4 @@
-import type { AccessoryType, BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, BoardSheets, Box, HandleType, JointType, PaneType, Piece, PieceKind, Room, Thickness } from '../types'
+import type { BoardColors, BoardMaterial, BoardKey, BoardMaterials, BoardNames, BoardSheets, Box, JointType, Piece, PieceKind, Room, Thickness } from '../types'
 import { normalizeBox, withBoxPanels } from './box'
 import { DEFAULT_KERF, cleanSheet } from './sheets'
 import {
@@ -13,7 +13,6 @@ import {
   MAX_UNIT_DEPTH,
   MIN_UNIT_DEPTH,
 } from './defaults'
-import { isDimension, isEdge } from './edges'
 import { isHexColor, normalizePiece } from './geometry'
 import { DEFAULT_ROOM, clampRoomSize, isSideWall, wallOf } from './room'
 import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
@@ -365,43 +364,9 @@ function validate(data: Raw): ProjectData | null {
       height: raw.height as number,
       depth: raw.depth as number,
     }
-    const railAt = raw.railAt === 'back' ? ('back' as const) : undefined
-    const boxId = typeof raw.boxId === 'string' ? raw.boxId : undefined
-    const color = isHexColor(raw.color) ? raw.color : undefined
-    const wall = isSideWall(raw.wall) ? raw.wall : undefined
-    const hinge = raw.hinge === 'right' ? ('right' as const) : undefined
-    const door = {
-      double: raw.double === true,
-      hinge,
-      inset: raw.inset === true,
-      // Checked against the angles hinges come in by `normalizePiece`.
-      openAngle: typeof raw.openAngle === 'number' ? raw.openAngle : undefined,
-      softClose: raw.softClose === true,
-      // Checked against the panel counts and overlaps allowed by `normalizePiece`.
-      lift: raw.lift === true,
-      accessory: typeof raw.accessory === 'string' ? (raw.accessory as AccessoryType) : undefined,
-      pane: raw.pane === 'glass' || raw.pane === 'mirror' ? (raw.pane as PaneType) : undefined,
-      sliding: typeof raw.sliding === 'number' ? raw.sliding : undefined,
-      overlap: typeof raw.overlap === 'number' ? raw.overlap : undefined,
-    }
-    const drawer = {
-      extension: raw.extension === 'full' ? ('full' as const) : undefined,
-      overlay: raw.overlay === true,
-      close: raw.close === 'soft' || raw.close === 'push' ? (raw.close as 'soft' | 'push') : undefined,
-    }
-    // Checked against the part's own board in `normalizePiece`.
-    const finish = {
-      bands: Array.isArray(raw.bands) ? raw.bands.filter(isEdge) : undefined,
-      grain: isDimension(raw.grain) ? raw.grain : undefined,
-    }
-    // Which handle types are allowed where is checked by `normalizePiece`.
-    const handle = {
-      noHandle: raw.noHandle === true,
-      handle: typeof raw.handle === 'string' ? (raw.handle as HandleType) : undefined,
-    }
-    const z = typeof raw.z === 'number' ? raw.z : undefined
-    const extras = { ...handle, fixed: raw.fixed === true, railAt, boxId, color, wall, z, ...door, ...drawer, ...finish }
-    return [normalizePiece({ ...piece, ...extras }, thickness)]
+    // `normalizePiece` checks every optional field and keeps only valid ones
+    // that apply to the part, so they're passed on as they are.
+    return [normalizePiece({ ...raw, ...piece }, thickness)]
   })
 
   const boxes = (Array.isArray(data.boxes) ? data.boxes : []).flatMap((raw): Box[] => {
