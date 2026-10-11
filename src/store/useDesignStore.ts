@@ -362,6 +362,23 @@ export const useDesignStore = create<DesignState>()(
       state.selectedIds = [`${id}:left`]
     }
 
+    /**
+     * Sets one board's entry in a per-board setting (a map in the state), as
+     * one undo step; null is the default, stored as no entry. Nothing happens
+     * when it's already so.
+     */
+    const setBoardEntry = <T>(
+      state: DesignState,
+      map: Partial<Record<BoardKey, T>>,
+      board: BoardKey,
+      value: T | null,
+    ) => {
+      if (JSON.stringify(map[board] ?? null) === JSON.stringify(value)) return
+      record(state)
+      if (value === null) delete map[board]
+      else map[board] = value
+    }
+
     /** Ids plus, for any box panel among them, every other panel of that box. */
     const withWholeBoxes = (state: DesignState, ids: string[]) => {
       const boxIds = new Set(
@@ -696,29 +713,18 @@ export const useDesignStore = create<DesignState>()(
 
       setBoardName: (board, name) =>
         set((state) => {
-          const cleaned = cleanBoardName(name)
-          if ((state.boardNames[board] ?? null) === cleaned) return
-          record(state)
-          if (cleaned) state.boardNames[board] = cleaned
-          else delete state.boardNames[board]
+          setBoardEntry(state, state.boardNames, board, cleanBoardName(name))
         }),
 
       setBoardMaterial: (board, material) =>
         set((state) => {
-          if ((state.boardMaterials[board] ?? 'chipboard') === material) return
-          record(state)
           // Chipboard is the default, stored as no value.
-          if (material === 'chipboard') delete state.boardMaterials[board]
-          else state.boardMaterials[board] = material
+          setBoardEntry(state, state.boardMaterials, board, material === 'chipboard' ? null : material)
         }),
 
       setBoardSheet: (board, sheet) =>
         set((state) => {
-          const next = sheet && cleanSheet(sheet)
-          if (JSON.stringify(state.boardSheets[board] ?? null) === JSON.stringify(next)) return
-          record(state)
-          if (next) state.boardSheets[board] = next
-          else delete state.boardSheets[board]
+          setBoardEntry(state, state.boardSheets, board, sheet && cleanSheet(sheet))
         }),
 
       applyLook: (look, resetParts) =>
@@ -754,18 +760,12 @@ export const useDesignStore = create<DesignState>()(
 
       setBoardColor: (board, color) =>
         set((state) => {
-          if ((state.boardColors[board] ?? null) === color) return
-          record(state)
-          if (color) state.boardColors[board] = color
-          else delete state.boardColors[board]
+          setBoardEntry(state, state.boardColors, board, color)
         }),
 
       setEdgeColor: (board, color) =>
         set((state) => {
-          if ((state.edgeColors[board] ?? null) === color) return
-          record(state)
-          if (color) state.edgeColors[board] = color
-          else delete state.edgeColors[board]
+          setBoardEntry(state, state.edgeColors, board, color)
         }),
 
       setHolePitch: (mm) =>
