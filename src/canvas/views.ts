@@ -1,6 +1,6 @@
 import { BOARD } from '../lib/defaults'
-import { type Rect, depthSpan, depthStart, wallDepthStart } from '../lib/geometry'
-import { adjacentWalls, fromWall, roomBox, wallLength, wallOf } from '../lib/room'
+import { type Rect, depthSpan, depthStart, footprint, wallDepthStart } from '../lib/geometry'
+import { adjacentWalls, fromWall, wallLength, wallOf } from '../lib/room'
 import type { Piece, Room, Thickness, Wall } from '../types'
 
 export type ViewName = 'front' | 'left' | 'right' | 'top' | 'back' | '3d'
@@ -68,7 +68,7 @@ export function roomPlan(pieces: Piece[], thickness: Thickness, room: Room): Pie
   return [...pieces]
     .sort((a, b) => a.y + a.height - (b.y + b.height))
     .map((piece) => {
-      const { min, max } = roomBox({ ...piece, depth: depthSpan(piece) }, zStart(piece), room)
+      const { min, max } = footprint(piece, zStart(piece), room)
       return { ...piece, x: min[0], width: max[0] - min[0], y: -max[2], height: max[2] - min[2] }
     })
 }
@@ -93,7 +93,7 @@ export function cornerGhosts(
   return pieces
     .filter((piece) => neighbours.has(wallOf(piece)))
     .flatMap((piece) => {
-      const { distance, ...rect } = fromWall(roomBox(piece, zStart(piece), room), wall, room)
+      const { distance, ...rect } = fromWall(footprint(piece, zStart(piece), room), wall, room)
       return distance < reach ? [{ id: piece.id, ...rect }] : []
     })
 }

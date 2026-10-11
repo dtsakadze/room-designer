@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece } from '../types'
 import { DEFAULT_THICKNESS } from '../lib/defaults'
+import { depthSpan } from '../lib/geometry'
 import {
   cornerGhosts,
   drawOrder,
@@ -88,6 +89,14 @@ describe('projections', () => {
     const ghosts = cornerGhosts([inCorner, farOut], thickness, room, 'back', 600)
     expect(ghosts.map((g) => g.id)).toEqual(['c'])
     expect(ghosts[0]).toMatchObject({ x: -1200, width: 600 })
+  })
+
+  it('outlines both lanes of sliding doors on the next wall', () => {
+    const room = { left: true, right: false, width: 2400, depth: 1800 }
+    const sliding = piece('s', 'door', { x: -600, width: 1200, height: 2000, depth: 18, sliding: 2, z: 0, wall: 'left' })
+    const [ghost] = cornerGhosts([sliding], thickness, room, 'back', 600)
+    expect(ghost).toMatchObject({ x: -1200, width: depthSpan(sliding) })
+    expect(depthSpan(sliding)).toBeGreaterThan(sliding.depth)
   })
 
   it('puts the end walls just past each end of the wall', () => {

@@ -1,6 +1,6 @@
 import type { Piece, Room, Thickness } from '../types'
-import { depthSpan, wallDepthStart } from './geometry'
-import { hasSideWalls, roomBox } from './room'
+import { footprint, wallDepthStart } from './geometry'
+import { hasSideWalls } from './room'
 
 /** Overlaps smaller than this are rounding, not a part in the wall, in mm. */
 const TOLERANCE = 1
@@ -22,7 +22,7 @@ export function roomOverhangs(pieces: Piece[], thickness: Thickness, room: Room)
   const zStart = wallDepthStart(pieces, thickness)
   const halfWidth = room.width / 2
   for (const piece of pieces) {
-    const { min, max } = roomBox({ ...piece, depth: depthSpan(piece) }, zStart(piece), room)
+    const { min, max } = footprint(piece, zStart(piece), room)
     const candidates: Overhang[] = [
       ...(hasSideWalls(room)
         ? [

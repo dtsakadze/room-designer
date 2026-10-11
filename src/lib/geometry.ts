@@ -485,6 +485,13 @@ export function doorFronts(piece: Piece): Front[] {
 export const depthSpan = (piece: Piece) =>
   piece.kind === 'door' && piece.sliding ? piece.depth + slidingLaneSpacing(piece) : piece.depth
 
+/**
+ * All the space a part takes up in the room, as one box, given where it
+ * starts front to back: both lanes of a set of sliding doors. For outlines
+ * and reach; `pieceSolids` has the exact solids, for clashes.
+ */
+export const footprint = (piece: Piece, z: number, room: Room) => roomBox({ ...piece, depth: depthSpan(piece) }, z, room)
+
 /** Parts that run across a unit, from one side to the other, and can be fitted between its sides. */
 export const FITS_BETWEEN_SIDES: readonly PieceKind[] = ['shelf', 'horizontal', 'plinth', 'rail', 'drawer', 'rod']
 

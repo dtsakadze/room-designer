@@ -1,7 +1,7 @@
 import type { Piece, Room, Thickness, Wall } from '../types'
 import { DOOR_OPEN_ANGLE } from './defaults'
-import { type Rect, depthSpan, doorFronts, wallDepthStart } from './geometry'
-import { hasSideWalls, roomBox, toRoom, wallOf } from './room'
+import { type Rect, doorFronts, footprint, wallDepthStart } from './geometry'
+import { hasSideWalls, toRoom, wallOf } from './room'
 
 /**
  * A point in the top view, in the same design mm as the room plan: x across
@@ -123,8 +123,7 @@ export function swingConflicts(pieces: Piece[], thickness: Thickness, room: Room
   ]
   const zStart = wallDepthStart(pieces, thickness)
   const parts = pieces.map((piece) => {
-    // All of what it takes up front to back: both lanes of a set of sliding doors.
-    const { min, max } = roomBox({ ...piece, depth: depthSpan(piece) }, zStart(piece), room)
+    const { min, max } = footprint(piece, zStart(piece), room)
     const area = rectPoints({ x: min[0], y: -max[2], width: max[0] - min[0], height: max[2] - min[2] })
     return { piece, area }
   })

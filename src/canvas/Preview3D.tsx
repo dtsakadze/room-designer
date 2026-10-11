@@ -4,8 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { drawerParts } from '../lib/drawer'
 import { bandsOf, grainOf } from '../lib/edges'
 import { roomAxisOf } from '../lib/grain'
-import { pieceSolids, wallDepthStart } from '../lib/geometry'
-import { type RoomBox, WALL_FRAMES, hasSideWalls, roomBox, wallOf } from '../lib/room'
+import { footprint, pieceSolids, wallDepthStart } from '../lib/geometry'
+import { type RoomBox, WALL_FRAMES, hasSideWalls, wallOf } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
@@ -376,7 +376,7 @@ function sceneBounds(pieces: Piece[], thickness: Thickness, room: Room): RoomBox
   if (pieces.length === 0) return null
   const zStart = wallDepthStart(pieces, thickness)
   return pieces
-    .map((piece) => roomBox(piece, zStart(piece), room))
+    .map((piece) => footprint(piece, zStart(piece), room))
     .reduce((all, box) => ({
       min: [0, 1, 2].map((axis) => Math.min(all.min[axis], box.min[axis])) as RoomBox['min'],
       max: [0, 1, 2].map((axis) => Math.max(all.max[axis], box.max[axis])) as RoomBox['max'],
