@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { type ProjectData, toProjectData } from '../lib/project'
 import { downloadProject, readProjectFile } from '../lib/projectFile'
 import { useDesignStore } from '../store/useDesignStore'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { OpenFileDialog } from './OpenFileDialog'
 import { PRINT_SHORTCUT } from './shortcuts'
+import { useMenu } from './useMenu'
 
 type ProjectMenuProps = {
   onProjects: () => void
@@ -17,8 +18,7 @@ type ProjectMenuProps = {
  * so the sidebar keeps only what's used while designing.
  */
 export function ProjectMenu({ onProjects, onPrint }: ProjectMenuProps) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const { open, setOpen, ref } = useMenu<HTMLDivElement>()
   const inputRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const isEmpty = useDesignStore((s) => s.pieces.length === 0)
@@ -29,23 +29,6 @@ export function ProjectMenu({ onProjects, onPrint }: ProjectMenuProps) {
   )
   /** A file that's been read and is waiting for "new project or replace?". */
   const [pending, setPending] = useState<{ fileName: string; design: ProjectData } | null>(null)
-
-  // A click anywhere else, or Escape, closes it.
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
 
   const choose = (action: () => void) => {
     setOpen(false)

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
 import type { Piece } from '../types'
 import { exportPng, exportSvg } from './exportView'
 import type { ViewName } from './views'
+import { useMenu } from '../ui/useMenu'
 
 type ExportViewMenuProps = {
   /** The parts as the view shows them. */
@@ -19,25 +19,7 @@ type ExportViewMenuProps = {
  * and documents).
  */
 export function ExportViewMenu({ pieces, view, caption, fileName }: ExportViewMenuProps) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  // A click anywhere else, or Escape, closes it.
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const { open, setOpen, ref } = useMenu<HTMLDivElement>()
 
   const choose = (format: 'svg' | 'png') => {
     setOpen(false)
