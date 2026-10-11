@@ -13,7 +13,7 @@ import { useSpanWarnings } from '../ui/useSpanWarnings'
 import { useClearanceWarnings } from '../ui/useClearanceWarnings'
 import { useRoomOverhangs } from '../ui/useRoomOverhangs'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
-import { MEASURE_SHORTCUT, hasModifier } from '../ui/shortcuts'
+import { MEASURE_SHORTCUT, hasModifier, isFieldTarget, isOverlayOpen } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
@@ -606,8 +606,7 @@ export function Canvas2D() {
   // ⌘A selects every part; ⌘C / ⌘V copy and paste parts (Ctrl on Windows).
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
+      if (isFieldTarget(event.target) || isOverlayOpen()) return
       if (!hasModifier(event) || event.shiftKey || event.altKey) return
       // Leave copying selected text on the page to the browser.
       if (window.getSelection()?.toString()) return
@@ -632,10 +631,9 @@ export function Canvas2D() {
   // M turns the Measure tool on and off; Escape clears a measurement, then turns it off.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
+      if (isFieldTarget(event.target)) return
       if (event.metaKey || event.ctrlKey || event.altKey) return
-      if (event.key.toLowerCase() === 'm' && viewName !== '3d') {
+      if (event.key.toLowerCase() === 'm' && viewName !== '3d' && !isOverlayOpen()) {
         event.preventDefault()
         toggleMeasuring()
       } else if (event.key === 'Escape' && measuring) {
@@ -654,8 +652,7 @@ export function Canvas2D() {
     if (!selectedId) return
 
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return
+      if (isFieldTarget(event.target)) return
 
       if (event.key === 'Escape') {
         // The Measure tool takes Escape while it's on.
@@ -666,6 +663,8 @@ export function Canvas2D() {
         select(null)
         return
       }
+
+      if (isOverlayOpen()) return
 
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault()
