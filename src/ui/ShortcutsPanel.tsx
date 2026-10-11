@@ -14,8 +14,8 @@ import {
   UNDO_SHORTCUT,
 } from './shortcuts'
 
-/** Every keyboard and mouse shortcut, in one place. */
-const SHORTCUTS: [string, string][] = [
+/** Every keyboard and mouse shortcut, in one place; `len` shows the nudge steps in the project's units. */
+const shortcuts = (len: (mm: number) => string): [string, string][] => [
   [`${MULTI_SELECT_KEY}-click`, 'Add a part to the selection, or take it out'],
   [`${MULTI_SELECT_KEY}-drag`, 'Select every part the rectangle touches'],
   [SELECT_ALL_SHORTCUT, 'Select all parts'],
@@ -28,6 +28,9 @@ const SHORTCUTS: [string, string][] = [
   [PRINT_SHORTCUT, 'Print drawings and the cut list'],
   [UNDO_SHORTCUT, 'Undo'],
   [REDO_SHORTCUT, 'Redo'],
+  ['← → ↑ ↓', `Nudge the selected parts ${len(SNAP)} (Front view); an adjustable shelf moves one hole up or down`],
+  ['⇧ + arrows', `Nudge ${len(SNAP * 10)}`],
+  [`${MULTI_SELECT_KEY} + arrows`, `Resize the selected part ${len(SNAP)} (Front view): → wider, ← narrower, ↑ taller, ↓ shorter; add ⇧ for ${len(SNAP * 10)}. A box's panel resizes the whole box`],
   ['Drag empty space', 'Pan (right-drag works too)'],
   ['Scroll', 'Zoom'],
   ['Esc', 'Deselect, or close a dialog, the cut list or this list'],
@@ -39,13 +42,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
   // Beside the drawing, for trying shortcuts out, so not modal.
   const dialog = useDialog<HTMLDivElement>(onClose, { modal: false })
 
-  const rows: [string, string][] = [
-    ...SHORTCUTS.slice(0, -3),
-    ['← → ↑ ↓', `Nudge the selected parts ${len(SNAP)} (Front view); an adjustable shelf moves one hole up or down`],
-    ['⇧ + arrows', `Nudge ${len(SNAP * 10)}`],
-    [`${MULTI_SELECT_KEY} + arrows`, `Resize the selected part ${len(SNAP)} (Front view): → wider, ← narrower, ↑ taller, ↓ shorter; add ⇧ for ${len(SNAP * 10)}. A box's panel resizes the whole box`],
-    ...SHORTCUTS.slice(-3),
-  ]
+  const rows = shortcuts(len)
   return (
     // A dialog, so Escape closes it rather than deselecting (see the canvas's keys).
     <div className="cut-list shortcuts-panel" role="dialog" aria-label="Keyboard shortcuts" ref={dialog}>

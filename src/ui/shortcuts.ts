@@ -25,6 +25,9 @@ export function isFieldTarget(target: EventTarget | null) {
 export const isOverlayOpen = () =>
   document.querySelector('[role="dialog"]:not(.shortcuts-panel), [role="menu"]') !== null
 
+/** Whether an open dialog or menu, the Shortcuts panel included, takes Escape to close itself. */
+export const escapeOwnedByOverlay = () => document.querySelector('[role="dialog"], [role="menu"]') !== null
+
 /** Shortcut labels for buttons and hints, in the platform's own notation. */
 export const UNDO_SHORTCUT = IS_MAC ? '⌘Z' : 'Ctrl+Z'
 export const REDO_SHORTCUT = IS_MAC ? '⇧⌘Z' : 'Ctrl+Shift+Z'

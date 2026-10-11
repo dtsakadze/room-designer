@@ -13,7 +13,7 @@ import { useSpanWarnings } from '../ui/useSpanWarnings'
 import { useClearanceWarnings } from '../ui/useClearanceWarnings'
 import { useRoomOverhangs } from '../ui/useRoomOverhangs'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
-import { MEASURE_SHORTCUT, hasModifier, isFieldTarget, isOverlayOpen } from '../ui/shortcuts'
+import { MEASURE_SHORTCUT, escapeOwnedByOverlay, hasModifier, isFieldTarget, isOverlayOpen } from '../ui/shortcuts'
 import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
@@ -650,7 +650,7 @@ export function Canvas2D() {
         event.preventDefault()
         toggleMeasuring()
       } else if (event.key === 'Escape' && measuring) {
-        if (document.querySelector('[role="dialog"], [role="menu"]')) return
+        if (escapeOwnedByOverlay()) return
         event.preventDefault()
         if (measured) setMeasurement(null)
         else toggleMeasuring()
@@ -670,8 +670,7 @@ export function Canvas2D() {
       if (event.key === 'Escape') {
         // The Measure tool takes Escape while it's on.
         if (measuring) return
-        // An open dialog or menu takes Escape for itself, to close.
-        if (document.querySelector('[role="dialog"], [role="menu"]')) return
+        if (escapeOwnedByOverlay()) return
         event.preventDefault()
         select(null)
         return
