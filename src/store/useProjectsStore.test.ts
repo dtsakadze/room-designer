@@ -11,29 +11,46 @@ const memory = vi.hoisted(() => ({
   currentId: null as string | null,
   legacy: undefined as unknown,
   failing: false,
+  /** Each app's change listener, to tell the others (other tabs) about writes. */
+  listeners: [] as { owner: object; listener: (id: string) => void }[],
 }))
 
 vi.mock('../lib/storage', () => {
   const copy = <T,>(value: T): T => (value === undefined ? value : structuredClone(value))
-  const storage: ProjectStorage = {
-    list: async () => {
-      if (memory.failing) throw new Error('storage blocked')
-      return [...memory.records.values()].map(copy)
-    },
-    get: async (id) => copy(memory.records.get(id)),
-    put: async (project) => void memory.records.set(project.id, copy(project)),
-    remove: async (id) => void memory.records.delete(id),
-    getCurrentId: async () => memory.currentId,
-    setCurrentId: async (id) => void (memory.currentId = id),
-    migrateLegacyDesign: async (convert) => {
-      if (memory.legacy === undefined) return
-      const project = convert(memory.legacy)
-      if (!project) return
-      memory.records.set(project.id, project)
-      memory.legacy = undefined
-    },
+  // One per app, so each tab only hears the others' writes.
+  const browserStorage = () => {
+    const owner = {}
+    const tell = (id: string) => {
+      for (const other of memory.listeners) if (other.owner !== owner) queueMicrotask(() => other.listener(id))
+    }
+    const storage: ProjectStorage = {
+      list: async () => {
+        if (memory.failing) throw new Error('storage blocked')
+        return [...memory.records.values()].map(copy)
+      },
+      get: async (id) => copy(memory.records.get(id)),
+      put: async (project) => {
+        memory.records.set(project.id, copy(project))
+        tell(project.id)
+      },
+      remove: async (id) => {
+        memory.records.delete(id)
+        tell(id)
+      },
+      getCurrentId: async () => memory.currentId,
+      setCurrentId: async (id) => void (memory.currentId = id),
+      migrateLegacyDesign: async (convert) => {
+        if (memory.legacy === undefined) return
+        const project = convert(memory.legacy)
+        if (!project) return
+        memory.records.set(project.id, project)
+        memory.legacy = undefined
+      },
+      onChange: (listener) => void memory.listeners.push({ owner, listener }),
+    }
+    return storage
   }
-  return { browserStorage: () => storage, requestPersistentStorage: async () => true }
+  return { browserStorage, requestPersistentStorage: async () => true }
 })
 
 const design = (pieces = 0) =>
@@ -73,6 +90,7 @@ beforeEach(() => {
   memory.currentId = null
   memory.legacy = undefined
   memory.failing = false
+  memory.listeners = []
   stubLocalStorage()
   page = stubPageEvents()
 })
@@ -190,6 +208,53 @@ describe('autosave', () => {
   it('doesn’t count opening a project as a change', async () => {
     const { projects } = await start()
     expect(projects().saveStatus).toBe('saved')
+  })
+})
+
+describe('another tab', () => {
+  /** A second tab: the same storage, its own app. */
+  async function secondTab() {
+    vi.resetModules()
+    return start()
+  }
+
+  it('shows what another tab saved to the open project, so it can’t save over it', async () => {
+    const a = await start()
+    const b = await secondTab()
+    expect(b.projects().currentId).toBe(a.projects().currentId)
+    a.design().addPiece('shelf')
+    await vi.advanceTimersByTimeAsync(500)
+    expect(b.design().pieces).toHaveLength(1)
+    expect(b.projects().projects[0].pieceCount).toBe(1)
+    b.design().addPiece('divider')
+    await vi.advanceTimersByTimeAsync(500)
+    expect(readStored(a.projects().currentId!).pieces).toHaveLength(2)
+    expect(a.design().pieces).toHaveLength(2)
+  })
+
+  it('lists projects another tab made or renamed', async () => {
+    const a = await start()
+    const b = await secondTab()
+    await a.projects().createProject()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.projects().projects).toHaveLength(2)
+    await a.projects().renameProject(a.projects().currentId!, 'Hall')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.projects().projects.map((p) => p.name)).toContain('Hall')
+  })
+
+  it('moves off the open project when another tab deletes it, without saving it back', async () => {
+    memory.records.set('a', record('a', 'Hall', '2026-09-01T00:00:00Z', design(2)))
+    memory.records.set('b', record('b', 'Kitchen', '2026-09-05T00:00:00Z'))
+    memory.currentId = 'a'
+    const a = await start()
+    const b = await secondTab()
+    await a.projects().openProject('b')
+    await a.projects().deleteProject('a')
+    await vi.advanceTimersByTimeAsync(500)
+    expect(b.projects().currentId).toBe('b')
+    expect(b.projects().projects.map((p) => p.id)).toEqual(['b'])
+    expect(memory.records.has('a')).toBe(false)
   })
 })
 

@@ -26,6 +26,12 @@ export type ProjectStorage = {
    * so a failure can't lose it. An old save `convert` can't read is left alone.
    */
   migrateLegacyDesign: (convert: (legacy: unknown) => StoredProject | null) => Promise<void>
+  /**
+   * Calls `listener` with a project's id when somewhere else (another tab)
+   * writes or deletes it, so an open copy can catch up instead of saving its
+   * stale design over the newer one.
+   */
+  onChange: (listener: (id: string) => void) => void
 }
 
 // The app's old name; renaming it would lose everyone's stored projects.
@@ -36,6 +42,8 @@ const META = 'meta'
 const CURRENT_ID = 'currentId'
 /** Version 1 kept its one design in the projects store under this key. */
 const LEGACY_KEY = 'autosave'
+/** Tabs tell each other which project they wrote; same prefix as every stored name. */
+const CHANNEL = 'room-designer:projects'
 
 /**
  * IndexedDB rather than localStorage: localStorage is capped at around 5 MB
@@ -54,14 +62,20 @@ export function browserStorage(options: { onBlocked?: () => void } = {}): Projec
   const read = async <T>(store: string, run: (store: IDBObjectStore) => IDBRequest<T>) =>
     request(run((await open()).transaction(store).objectStore(store)))
 
+  // Not in every browser (or in tests); without it tabs just don't hear each other.
+  const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(CHANNEL)
+
   /**
    * When the page is closing, anything that waits a tick is too late, so once
    * the database is open a write is queued and committed in the same turn.
+   * Other tabs are told in that turn too: a read they start after hearing
+   * waits for this write, as IndexedDB runs overlapping transactions in order.
    */
-  const write = async (store: string, run: (store: IDBObjectStore) => void) => {
+  const write = async (store: string, run: (store: IDBObjectStore) => void, changed?: string) => {
     const tx = (db ?? (await open())).transaction(store, 'readwrite')
     run(tx.objectStore(store))
     tx.commit?.()
+    if (changed) channel?.postMessage(changed)
     await done(tx)
   }
 
@@ -74,8 +88,8 @@ export function browserStorage(options: { onBlocked?: () => void } = {}): Projec
       const found = await read(PROJECTS, (store) => store.get(id))
       return isStoredProject(found) ? found : undefined
     },
-    put: (project) => write(PROJECTS, (store) => store.put(project, project.id)),
-    remove: (id) => write(PROJECTS, (store) => store.delete(id)),
+    put: (project) => write(PROJECTS, (store) => store.put(project, project.id), project.id),
+    remove: (id) => write(PROJECTS, (store) => store.delete(id), id),
     getCurrentId: async () => {
       const id = await read(META, (store) => store.get(CURRENT_ID))
       return typeof id === 'string' ? id : null
@@ -89,6 +103,11 @@ export function browserStorage(options: { onBlocked?: () => void } = {}): Projec
       await write(PROJECTS, (store) => {
         store.put(project, project.id)
         store.delete(LEGACY_KEY)
+      }, project.id)
+    },
+    onChange: (listener) => {
+      channel?.addEventListener('message', (event: MessageEvent) => {
+        if (typeof event.data === 'string') listener(event.data)
       })
     },
   }

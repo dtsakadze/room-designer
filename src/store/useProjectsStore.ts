@@ -172,6 +172,35 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
 
   const usable = () => ['saving', 'saved'].includes(get().saveStatus)
 
+  /**
+   * Moves off the open project without saving it: to the most recent other
+   * one that can be opened, or a new one.
+   */
+  const leaveCurrent = async () => {
+    pending = false
+    clearTimeout(timer)
+    const next = get().projects.find((project) => project.id !== get().currentId && !project.problem)
+    if (next) await get().openProject(next.id)
+    else await get().createProject()
+  }
+
+  /**
+   * Another tab wrote or deleted a project. The list follows it, and if it's
+   * the open one this tab reloads it, so its next autosave doesn't put back
+   * an older design (or a deleted project). Unsaved edits here still win:
+   * they were made after, and are saved within a moment.
+   */
+  const catchUp = async (id: string) => {
+    const record = await storage.get(id)
+    const others = get().projects.filter((project) => project.id !== id)
+    set({ projects: record ? sortByEdited([summarize(record), ...others]) : others })
+    if (id !== get().currentId || pending) return
+    const design = record && parseProject(record.design)
+    // Deleted there, or saved by a newer version this tab can't read.
+    if (!design) await leaveCurrent()
+    else apply(design)
+  }
+
   return {
     saveStatus: 'loading',
     persistent: null,
@@ -223,6 +252,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         apply(current.design)
         await storage.setCurrentId(current.record.id)
         startAutosave()
+        storage.onChange((id) => void catchUp(id))
       } catch (error) {
         // Private windows and blocked site data can refuse IndexedDB. Nothing
         // is saved then, so a read that failed for a passing reason can't be
@@ -305,12 +335,8 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         clearTimeout(timer)
       }
       await storage.remove(id)
-      const remaining = get().projects.filter((project) => project.id !== id)
-      set({ projects: remaining })
-      if (!isOpen) return
-      const next = remaining.find((project) => !project.problem)
-      if (next) await get().openProject(next.id)
-      else await get().createProject()
+      set({ projects: get().projects.filter((project) => project.id !== id) })
+      if (isOpen) await leaveCurrent()
     },
   }
 })
