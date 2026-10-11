@@ -1507,6 +1507,12 @@ button kbd {
   display: none;
 }
 
+.print-hint {
+  display: none;
+  margin: 20mm;
+  font: 14pt ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
 @media print {
   html,
   body {
@@ -1519,6 +1525,11 @@ button kbd {
   }
 
   .print-document {
+    display: block;
+  }
+
+  /* Printing from the browser's menu leaves out the print pages: say how instead of a blank page. */
+  body:not(:has(.print-document)) > .print-hint {
     display: block;
   }
 }

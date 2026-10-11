@@ -38,6 +38,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - A very narrow set of sliding doors (narrower than the overlap between its panels) no longer draws its panels sticking out to the left of the set; the overlap shrinks to fit.
 - Typing a length with a thousands comma, like 1,200 in millimetres, now gives 1200 mm instead of 1.2 mm. A comma still works as a decimal point where that's what it must mean, like 116,4 in centimetres.
 - The note about glass and mirror pane thickness in the Selected panel now uses your chosen units, instead of always saying mm.
+- Printing from the browser's own menu (instead of Boardcut's File → Print…) no longer gives a blank page: it prints a short note saying where to print from.
 
 ## 1.11.0 — 2026-10-10
 
