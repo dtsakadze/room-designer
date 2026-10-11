@@ -319,6 +319,11 @@ export const useDesignStore = create<DesignState>()(
         })
       }
 
+      // Adjustable shelves go on this project's holes (its spacing may differ
+      // from where they were copied), once the sides they sit between are in.
+      const placed = state.pieces
+      state.pieces = placed.map((piece) => (pasted.includes(piece.id) ? onHoles(state, piece, placed) : piece))
+
       state.selectedIds = pasted
       state.selectedId = pasted.at(-1) ?? null
     }

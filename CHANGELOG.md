@@ -30,6 +30,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Cut list CSV downloads are safer to open in Excel or Google Sheets: a board name starting with =, +, - or @ (which a spreadsheet would run as a formula) now gets a ' in front, so it shows as plain text.
 - Export view works for a project whose name has a non-breaking space in it (Option+Space on a Mac, or pasted from a web page): the SVG used to be a broken file and the PNG silently didn't download. If a PNG ever can't be made, you're now told so.
 - Duplicating a box (⌘D, or Duplicate in the Selected panel) now keeps its panels' colours, edge banding and grain, as pasting it already did, instead of giving the copy plain panels or the new-part colour.
+- Pasted adjustable shelves, and those in a block you insert, now sit on the shelf-pin holes of the project they land in, even when its hole spacing differs from where they came from.
 
 ## 1.11.0 — 2026-10-10
 

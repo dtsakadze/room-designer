@@ -357,6 +357,18 @@ describe('adjustable shelves', () => {
     expect(byId(shelf).y).toBe(544)
   })
 
+  it('land on this project’s holes when pasted from one with other spacing', () => {
+    const { box, shelf } = shelfInBox()
+    store().selectMany([...store().pieces.filter((piece) => piece.boxId === box.id).map((piece) => piece.id), shelf])
+    store().copySelection()
+    store().loadProject(emptyProject())
+    store().setHolePitch(25)
+    store().paste()
+    const pastedBox = store().boxes[0]
+    const pasted = store().pieces.find((piece) => piece.kind === 'shelf' && !piece.boxId)!
+    expect((pasted.y - pastedBox.y) % 25).toBe(0)
+  })
+
   it('records nothing for a move too small to reach another hole', () => {
     const { shelf } = shelfInBox()
     const steps = store().past.length
