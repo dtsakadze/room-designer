@@ -505,6 +505,18 @@ export const depthSpan = (piece: Piece) =>
  */
 export const footprint = (piece: Piece, z: number, room: Room) => roomBox({ ...piece, depth: depthSpan(piece) }, z, room)
 
+/** The box around everything placed, in room coordinates, or null when there's nothing. */
+export function roomBounds(pieces: Piece[], thickness: Thickness, room: Room): RoomBox | null {
+  if (pieces.length === 0) return null
+  const zStart = wallDepthStart(pieces, thickness)
+  return pieces
+    .map((piece) => footprint(piece, zStart(piece), room))
+    .reduce((all, box) => ({
+      min: [0, 1, 2].map((axis) => Math.min(all.min[axis], box.min[axis])) as RoomBox['min'],
+      max: [0, 1, 2].map((axis) => Math.max(all.max[axis], box.max[axis])) as RoomBox['max'],
+    }))
+}
+
 /** Parts that run across a unit, from one side to the other, and can be fitted between its sides. */
 export const FITS_BETWEEN_SIDES: readonly PieceKind[] = ['shelf', 'horizontal', 'plinth', 'rail', 'drawer', 'rod']
 

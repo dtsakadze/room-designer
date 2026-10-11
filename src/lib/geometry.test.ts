@@ -13,6 +13,7 @@ import {
   neighbourGaps,
   normalizePiece,
   pieceSolids,
+  roomBounds,
   snapToMiddle,
   wallDepthStart,
 } from './geometry'
@@ -385,5 +386,14 @@ describe('centredGaps', () => {
   it('shows the gaps on an axis only where the part ended up in the middle', () => {
     expect(centredGaps(middle, { x: 100, y: 0 })).toEqual([gap, gap])
     expect(centredGaps(middle, { x: 132, y: 0 })).toEqual([])
+  })
+})
+
+describe('roomBounds', () => {
+  it('is the box around every part in the room, or null for none', () => {
+    expect(roomBounds([], thickness, DEFAULT_ROOM)).toBeNull()
+    const a = piece('a', 'vertical', { x: -600, width: 18, height: 2000, depth: 560 })
+    const b = piece('b', 'vertical', { x: 582, width: 18, height: 1000, depth: 560 })
+    expect(roomBounds([a, b], thickness, DEFAULT_ROOM)).toEqual({ min: [-600, 0, 0], max: [600, 2000, 560] })
   })
 })

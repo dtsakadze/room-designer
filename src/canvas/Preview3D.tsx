@@ -4,13 +4,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { drawerParts } from '../lib/drawer'
 import { bandsOf, grainOf } from '../lib/edges'
 import { roomAxisOf } from '../lib/grain'
-import { footprint, pieceSolids, wallDepthStart } from '../lib/geometry'
-import { type RoomBox, WALL_FRAMES, hasSideWalls, wallOf } from '../lib/room'
+import { pieceSolids, roomBounds, wallDepthStart } from '../lib/geometry'
+import { type RoomBox, hasSideWalls, wallOf } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
-import type { BoardKey, Dimension, Edge, Piece, Room, Thickness } from '../types'
-import { CLASH, type DesignColors, SELECTED, boardOf, faceColor } from './colors'
+import type { BoardKey, Dimension, Edge, Piece, Room } from '../types'
+import { CLASH, SELECTED, boardOf } from './colors'
+import { type Finish, finishOf } from './finish'
 
 const BACKGROUND = '#f4f6f9'
 const EDGE = '#6f6450'
@@ -77,7 +78,7 @@ export default function Preview3D() {
     /** Frames the unit (or the whole room) from the front-right and a little above. */
     const frame = () => {
       const { pieces, thickness, room } = useDesignStore.getState()
-      const bounds = sceneBounds(pieces, thickness, room)
+      const bounds = roomBounds(pieces, thickness, room)
       const box = bounds
         ? { x: [bounds.min[0], bounds.max[0]], y: [bounds.min[1], bounds.max[1]] }
         : { x: [-600, 600], y: [0, 2000] }
@@ -151,7 +152,7 @@ export default function Preview3D() {
     }
   }, [])
 
-  // Rebuild the parts whenever the design or selection changes.
+  // Rebuild the parts whenever the design changes (not the selection: see below).
   useEffect(() => {
     const current = sceneRef.current
     if (!current) return
@@ -159,7 +160,6 @@ export default function Preview3D() {
     const zStart = wallDepthStart(pieces, thickness)
     for (const piece of pieces) {
       if (!showDoors && piece.kind === 'door') continue
-      const tint = piece.id === selectedId ? SELECTED : clashes.has(piece.id) ? CLASH : null
       const colors = { boardColors, edgeColors }
       // A drawer as its boards, so you can see into it past a see-through door;
       // each is cut from its own board, with its own banding.
@@ -171,11 +171,24 @@ export default function Preview3D() {
         const { board, bands, grain } = boards[index] ?? boards[0]
         // Wood grain on the boards marked as having one, along the way each part's grain runs.
         const grainAxis = board && grain && grainedBoards.includes(board) ? roomAxisOf(grain, wallOf(piece)) : null
-        current.parts.add(buildPiece(piece, box, tint, finishOf(piece, board, bands, colors, grainAxis)))
+        current.parts.add(buildPiece(piece, box, finishOf(piece, board, bands, colors, grainAxis)))
       })
     }
     current.invalidate()
-  }, [pieces, thickness, room, selectedId, clashes, showDoors, boardColors, edgeColors, grainedBoards])
+  }, [pieces, thickness, room, showDoors, boardColors, edgeColors, grainedBoards])
+
+  // The selected part in blue and parts that clash in red: after every
+  // rebuild, and on its own when only the selection changes, which then
+  // doesn't throw away and rebuild every part.
+  useEffect(() => {
+    const current = sceneRef.current
+    if (!current) return
+    for (const part of current.parts.children) {
+      const id = part.userData.pieceId as string
+      tintPart(part, id === selectedId ? SELECTED : clashes.has(id) ? CLASH : null)
+    }
+    current.invalidate()
+  }, [selectedId, clashes, pieces, thickness, room, showDoors, boardColors, edgeColors, grainedBoards])
 
   // The room's outline on the floor, once there's more than one wall.
   useEffect(() => {
@@ -255,53 +268,17 @@ function woodTexture(direction: 'across' | 'up', width: number, height: number) 
 }
 
 /**
- * How a solid is coloured: its face colour, and the faces of its box that are
- * banded edges with their banding colour (only when the board has one).
- */
-type Finish = { face: string; edge: string | null; bandedFaces: number[]; grainAxis: number | null }
-
-function finishOf(
-  piece: Piece,
-  board: BoardKey | null,
-  bands: Edge[],
-  colors: DesignColors,
-  grainAxis: number | null,
-): Finish {
-  const face = faceColor(piece, colors, board)
-  const edge = (board && colors.edgeColors[board]) || null
-  if (!edge || bands.length === 0) return { face, edge: null, bandedFaces: [], grainAxis }
-  const faces = boxFaces(piece)
-  return { face, edge, bandedFaces: bands.map((band) => faces[band]), grainAxis }
-}
-
-/**
- * Which face of a `BoxGeometry` (its material groups: +x, -x, +y, -y, +z, -z)
- * each edge of a part faces in the room: its right edge faces along its wall,
- * its front edge out from it.
- */
-function boxFaces(piece: Piece): Record<Edge, number> {
-  const { along, out } = WALL_FRAMES[wallOf(piece)]
-  // A direction on the floor plan is along the room's x or z.
-  const face = ([x, z]: [number, number]) => (x !== 0 ? (x > 0 ? 0 : 1) : z > 0 ? 4 : 5)
-  const opposite = (index: number) => index ^ 1
-  const right = face(along)
-  const front = face(out)
-  return { right, left: opposite(right), top: 2, bottom: 3, front, back: opposite(front) }
-}
-
-/**
  * One piece as a solid with outlined edges; a rod as a cylinder along x.
- * `tint` (selection blue or clash red) is mixed in rather than painted over,
- * so the part still reads as wood.
+ * Each material keeps its own colour as `userData.base`, for `tintPart`.
  */
-function buildPiece(piece: Piece, box: RoomBox, tint: string | null, finish: Finish) {
+function buildPiece(piece: Piece, box: RoomBox, finish: Finish) {
   const pane = piece.kind === 'door' ? piece.pane : undefined
-  const paint = (color: string, map?: THREE.Texture) =>
-    new THREE.MeshStandardMaterial({
+  const paint = (color: string, map?: THREE.Texture) => {
+    const material = new THREE.MeshStandardMaterial({
       ...(map ? { map } : {}),
       // Glass is nearly clear and a mirror is shiny; both let you see the inside.
       ...(pane === 'mirror' ? { metalness: 0.5 } : {}),
-      color: tint ? new THREE.Color(color).lerp(new THREE.Color(tint), 0.45) : color,
+      color,
       roughness: pane ? 0.1 : 0.85,
       // The back panel and doors would hide the inside from most angles, so they're faint.
       transparent: piece.kind === 'back' || piece.kind === 'door',
@@ -309,6 +286,9 @@ function buildPiece(piece: Piece, box: RoomBox, tint: string | null, finish: Fin
       // Keeps a faint door from hiding the parts behind it.
       depthWrite: piece.kind !== 'door',
     })
+    material.userData.base = color
+    return material
+  }
   const faceMaterial = paint(finish.face)
   const edgeMaterial = finish.edge && paint(finish.edge)
   const size = [0, 1, 2].map((axis) => box.max[axis] - box.min[axis])
@@ -340,13 +320,33 @@ function buildPiece(piece: Piece, box: RoomBox, tint: string | null, finish: Fin
   const mesh = new THREE.Mesh(geometry, material)
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(geometry, 30),
-    new THREE.LineBasicMaterial({ color: tint ?? EDGE }),
+    new THREE.LineBasicMaterial({ color: EDGE }),
   )
   const group = new THREE.Group()
+  group.userData.pieceId = piece.id
   group.add(mesh, edges)
   const [cx, cy, cz] = [0, 1, 2].map((axis) => (box.min[axis] + box.max[axis]) / 2)
   group.position.set(cx, cy, cz)
   return group
+}
+
+/**
+ * Mixes a tint (the selection blue, the clash red) into a part's colours
+ * rather than painting over them, so it still reads as wood, and colours its
+ * outline with it; null takes it off again.
+ */
+function tintPart(part: THREE.Object3D, tint: string | null) {
+  part.traverse((object) => {
+    if (object instanceof THREE.Mesh) {
+      for (const material of [object.material].flat() as THREE.MeshStandardMaterial[]) {
+        material.color.set(material.userData.base as string)
+        if (tint) material.color.lerp(new THREE.Color(tint), 0.45)
+      }
+    } else if (object instanceof THREE.LineSegments) {
+      const outline = object.material as THREE.LineBasicMaterial
+      outline.color.set(tint ?? EDGE)
+    }
+  })
 }
 
 /**
@@ -369,18 +369,6 @@ function buildRoomOutline(room: Room) {
     ),
   )
   return group
-}
-
-/** Everything placed, in room coordinates, or null when there's nothing. */
-function sceneBounds(pieces: Piece[], thickness: Thickness, room: Room): RoomBox | null {
-  if (pieces.length === 0) return null
-  const zStart = wallDepthStart(pieces, thickness)
-  return pieces
-    .map((piece) => footprint(piece, zStart(piece), room))
-    .reduce((all, box) => ({
-      min: [0, 1, 2].map((axis) => Math.min(all.min[axis], box.min[axis])) as RoomBox['min'],
-      max: [0, 1, 2].map((axis) => Math.max(all.max[axis], box.max[axis])) as RoomBox['max'],
-    }))
 }
 
 function disposeChildren(group: THREE.Group) {
