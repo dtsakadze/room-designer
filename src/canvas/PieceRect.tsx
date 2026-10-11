@@ -3,7 +3,7 @@ import type { Piece } from '../types'
 import { ACCESSORIES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorLeaves, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { ACCESSORY_FILLS, CLASH, PANE_FILLS, SPAN_WARNING } from './colors'
+import { ACCESSORY_FILLS, CLASH, PANE_FILLS, SELECTED, SPAN_WARNING } from './colors'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -79,7 +79,7 @@ export function PieceRect({
         rx={rx}
         fill={fill}
         fillOpacity={hollow ? 0.35 : 1}
-        stroke={selected ? '#2563eb' : clashing ? CLASH : warned ? SPAN_WARNING : showHover ? '#60a5fa' : '#9c8f6d'}
+        stroke={selected ? SELECTED : clashing ? CLASH : warned ? SPAN_WARNING : showHover ? '#60a5fa' : '#9c8f6d'}
         strokeWidth={unit * (selected ? 2.4 : showHover ? 1.8 : warned ? 2.4 : 1)}
         // A door's own marks are dashed, so its outline stays solid.
         strokeDasharray={hollow && piece.kind !== 'door' ? `${unit * 8} ${unit * 6}` : undefined}
@@ -111,7 +111,7 @@ export function PieceRect({
         ))}
       {doorMarks && piece.kind === 'accessory' && <AccessoryMarks piece={piece} y={y} unit={unit} />}
       {doorMarks && piece.kind === 'door' && !piece.sliding && piece.pane && (
-        <PaneSheen piece={piece} y={y} unit={unit} />
+        <PaneSheen piece={piece} y={y} />
       )}
       {doorMarks && piece.kind === 'door' && <DoorMarks piece={piece} y={y} unit={unit} />}
       {clashing && (
@@ -133,7 +133,7 @@ export function PieceRect({
           width={piece.width}
           height={piece.height}
           rx={rx}
-          fill="#2563eb"
+          fill={SELECTED}
           fillOpacity={0.08}
           style={{ pointerEvents: 'none' }}
         />
@@ -144,7 +144,7 @@ export function PieceRect({
           y={labelY}
           textAnchor="middle"
           fontSize={unit * 16}
-          fill="#2563eb"
+          fill={SELECTED}
           style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
           {label}
@@ -229,7 +229,7 @@ function SlidingMarks({ piece, y, unit }: { piece: Piece; y: number; unit: numbe
 }
 
 /** The light on glass or a mirror: each leaf of a double door gets its own. */
-function PaneSheen({ piece, y }: { piece: Piece; y: number; unit: number }) {
+function PaneSheen({ piece, y }: { piece: Piece; y: number }) {
   return (
     <g style={{ pointerEvents: 'none' }}>
       {doorLeaves(piece, piece.double).map((leaf, index) => (

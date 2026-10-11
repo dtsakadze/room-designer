@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
-import { type Gap, contentBounds, snapToMiddle } from '../lib/geometry'
+import { type Gap, type Rect, contentBounds, snapToMiddle } from '../lib/geometry'
 import { WALL_LABELS, activeWalls, hasSideWalls, wallLength, wallOf } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
@@ -18,7 +18,7 @@ import { Dimensions } from './Dimensions'
 import { HangingGuides } from './HangingGuides'
 import { HoleLines } from './HoleLines'
 import { MiddleGuides } from './MiddleGuides'
-import { type EdgeView, edgeOnColor, faceColor } from './colors'
+import { type EdgeView, SELECTED, edgeOnColor, faceColor } from './colors'
 import { MeasureLayer } from './MeasureLayer'
 import { type Point, type SnapKind, snapPoint } from '../lib/measure'
 import { ExportViewMenu } from './ExportViewMenu'
@@ -35,7 +35,7 @@ import { ResizeHandles } from './ResizeHandles'
 import { CornerGhosts, RoomWallsFront, RoomWallsPlan } from './RoomWalls'
 import { DoorSwings } from './DoorSwings'
 import { doorSwings, swingBounds, swingConflicts } from '../lib/swing'
-import type { Handle, Rect } from './handles'
+import type { Handle } from './handles'
 import { resizeByKey, resizePiece } from './handles'
 import {
   VIEWS,
@@ -943,9 +943,9 @@ export function Canvas2D() {
             y={Math.min(marquee.y1, marquee.y2)}
             width={Math.abs(marquee.x2 - marquee.x1)}
             height={Math.abs(marquee.y2 - marquee.y1)}
-            fill="#2563eb"
+            fill={SELECTED}
             fillOpacity={0.08}
-            stroke="#2563eb"
+            stroke={SELECTED}
             strokeWidth={unit}
             strokeDasharray={`${unit * 5} ${unit * 4}`}
             style={{ pointerEvents: 'none' }}

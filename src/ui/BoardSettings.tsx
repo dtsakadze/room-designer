@@ -277,7 +277,7 @@ export function NewPartSettings() {
         <ColorField
           label="Colour"
           value={defaultColor}
-          fallback="#d8c9a3"
+          fallback={BOARD_FILLS.body}
           onChange={setDefaultColor}
           onReset={() => setDefaultColor(null)}
         />

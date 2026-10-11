@@ -3,11 +3,12 @@ import {
   HANDLES,
   HANDLE_SIZE,
   type Handle,
-  type Rect,
   handleCursor,
   handleKey,
   handleOutsets,
 } from './handles'
+import type { Rect } from '../lib/geometry'
+import { SELECTED } from './colors'
 import { toSvgY } from './view'
 
 type ResizeHandlesProps = {
@@ -52,7 +53,7 @@ export function ResizeHandles({ piece, locked, unit, onPointerDown }: ResizeHand
             width={box}
             height={box}
             fill="#ffffff"
-            stroke="#2563eb"
+            stroke={SELECTED}
             strokeWidth={unit * 1.6}
             style={{ cursor: handleCursor(handle) }}
             onPointerDown={(event) => onPointerDown(event, handle)}

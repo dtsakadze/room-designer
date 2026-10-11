@@ -116,9 +116,9 @@ type DesignState = {
   selectMany: (ids: string[], add?: boolean) => void
   /** Something has been copied (here or in another tab), so paste can work. */
   canPaste: boolean
-  /** Copies the selected parts (whole boxes, if any panel of one is selected). */
   /** The selected parts, whole boxes included, as `toProjectData` takes them; null with none. */
   selectionParts: () => { pieces: Piece[]; boxes: Box[]; thickness: Thickness } | null
+  /** Copies the selected parts (whole boxes, if any panel of one is selected). */
   copySelection: () => void
   /**
    * Pastes the copied parts, from this project or another, to the right of

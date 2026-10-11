@@ -1,3 +1,4 @@
+import { BOARD_FILLS } from '../canvas/colors'
 import { useDesignStore } from '../store/useDesignStore'
 import { ColorField } from './ColorField'
 import { InspectorHeader } from './InspectorHeader'
@@ -23,7 +24,7 @@ export function MultiInspector() {
           key={selectedIds.join()}
           label="Parts colour"
           value={shared}
-          fallback="#d8c9a3"
+          fallback={BOARD_FILLS.body}
           onChange={(color) => setPieceColors(selectedIds, color)}
           onReset={() => setPieceColors(selectedIds, null)}
           resetLabel="Reset all"

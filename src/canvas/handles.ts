@@ -1,7 +1,4 @@
-import type { Piece } from '../types'
-
-/** The part of a piece (or a box) that handles resize. */
-export type Rect = Pick<Piece, 'x' | 'y' | 'width' | 'height'>
+import type { Rect } from '../lib/geometry'
 
 /**
  * A handle is identified by which edges it drags: -1 is the left/bottom edge,

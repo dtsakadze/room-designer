@@ -81,17 +81,8 @@ export function faceColor(
 const kindFill = (piece: Pick<Piece, 'kind' | 'accessory'>) =>
   (piece.accessory && ACCESSORY_FILLS[piece.accessory]) || FILLS[piece.kind]
 
-/** The flat views a board can be seen edge-on in. */
-export type EdgeView = 'front' | 'back' | 'left' | 'right' | 'top'
-
-/** The edge of a board that faces the viewer in each flat view. */
-const FACING: Record<EdgeView, Edge> = {
-  front: 'front',
-  back: 'back',
-  left: 'left',
-  right: 'right',
-  top: 'top',
-}
+/** The flat views a board can be seen edge-on in, each named after the edge that faces the viewer. */
+export type EdgeView = Exclude<Edge, 'bottom'>
 
 /**
  * A board seen edge-on in a flat view: its edge banding's colour when the edge
@@ -103,7 +94,7 @@ export function edgeOnColor(piece: Piece, view: EdgeView, colors: DesignColors) 
   if (piece.pane) return darken(PANE_FILLS[piece.pane], 0.2)
   const board = boardOf(piece.kind)
   const banding = board && colors.edgeColors[board]
-  if (banding && BOARD[piece.kind] && bandsOf(piece).includes(FACING[view])) return banding
+  if (banding && BOARD[piece.kind] && bandsOf(piece).includes(view)) return banding
   if (piece.color) return piece.color
   const boardColor = board && colors.boardColors[board]
   return boardColor ? darken(boardColor, 0.18) : piece.accessory ? darken(kindFill(piece), 0.18) : EDGE_FILLS[piece.kind]
