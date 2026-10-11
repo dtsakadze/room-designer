@@ -339,6 +339,29 @@ export const useDesignStore = create<DesignState>()(
     }
 
     /**
+     * `updatePiece` on a box's panel: banding and grain are the panel's own,
+     * and a move moves the whole box, by as far as the panel was moved.
+     */
+    const updatePanel = (state: DesignState, index: number, patch: Partial<Piece>) => {
+      const panel = state.pieces[index]
+      if ('bands' in patch || 'grain' in patch) {
+        const { bands, grain } = { ...panel, ...patch }
+        const next = normalizePiece({ ...panel, bands, grain }, state.thickness)
+        if (samePiece(panel, next)) return
+        record(state)
+        state.pieces[index] = next
+        return
+      }
+      const box = state.boxes.find((candidate) => candidate.id === panel.boxId)
+      if (!box) return
+      const dx = (patch.x ?? panel.x) - panel.x
+      const dy = (patch.y ?? panel.y) - panel.y
+      const wall = 'wall' in patch ? { wall: patch.wall } : {}
+      changeBox(state, box.id, { x: box.x + dx, y: box.y + dy, ...wall })
+      followSelection(state)
+    }
+
+    /**
      * A new box, or a copy, placed clear of everything else and selected. Its
      * panels start in the new-part colour, unless `startColor` is false.
      * Returns its id.
@@ -479,24 +502,8 @@ export const useDesignStore = create<DesignState>()(
         set((state) => {
           const index = state.pieces.findIndex((piece) => piece.id === id)
           if (index === -1) return
-          const boxId = state.pieces[index].boxId
-          if (boxId && ('bands' in patch || 'grain' in patch)) {
-            const { bands, grain } = { ...state.pieces[index], ...patch }
-            const next = normalizePiece({ ...state.pieces[index], bands, grain }, state.thickness)
-            if (samePiece(state.pieces[index], next)) return
-            record(state)
-            state.pieces[index] = next
-            return
-          }
-          if (boxId) {
-            // A box's panel moves the whole box, by as far as it was moved.
-            const box = state.boxes.find((candidate) => candidate.id === boxId)
-            if (!box) return
-            const dx = (patch.x ?? state.pieces[index].x) - state.pieces[index].x
-            const dy = (patch.y ?? state.pieces[index].y) - state.pieces[index].y
-            const wall = 'wall' in patch ? { wall: patch.wall } : {}
-            changeBox(state, boxId, { x: box.x + dx, y: box.y + dy, ...wall })
-            followSelection(state)
+          if (state.pieces[index].boxId) {
+            updatePanel(state, index, patch)
             return
           }
           const next = onHoles(
