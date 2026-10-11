@@ -9,6 +9,8 @@ import {
   isHollow,
   piecesAt,
   piecesInRect,
+  viewPieces,
+  visiblePieces,
   projectPieces,
   roomPlan,
   showsEdge,
@@ -141,5 +143,25 @@ describe('piecesInRect', () => {
     // SVG y grows down: from y = 50 to 10 up off the floor.
     const hit = piecesInRect([low, high], { x: 50, y: -50 }, { x: -10, y: -10 })
     expect(hit.map((p) => p.id)).toEqual(['low'])
+  })
+})
+
+describe('visiblePieces and viewPieces', () => {
+  const room = { left: true, right: false, width: 2400, depth: 1800 }
+  const door = piece('d', 'door')
+  const shelf = piece('s', 'shelf', { y: 400, height: 18 })
+  const onLeft = piece('l', 'vertical', { wall: 'left' })
+  const all = [door, shelf, onLeft]
+
+  it('leaves out hidden doors, and other walls’ parts when given a wall', () => {
+    expect(visiblePieces(all, {}).map((p) => p.id)).toEqual(['d', 's', 'l'])
+    expect(visiblePieces(all, { showDoors: false }).map((p) => p.id)).toEqual(['s', 'l'])
+    expect(visiblePieces(all, { wall: 'back' }).map((p) => p.id)).toEqual(['d', 's'])
+  })
+
+  it('draws the whole room from the top and one wall’s unit from the other sides', () => {
+    const thickness = DEFAULT_THICKNESS
+    expect(viewPieces(all, 'top', 'back', thickness, room).map((p) => p.id).sort()).toEqual(['d', 'l', 's'])
+    expect(viewPieces(all, 'front', 'left', thickness, room).map((p) => p.id)).toEqual(['l'])
   })
 })

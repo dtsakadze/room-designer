@@ -1,8 +1,8 @@
 import { PrintDrawing } from '../canvas/PrintDrawing'
-import { type ViewName, projectPieces, roomPlan } from '../canvas/views'
+import { type ViewName, viewPieces, visiblePieces } from '../canvas/views'
 import { PAPER, type PaperSize, fitScale } from '../lib/drawing'
 import { contentBounds } from '../lib/geometry'
-import { WALL_LABELS, activeWalls, hasSideWalls, wallOf } from '../lib/room'
+import { WALL_LABELS, activeWalls, hasSideWalls } from '../lib/room'
 import { UNITS } from '../lib/units'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUnits } from '../store/useSettingsStore'
@@ -49,15 +49,14 @@ export function PrintDocument({ options, projectName }: { options: PrintOptions;
   const sheets: Sheet[] = options.drawings
     ? [
         ...activeWalls(room).flatMap((wall): Sheet[] => {
-          const onWall = pieces.filter((piece) => wallOf(piece) === wall)
-          if (onWall.length === 0) return []
+          if (visiblePieces(pieces, { wall }).length === 0) return []
           const prefix = multiWall ? `${WALL_LABELS[wall]}: ` : ''
           return [
-            { title: `${prefix}Front`, view: 'front', pieces: projectPieces(onWall, 'front', thickness) },
-            { title: `${prefix}Side, from the left`, view: 'left', pieces: projectPieces(onWall, 'left', thickness) },
+            { title: `${prefix}Front`, view: 'front', pieces: viewPieces(pieces, 'front', wall, thickness, room) },
+            { title: `${prefix}Side, from the left`, view: 'left', pieces: viewPieces(pieces, 'left', wall, thickness, room) },
           ]
         }),
-        { title: multiWall ? 'Top, the whole room' : 'Top', view: 'top', pieces: roomPlan(pieces, thickness, room) },
+        { title: multiWall ? 'Top, the whole room' : 'Top', view: 'top', pieces: viewPieces(pieces, 'top', 'back', thickness, room) },
       ]
     : []
 

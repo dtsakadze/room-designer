@@ -3,7 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
 import { type Gap, type Rect, centredGaps, snapToMiddle } from '../lib/geometry'
-import { WALL_LABELS, activeWalls, hasSideWalls, wallLength, wallOf } from '../lib/room'
+import { WALL_LABELS, activeWalls, hasSideWalls, wallLength } from '../lib/room'
 import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
 import { EditButtons } from '../ui/EditButtons'
@@ -45,10 +45,11 @@ import {
   isHollow,
   piecesAt,
   piecesInRect,
-  projectPieces,
   roomPlan,
   showsEdge,
   sizeLabel,
+  viewPieces,
+  visiblePieces,
 } from './views'
 
 import { Preview3DLoader } from './Preview3DLoader'
@@ -168,10 +169,7 @@ export function Canvas2D() {
   const hasDoors = allPieces.some((piece) => piece.kind === 'door')
   // With doors hidden they're gone from every view and can't be clicked, so
   // the inside can be edited directly. They stay in the cut list and clashes.
-  const pieces = useMemo(
-    () => (showDoors ? allPieces : allPieces.filter((piece) => piece.kind !== 'door')),
-    [allPieces, showDoors],
-  )
+  const pieces = useMemo(() => visiblePieces(allPieces, { showDoors }), [allPieces, showDoors])
   const selectedId = useDesignStore(selectedIdOf)
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const select = useDesignStore((s) => s.select)
@@ -206,18 +204,12 @@ export function Canvas2D() {
   )
   const multiWall = hasSideWalls(room)
   // Each wall's unit is edited on its own; the top view shows the whole room.
-  const wallPieces = useMemo(
-    () => (multiWall ? pieces.filter((piece) => wallOf(piece) === activeWall) : pieces),
-    [pieces, multiWall, activeWall],
-  )
+  const wallPieces = useMemo(() => visiblePieces(pieces, { wall: activeWall }), [pieces, activeWall])
   // What's drawn: the pieces themselves in the front view, read-only
   // projections in the others.
   const shown = useMemo(
-    () =>
-      viewName === 'top'
-        ? roomPlan(pieces, thickness, room)
-        : projectPieces(wallPieces, viewName, thickness),
-    [pieces, wallPieces, viewName, thickness, room],
+    () => viewPieces(pieces, viewName, activeWall, thickness, room),
+    [pieces, viewName, activeWall, thickness, room],
   )
   // How each door opens, drawn in the top view.
   const swings = useMemo(
@@ -598,11 +590,7 @@ export function Canvas2D() {
       const store = useDesignStore.getState()
       const key = event.key.toLowerCase()
       // Everything in view: the wall being edited, or the whole room from the top.
-      const all = store.pieces.filter(
-        (piece) =>
-          (viewName === 'top' || wallOf(piece) === store.activeWall) &&
-          (showDoors || piece.kind !== 'door'),
-      )
+      const all = visiblePieces(store.pieces, { showDoors, wall: viewName === 'top' ? undefined : store.activeWall })
       if (key === 'a') selectMany(all.map((piece) => piece.id))
       else if (key === 'c' && store.selectedIds.length > 0) store.copySelection()
       else if (key === 'v' && store.canPaste) store.paste()
@@ -725,8 +713,7 @@ export function Canvas2D() {
       if (!multiWall) return plan
       return [...plan, { x: -room.width / 2, y: -room.depth, width: room.width, height: room.depth }]
     }
-    const onWall = multiWall ? pieces.filter((piece) => wallOf(piece) === wall) : pieces
-    const list: Rect[] = projectPieces(onWall, name, thickness)
+    const list: Rect[] = viewPieces(pieces, name, wall, thickness, room)
     if (!multiWall || name !== 'front') return list
     const half = wallLength(room, wall) / 2
     return [...list, { x: -half, y: 0, width: 2 * half, height: WALL_FRAME_HEIGHT }]

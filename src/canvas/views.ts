@@ -67,6 +67,22 @@ export function projectPieces(pieces: Piece[], view: ViewName, thickness: Thickn
 }
 
 /**
+ * The parts a view shows: doors only while they're shown, and only the parts
+ * on `wall`, or on every wall without one (the top view shows the whole room).
+ */
+export function visiblePieces(pieces: Piece[], { showDoors = true, wall }: { showDoors?: boolean; wall?: Wall }) {
+  return pieces.filter((piece) => (showDoors || piece.kind !== 'door') && (!wall || wallOf(piece) === wall))
+}
+
+/**
+ * What a view draws of these parts: from the top the whole room in plan,
+ * from any other side the unit on `wall`.
+ */
+export function viewPieces(pieces: Piece[], view: ViewName, wall: Wall, thickness: Thickness, room: Room) {
+  return view === 'top' ? roomPlan(pieces, thickness, room) : projectPieces(visiblePieces(pieces, { wall }), view, thickness)
+}
+
+/**
  * The top view of the whole room: every wall's pieces in plan, turned to face
  * out from their wall. The back wall runs along the top (y = 0) and the room
  * opens towards the bottom. With only the back wall this is the same as the
