@@ -22,5 +22,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests run in Node and get its types from tsconfig.test.json; the app runs in the browser.
+  "exclude": ["src/**/*.test.ts", "src/test"]
 }

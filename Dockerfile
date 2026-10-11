@@ -10,12 +10,20 @@ COPY . .
 ARG SITE_URL=""
 ENV SITE_URL=$SITE_URL
 RUN pnpm build
+# nginx's copy of the security headers, made from the list for every path
+# ("/*") in public/_headers (Cloudflare's format), so there's one list to keep.
+# Fails the build if the policy didn't come through.
+RUN awk '/^[ \t]*(#|$)/ { next } \
+  /^[^ \t]/ { all = ($1 == "/*"); next } \
+  all { sub(/^[ \t]+/, ""); i = index($0, ":"); printf "add_header %s \"%s\" always;\n", substr($0, 1, i - 1), substr($0, i + 2) }' \
+  dist/_headers > security-headers.conf \
+  && grep -q '^add_header Content-Security-Policy ' security-headers.conf
 
 # nginx's own image that runs as an ordinary user, not root, so a hole in
 # nginx can't take over the container. Such a user can't use ports below
 # 1024, hence 8080.
 FROM nginxinc/nginx-unprivileged:alpine
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY --from=build /app/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080

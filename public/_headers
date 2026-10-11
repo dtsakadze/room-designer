@@ -1,7 +1,6 @@
 # Security headers for every response. Cloudflare reads this file from the
-# build (dist/_headers); docker/security-headers.conf has the same headers for
-# nginx, and `pnpm preview` serves them too. Keep the two files in step
-# (headers.test.ts checks they match).
+# build (dist/_headers), and the Docker build turns the "/*" list into nginx's
+# add_header lines, so this is the only copy. Keep each header on one line.
 #
 # The policy allows only the app's own files. Styles may be inline, as React
 # sets `style` attributes and printing adds a <style> element; images may be

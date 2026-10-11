@@ -58,7 +58,7 @@ pnpm build      # outputs dist/
 - It works at a domain root or in a sub-folder (e.g. `https://example.com/tools/boardcut/`), because all asset paths are relative.
 - It must be served over `http(s)://`. Opening `dist/index.html` straight from disk (`file://`) doesn't work, because browsers block module scripts there.
 - For a quick local server: `npx serve dist` or `python3 -m http.server -d dist 8080`.
-- Recommended security headers (a Content Security Policy that allows only the app's own files, no framing, `nosniff`) are in `public/_headers`, which Cloudflare and Netlify read from the build as is. For nginx, include `docker/security-headers.conf` in each `location`, as the Docker image does; on other hosts, set the same headers. `pnpm preview` serves the build with them, to check a change to the policy before it goes live.
+- Recommended security headers (a Content Security Policy that allows only the app's own files, no framing, `nosniff`) are in `public/_headers`, which Cloudflare and Netlify read from the build as is. The Docker image turns them into nginx `add_header` lines when it's built, included in each `location`; on other hosts, set the same headers. To check a change to the policy before it goes live, build and run the Docker image (`docker compose up --build`).
 - Search engines: set `SITE_URL` when building (`SITE_URL=https://example.com pnpm build`, or in a `.env` file) to add a canonical link and `og:url` for that address. Leave it unset on a copy you don't want to present as the main site.
 - Caching: files in `dist/assets/` have content hashes in their names and can be cached forever. Serve `index.html` with `Cache-Control: no-cache` so people get updates.
 
