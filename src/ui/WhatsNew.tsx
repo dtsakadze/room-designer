@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useDialog } from './useDialog'
+import { Modal, ModalHeader } from './Modal'
 import changelog from '../../CHANGELOG.md?raw'
 import { parseChangelog } from '../lib/changelog'
 import { GitHubLink } from './GitHubLink'
@@ -80,40 +80,28 @@ export function VersionInfo() {
 }
 
 function WhatsNewPanel({ onClose }: { onClose: () => void }) {
-  const dialog = useDialog<HTMLDivElement>(onClose)
-
   return (
-    <div
-      className="overlay"
-      onPointerDown={(event) => event.target === event.currentTarget && onClose()}
-    >
-      <div className="projects-panel whats-new" role="dialog" aria-modal="true" aria-label="What's new" ref={dialog}>
-        <header className="projects-header">
-          <h2>What's new</h2>
-          <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
-            ×
-          </button>
-        </header>
-        <div className="whats-new-body">
-          {RELEASES.map((release) => (
-            <section key={release.version}>
-              <h3>
-                v{release.version}
-                {release.version === __APP_VERSION__ && (
-                  <span className="muted"> · this version</span>
-                )}
-                <span className="muted"> · {release.date}</span>
-              </h3>
-              {release.summary && <p className="muted">{release.summary}</p>}
-              <ul>
-                {release.changes.map((change) => (
-                  <li key={change}>{change}</li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+    <Modal label="What's new" className="whats-new" onClose={onClose}>
+      <ModalHeader title="What's new" onClose={onClose} />
+      <div className="whats-new-body">
+        {RELEASES.map((release) => (
+          <section key={release.version}>
+            <h3>
+              v{release.version}
+              {release.version === __APP_VERSION__ && (
+                <span className="muted"> · this version</span>
+              )}
+              <span className="muted"> · {release.date}</span>
+            </h3>
+            {release.summary && <p className="muted">{release.summary}</p>}
+            <ul>
+              {release.changes.map((change) => (
+                <li key={change}>{change}</li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
-    </div>
+    </Modal>
   )
 }

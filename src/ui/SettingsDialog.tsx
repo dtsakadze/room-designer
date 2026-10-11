@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import { useDialog } from './useDialog'
+import { Modal, ModalHeader } from './Modal'
 import { BoardSettings, ConstructionSettings, NewPartSettings, UnitSettings } from './BoardSettings'
 import { HangingGuideSettings } from './HangingGuideSettings'
 import { LookPicker } from './LookPicker'
@@ -47,7 +47,6 @@ function storedPage(): SettingsPage {
 export function SettingsDialog({ page: initialPage, onClose }: { page?: SettingsPage; onClose: () => void }) {
   const [page, setPage] = useState<SettingsPage>(() => initialPage ?? storedPage())
 
-  const dialog = useDialog<HTMLDivElement>(onClose)
 
   const choose = (id: SettingsPage) => {
     setPage(id)
@@ -59,31 +58,24 @@ export function SettingsDialog({ page: initialPage, onClose }: { page?: Settings
   }
 
   return (
-    <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="projects-panel settings-dialog" role="dialog" aria-modal="true" aria-label="Settings" ref={dialog}>
-        <header className="projects-header">
-          <h2>Settings</h2>
-          <button type="button" className="icon-button" aria-label="Close settings" onClick={onClose}>
-            ×
-          </button>
-        </header>
-        <div className="settings-layout">
-          <nav className="settings-nav" aria-label="Settings pages">
-            {PAGES.map(({ id, title }) => (
-              <button
-                key={id}
-                type="button"
-                className={id === 'preferences' ? 'settings-nav-browser' : undefined}
-                aria-current={page === id ? 'page' : undefined}
-                onClick={() => choose(id)}
-              >
-                {title}
-              </button>
-            ))}
-          </nav>
-          <div className="settings-page">{PAGES.find(({ id }) => id === page)!.content()}</div>
-        </div>
+    <Modal label="Settings" className="settings-dialog" onClose={onClose}>
+      <ModalHeader title="Settings" closeLabel="Close settings" onClose={onClose} />
+      <div className="settings-layout">
+        <nav className="settings-nav" aria-label="Settings pages">
+          {PAGES.map(({ id, title }) => (
+            <button
+              key={id}
+              type="button"
+              className={id === 'preferences' ? 'settings-nav-browser' : undefined}
+              aria-current={page === id ? 'page' : undefined}
+              onClick={() => choose(id)}
+            >
+              {title}
+            </button>
+          ))}
+        </nav>
+        <div className="settings-page">{PAGES.find(({ id }) => id === page)!.content()}</div>
       </div>
-    </div>
+    </Modal>
   )
 }

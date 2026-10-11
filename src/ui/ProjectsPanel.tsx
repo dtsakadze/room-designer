@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useDialog } from './useDialog'
+import { Modal, ModalHeader } from './Modal'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { useDesignStore } from '../store/useDesignStore'
 import { EditableName } from './EditableName'
@@ -25,172 +25,164 @@ export function ProjectsPanel({ onClose }: { onClose: () => void }) {
   const templates = useMemo(() => (choosing ? TEMPLATES.map((template) => ({ template, project: template.build() })) : []), [choosing])
 
   // Escape while renaming cancels the rename only (`EditableName` keeps the key).
-  const dialog = useDialog<HTMLDivElement>(onClose)
-
   return (
-    <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="projects-panel" role="dialog" aria-modal="true" aria-label="Projects" ref={dialog}>
-        <header className="projects-header">
-          <h2>{choosing ? 'New project' : 'Projects'}</h2>
-          {choosing ? (
-            <button type="button" className="add-button" onClick={() => setChoosing(false)}>
-              Back
-            </button>
-          ) : (
-            <button type="button" className="add-button" onClick={() => setChoosing(true)}>
-              New project
-            </button>
-          )}
-          <button type="button" className="icon-button" aria-label="Close projects" onClick={onClose}>
-            ×
+    <Modal label="Projects" onClose={onClose}>
+      <ModalHeader title={choosing ? 'New project' : 'Projects'} closeLabel="Close projects" onClose={onClose}>
+        {choosing ? (
+          <button type="button" className="add-button" onClick={() => setChoosing(false)}>
+            Back
           </button>
-        </header>
+        ) : (
+          <button type="button" className="add-button" onClick={() => setChoosing(true)}>
+            New project
+          </button>
+        )}
+      </ModalHeader>
 
-        {choosing && (
-          <ul className="template-list" aria-label="Start from">
-            <li>
+      {choosing && (
+        <ul className="template-list" aria-label="Start from">
+          <li>
+            <button
+              type="button"
+              className="template-button"
+              onClick={async () => {
+                await createProject()
+                onClose()
+              }}
+            >
+              <ProjectThumbnail pieces={[]} room={DEFAULT_ROOM} colors={{ boardColors: {}, edgeColors: {} }} size={72} />
+              <span className="template-text">
+                <strong>Blank</strong>
+                <span className="muted">Start with nothing and add parts yourself.</span>
+              </span>
+            </button>
+          </li>
+          {templates.map(({ template, project }) => (
+            <li key={template.id}>
               <button
                 type="button"
                 className="template-button"
                 onClick={async () => {
-                  await createProject()
+                  await createProject({
+                    name: projectNameFor(template, projects.map((existing) => existing.name)),
+                    design: project,
+                  })
                   onClose()
                 }}
               >
-                <ProjectThumbnail pieces={[]} room={DEFAULT_ROOM} colors={{ boardColors: {}, edgeColors: {} }} size={72} />
+                <ProjectThumbnail
+                  pieces={project.pieces}
+                  room={project.room}
+                  colors={{ boardColors: project.boardColors ?? {}, edgeColors: project.edgeColors ?? {} }}
+                  size={72}
+                />
                 <span className="template-text">
-                  <strong>Blank</strong>
-                  <span className="muted">Start with nothing and add parts yourself.</span>
+                  <strong>{template.name}</strong>
+                  <span className="muted">{template.description}</span>
                 </span>
               </button>
             </li>
-            {templates.map(({ template, project }) => (
-              <li key={template.id}>
-                <button
-                  type="button"
-                  className="template-button"
-                  onClick={async () => {
-                    await createProject({
-                      name: projectNameFor(template, projects.map((existing) => existing.name)),
-                      design: project,
-                    })
-                    onClose()
-                  }}
-                >
-                  <ProjectThumbnail
-                    pieces={project.pieces}
-                    room={project.room}
-                    colors={{ boardColors: project.boardColors ?? {}, edgeColors: project.edgeColors ?? {} }}
-                    size={72}
+          ))}
+        </ul>
+      )}
+
+      {!choosing && <ul className="project-list">
+        {projects.map((project) => {
+          const isOpen = project.id === currentId
+          return (
+            <li key={project.id} className={isOpen ? 'project-row project-row-open' : 'project-row'}>
+              {/* The open project is drawn from the live design, so it's always current. */}
+              <ProjectThumbnail
+                pieces={isOpen ? livePieces : project.pieces}
+                room={isOpen ? liveRoom : project.room}
+                colors={isOpen ? { boardColors: liveBoardColors, edgeColors: liveEdgeColors } : project.colors}
+              />
+              <div className="project-info">
+                {renamingId === project.id ? (
+                  <EditableName
+                    name={project.name}
+                    editing
+                    onRename={(name) => renameProject(project.id, name)}
+                    onDone={() => setRenamingId(null)}
                   />
-                  <span className="template-text">
-                    <strong>{template.name}</strong>
-                    <span className="muted">{template.description}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {!choosing && <ul className="project-list">
-          {projects.map((project) => {
-            const isOpen = project.id === currentId
-            return (
-              <li key={project.id} className={isOpen ? 'project-row project-row-open' : 'project-row'}>
-                {/* The open project is drawn from the live design, so it's always current. */}
-                <ProjectThumbnail
-                  pieces={isOpen ? livePieces : project.pieces}
-                  room={isOpen ? liveRoom : project.room}
-                  colors={isOpen ? { boardColors: liveBoardColors, edgeColors: liveEdgeColors } : project.colors}
-                />
-                <div className="project-info">
-                  {renamingId === project.id ? (
-                    <EditableName
-                      name={project.name}
-                      editing
-                      onRename={(name) => renameProject(project.id, name)}
-                      onDone={() => setRenamingId(null)}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      className="project-name"
-                      // Can't be opened, so it's never autosaved over; see `problem`.
-                      disabled={!!project.problem}
-                      onClick={async () => {
-                        await openProject(project.id)
-                        onClose()
-                      }}
-                    >
-                      {project.name}
-                    </button>
-                  )}
-                  {project.problem ? (
-                    <span className="hint hint-error">
-                      {project.problem === 'newer'
-                        ? "Can't open: saved by a newer version of the app. It's kept as is."
-                        : "Can't open: the saved data is damaged. It's kept as is."}
-                    </span>
-                  ) : (
-                    <span className="muted">
-                      {isOpen ? 'Open now · ' : ''}
-                      {project.pieces.length} piece{project.pieces.length === 1 ? '' : 's'} · edited{' '}
-                      {formatEdited(project.updatedAt)}
-                    </span>
-                  )}
-                </div>
-
-                {confirmingId === project.id ? (
-                  <div className="project-actions">
-                    <span className="muted">Delete for good?</span>
-                    <button
-                      type="button"
-                      className="danger-button"
-                      onClick={() => {
-                        setConfirmingId(null)
-                        void deleteProject(project.id)
-                      }}
-                    >
-                      Delete
-                    </button>
-                    <button type="button" className="ghost-button" onClick={() => setConfirmingId(null)}>
-                      Cancel
-                    </button>
-                  </div>
                 ) : (
-                  <div className="project-actions">
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => setRenamingId(project.id)}
-                    >
-                      Rename
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => void duplicateProject(project.id)}
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => setConfirmingId(project.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="project-name"
+                    // Can't be opened, so it's never autosaved over; see `problem`.
+                    disabled={!!project.problem}
+                    onClick={async () => {
+                      await openProject(project.id)
+                      onClose()
+                    }}
+                  >
+                    {project.name}
+                  </button>
                 )}
-              </li>
-            )
-          })}
-        </ul>}
+                {project.problem ? (
+                  <span className="hint hint-error">
+                    {project.problem === 'newer'
+                      ? "Can't open: saved by a newer version of the app. It's kept as is."
+                      : "Can't open: the saved data is damaged. It's kept as is."}
+                  </span>
+                ) : (
+                  <span className="muted">
+                    {isOpen ? 'Open now · ' : ''}
+                    {project.pieces.length} piece{project.pieces.length === 1 ? '' : 's'} · edited{' '}
+                    {formatEdited(project.updatedAt)}
+                  </span>
+                )}
+              </div>
 
-        <p className="hint">Projects are kept in this browser. Save to a file to back one up or move it.</p>
-      </div>
-    </div>
+              {confirmingId === project.id ? (
+                <div className="project-actions">
+                  <span className="muted">Delete for good?</span>
+                  <button
+                    type="button"
+                    className="danger-button"
+                    onClick={() => {
+                      setConfirmingId(null)
+                      void deleteProject(project.id)
+                    }}
+                  >
+                    Delete
+                  </button>
+                  <button type="button" className="ghost-button" onClick={() => setConfirmingId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="project-actions">
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => setRenamingId(project.id)}
+                  >
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => void duplicateProject(project.id)}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => setConfirmingId(project.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>}
+
+      <p className="hint">Projects are kept in this browser. Save to a file to back one up or move it.</p>
+    </Modal>
   )
 }
 
