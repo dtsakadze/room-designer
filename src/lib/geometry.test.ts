@@ -157,6 +157,13 @@ describe('depthStart', () => {
     expect(z(backRail)).toBe(3)
   })
 
+  it('hangs a rod halfway between the back panel and the front', () => {
+    const rod = piece('rod', 'rod', { height: 25 })
+    const z = depthStart([back, side, rod], thickness)
+    expect(z(rod)).toBe(3 + (600 - 3 - 25) / 2)
+    expect(depthStart([rod], thickness)(rod)).toBe(0)
+  })
+
   it('places overlay doors in front of the unit and inset doors flush inside it', () => {
     const overlay = piece('o', 'door', {})
     const inset = piece('i', 'door', { inset: true })

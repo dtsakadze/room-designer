@@ -275,7 +275,8 @@ const overlaps = (a: Edges, b: Edges) =>
  * `z` when it has one. Otherwise everything sits flush against the back: the
  * back panel takes the first `thickness.back` mm, and the rest start in front
  * of it. The exceptions: the plinth sits at the front, set back a little, a rail
- * runs along the front unless it's marked as a back rail, trim and
+ * runs along the front unless it's marked as a back rail, a hanging rod hangs
+ * halfway between the back panel and the front, where hangers fit, trim and
  * accessories sit flush with the front edge, a door stands in
  * front of the unit (overlay) or just inside its front edge (inset), and so
  * does a drawer's front, its box behind it inside the unit.
@@ -287,13 +288,17 @@ export function depthStart(pieces: Piece[], thickness: Thickness) {
   const front = Math.max(
     0,
     ...pieces
-      .filter((piece) => !['plinth', 'rail', 'door', 'drawer', 'filler', 'cornice', 'accessory'].includes(piece.kind))
+      .filter((piece) => !['plinth', 'rail', 'rod', 'door', 'drawer', 'filler', 'cornice', 'accessory'].includes(piece.kind))
       .map((piece) => (piece.z ?? behind(piece)) + piece.depth),
   )
   return (piece: Piece) => {
     if (piece.z !== undefined) return piece.z
     if (piece.kind === 'plinth') return Math.max(0, front - PLINTH_RECESS - piece.depth)
     if (piece.kind === 'rail' && piece.railAt !== 'back') return Math.max(0, front - piece.depth)
+    if (piece.kind === 'rod') {
+      const inside = behind(piece)
+      return Math.max(inside, Math.round(inside + (front - inside - piece.depth) / 2))
+    }
     // A pull-out or shoe shelf starts at the front of the unit, not against the back.
     if (piece.kind === 'accessory') return Math.max(0, front - piece.depth)
     // Trim sits flush with the front edges of the unit, like an inset door.
