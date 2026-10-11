@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { findClashes } from '../lib/geometry'
 import { LOOKS, STANDARD_LOOK } from '../lib/looks'
 import { toProjectData } from '../lib/project'
-import { DEFAULT_THICKNESS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
+import { DEFAULT_THICKNESS, MAX_THICKNESS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { wallOf } from '../lib/room'
 import { useDesignStore } from './useDesignStore'
 
@@ -690,6 +690,8 @@ describe('project settings', () => {
     const steps = store().past.length
     store().setThickness({ body: 1.2 })
     expect(store().past.length).toBe(steps)
+    store().setThickness({ body: Infinity })
+    expect(store().thickness.body).toBe(MAX_THICKNESS)
   })
 
   it('keeps the unit depth within limits, without an undo step', () => {

@@ -13,6 +13,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - The cut list opens as a large view over the drawing instead of a small box: totals at the top (boards to cut, sheets, edge banding, hardware), the boards table on the left with the edge banding and hardware beside it, and the sheet layouts drawn bigger, side by side. Whole room or By wall is a switch at the top, next to the CSV downloads and a new Print button. Esc or × goes back to the drawing.
 - Works on phones and tablets: the drawing gets the whole screen. Tap ☰ (top left) for the sidebar; it closes by itself once you add or pick a part. Selecting a part slides its panel in from the right, or up from the bottom on a phone held upright, where ⌄ folds it down to see the drawing and × closes it. Pinch with two fingers to zoom, drag to pan. On a phone held upright a note suggests turning it sideways for more room. Desktop looks as before.
 - A damaged or hand-edited project file can no longer crash Boardcut every time it opens: parts with an unknown kind are now dropped when the file is read.
+- Sizes and positions now stop at 50 m and board thickness at 100 mm, so a damaged file or a mistyped huge number can no longer freeze the page. A file with more than 5,000 parts is shown as "Can't open" instead.
 
 ## 1.11.0 — 2026-10-10
 

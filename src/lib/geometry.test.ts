@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Piece } from '../types'
-import { DEFAULT_THICKNESS, DOOR_LEAF_GAP, PLINTH_RECESS } from './defaults'
+import { DEFAULT_THICKNESS, DOOR_LEAF_GAP, MAX_LENGTH, PLINTH_RECESS } from './defaults'
 import {
   clearanceBelow,
   contentBounds,
@@ -39,6 +39,11 @@ describe('normalizePiece', () => {
       width: 1,
       height: 1,
     })
+  })
+
+  it('keeps sizes and positions within 50 m, even when infinite', () => {
+    const huge = normalizePiece(raw('a', 'drawer', { x: -1e18, y: 1e300, width: 1e18, height: Infinity, depth: 1e9, z: 1e12 }), thickness)
+    expect(huge).toMatchObject({ x: -MAX_LENGTH, y: MAX_LENGTH, height: MAX_LENGTH, depth: MAX_LENGTH, z: MAX_LENGTH })
   })
 
   it('treats a missing number as 0 rather than breaking the design', () => {

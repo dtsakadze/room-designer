@@ -6,6 +6,7 @@ import {
   ACCESSORY_TYPES,
   DOOR_OPEN_ANGLE,
   HANDLE_TYPES,
+  MAX_LENGTH,
   MAX_SLIDING_OVERLAP,
   PANE_THICKNESS,
   PANE_TYPES,
@@ -31,8 +32,8 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
     height,
     // A rod is round, so its height and depth are one number: the diameter.
     depth: piece.kind === 'rod' ? height : atLeast(piece.depth),
-    x: round(piece.x),
-    y: Math.max(0, round(piece.y)),
+    x: Math.min(MAX_LENGTH, Math.max(-MAX_LENGTH, round(piece.x))),
+    y: Math.min(MAX_LENGTH, Math.max(0, round(piece.y))),
   }
   const board = BOARD[piece.kind]
   if (board) normalized[board.axis] = atLeast(thickness[board.board])
@@ -87,7 +88,7 @@ export function normalizePiece(piece: Piece, thickness: Thickness): Piece {
     delete normalized.close
   }
   // Automatic front-to-back placement is stored as no value.
-  if (typeof piece.z === 'number' && Number.isFinite(piece.z)) normalized.z = Math.max(0, round(piece.z))
+  if (typeof piece.z === 'number' && Number.isFinite(piece.z)) normalized.z = Math.min(MAX_LENGTH, Math.max(0, round(piece.z)))
   else delete normalized.z
   if (!piece.boxId) delete normalized.boxId
   // The back wall (the default) is stored as no value.
@@ -136,7 +137,7 @@ export function contentBounds(pieces: Rect[]) {
 }
 
 const round = (value: number) => (Number.isNaN(value) ? 0 : Math.round(value))
-const atLeast = (value: number, min = 1) => Math.max(min, round(value))
+const atLeast = (value: number, min = 1) => Math.min(MAX_LENGTH, Math.max(min, round(value)))
 
 /**
  * A measured gap in the front view: from `from` to `to` along `axis`, drawn at

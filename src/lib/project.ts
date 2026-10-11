@@ -6,6 +6,8 @@ import {
   DEFAULT_THICKNESS,
   DEFAULT_UNIT_DEPTH,
   MAX_BOARD_NAME,
+  MAX_PIECES,
+  MAX_THICKNESS,
   MATERIAL_LABELS,
   MAX_UNIT_DEPTH,
   MIN_UNIT_DEPTH,
@@ -259,15 +261,21 @@ export function parseProject(data: unknown): ProjectData | null {
  */
 function validate(data: Raw): ProjectData | null {
   if (data.formatVersion !== FORMAT_VERSION || !Array.isArray(data.pieces)) return null
+  // Refused rather than cut short, so nothing in it is lost by autosave.
+  if (data.pieces.length > MAX_PIECES) return null
 
   const stored = isRecord(data.thickness) ? data.thickness : {}
-  const body = positive(stored.body) ?? DEFAULT_THICKNESS.body
+  const board = (value: unknown) => {
+    const mm = positive(value)
+    return mm === undefined ? undefined : Math.min(MAX_THICKNESS, mm)
+  }
+  const body = board(stored.body) ?? DEFAULT_THICKNESS.body
   // Fronts and drawer boxes were body board until they had their own.
   const thickness: Thickness = {
     body,
-    back: positive(stored.back) ?? DEFAULT_THICKNESS.back,
-    front: positive(stored.front) ?? body,
-    drawer: positive(stored.drawer) ?? body,
+    back: board(stored.back) ?? DEFAULT_THICKNESS.back,
+    front: board(stored.front) ?? body,
+    drawer: board(stored.drawer) ?? body,
   }
   const boardNames = readBoardNames(data.boardNames)
   const boardMaterials = readBoardMaterials(data.boardMaterials)

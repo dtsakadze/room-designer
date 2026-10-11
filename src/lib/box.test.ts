@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Box, Piece } from '../types'
 import { boxPanels, normalizeBox, rebuildBox, withBoxPanels } from './box'
-import { DEFAULT_THICKNESS } from './defaults'
+import { DEFAULT_THICKNESS, MAX_LENGTH } from './defaults'
 
 const thickness = DEFAULT_THICKNESS
 const box = (patch: Partial<Box> = {}): Box => ({
@@ -60,6 +60,11 @@ describe('normalizeBox', () => {
       y: 0,
       width: 1201,
     })
+  })
+
+  it('keeps a box within 50 m', () => {
+    const huge = normalizeBox(box({ x: 1e18, y: 1e18, width: 1e18, height: 1e18, depth: 1e18, z: 1e18 }), thickness)
+    expect(huge).toMatchObject({ x: MAX_LENGTH, y: MAX_LENGTH, width: MAX_LENGTH, height: MAX_LENGTH, depth: MAX_LENGTH, z: MAX_LENGTH })
   })
 
   it('keeps a box big enough to hold its own boards', () => {

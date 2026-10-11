@@ -1,4 +1,5 @@
 import type { Box, Piece, Thickness } from '../types'
+import { MAX_LENGTH } from './defaults'
 import { normalizePiece } from './geometry'
 import { isSideWall } from './room'
 
@@ -85,16 +86,16 @@ export function normalizeBox(box: Box, thickness: Thickness): Box {
   const { wall, z, ...rest } = box
   return {
     ...rest,
-    x: Math.round(box.x),
-    y: Math.max(0, Math.round(box.y)),
-    width: Math.max(min, Math.round(box.width)),
-    height: Math.max(min, Math.round(box.height)),
-    depth: Math.max(thickness.back + 1, Math.round(box.depth)),
+    x: Math.min(MAX_LENGTH, Math.max(-MAX_LENGTH, Math.round(box.x))),
+    y: Math.min(MAX_LENGTH, Math.max(0, Math.round(box.y))),
+    width: Math.min(MAX_LENGTH, Math.max(min, Math.round(box.width))),
+    height: Math.min(MAX_LENGTH, Math.max(min, Math.round(box.height))),
+    depth: Math.min(MAX_LENGTH, Math.max(thickness.back + 1, Math.round(box.depth))),
     joint: box.joint === 'on' ? 'on' : 'between',
     // The back wall (the default) is stored as no value.
     ...(isSideWall(wall) ? { wall } : {}),
     // Automatic is stored as no value.
-    ...(typeof z === 'number' && Number.isFinite(z) ? { z: Math.max(0, Math.round(z)) } : {}),
+    ...(typeof z === 'number' && Number.isFinite(z) ? { z: Math.min(MAX_LENGTH, Math.max(0, Math.round(z))) } : {}),
   }
 }
 

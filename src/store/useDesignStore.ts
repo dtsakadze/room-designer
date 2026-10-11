@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { BoardColors, BoardKey, BoardMaterial, BoardMaterials, BoardNames, BoardSheets, SheetSetup, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { FITS_BETWEEN_SIDES, contentBounds, fitBetweenSides, normalizePiece } from '../lib/geometry'
-import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, PLACEMENT_GAP, createPiece } from '../lib/defaults'
+import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, MAX_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
@@ -645,7 +645,7 @@ export const useDesignStore = create<DesignState>()(
         set((state) => {
           const merged = { ...state.thickness, ...patch }
           const next = Object.fromEntries(
-            BOARDS.map(({ key }) => [key, atLeastOne(merged[key])]),
+            BOARDS.map(({ key }) => [key, Math.min(MAX_THICKNESS, atLeastOne(merged[key]))]),
           ) as Thickness
           if (BOARDS.every(({ key }) => next[key] === state.thickness[key])) return
           record(state)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FORMAT_VERSION, readProject, toProjectData } from './project'
 import { DEFAULT_ROOM } from './room'
+import { MAX_LENGTH, MAX_PIECES, MAX_THICKNESS } from './defaults'
 import type { Piece } from '../types'
 
 /**
@@ -506,6 +507,23 @@ describe('readProject', () => {
     const result = readProject(save)
     if (!result.ok) throw new Error("the damaged save didn't open")
     expect(result.project.pieces).toHaveLength(7)
+  })
+
+  it('keeps damaged huge sizes and thicknesses within limits', () => {
+    const save = fixture('v12-materials') as { pieces: Record<string, unknown>[]; thickness: Record<string, unknown> }
+    save.pieces.push({ id: 'huge', kind: 'vertical', x: 0, y: 0, width: 18, height: 1e300, depth: 600 })
+    save.thickness.body = 1e9
+    const result = readProject(save)
+    if (!result.ok) throw new Error("the edited save didn't open")
+    expect(result.project.thickness.body).toBe(MAX_THICKNESS)
+    expect(result.project.pieces.find((piece) => piece.id === 'huge')?.height).toBe(MAX_LENGTH)
+  })
+
+  it('refuses a save with more parts than any real design has', () => {
+    const save = fixture('v1-minimal') as { pieces: Record<string, unknown>[] }
+    const part = save.pieces[0]
+    save.pieces = Array.from({ length: MAX_PIECES + 1 }, (_, i) => ({ ...part, id: `p${i}` }))
+    expect(readProject(save)).toEqual({ ok: false, problem: 'invalid' })
   })
 
   it('drops parts and materials named after built-in object keys', () => {

@@ -20,6 +20,20 @@ export const BOARDS: { key: BoardKey; label: string; hint: string; example: stri
   },
 ]
 
+/**
+ * Longest a part or box can be, and how far from the middle of its wall or off
+ * the floor it can sit: 50 m, far beyond any room. Without a limit a damaged
+ * save with a 1e18 mm panel hangs the tab drawing its shelf holes and grid.
+ */
+export const MAX_LENGTH = 50_000
+/** Thickest board a project can have, for the same reason. */
+export const MAX_THICKNESS = 100
+/**
+ * Most parts a save can hold before it's refused as damaged: far more than a
+ * room of wardrobes, few enough that the clash check (every pair) stays quick.
+ */
+export const MAX_PIECES = 5000
+
 /** Longest board name kept, so a pasted paragraph can't take over the cut list. */
 export const MAX_BOARD_NAME = 60
 
