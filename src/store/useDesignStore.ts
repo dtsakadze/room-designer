@@ -2,15 +2,15 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { BoardColors, BoardKey, BoardMaterial, BoardMaterials, BoardNames, BoardSheets, SheetSetup, JointType, Box, Piece, PieceKind, Room, Thickness, Wall } from '../types'
 import { contentBounds, normalizePiece } from '../lib/geometry'
-import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, MAX_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
-import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
+import { BOARDS, MAX_THICKNESS, PLACEMENT_GAP, createPiece } from '../lib/defaults'
+import { type ProjectData, clampUnitDepth, cleanBoardName, designOf, newDesign } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
 import { newId } from '../lib/ids'
-import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
+import { activeWalls, clampRoomSize, wallOf } from '../lib/room'
 import { cleanSheet } from '../lib/sheets'
 import type { Look } from '../lib/looks'
-import { DEFAULT_HOLE_PITCH, clampHolePitch, isAdjustable, snapToHoles } from '../lib/shelfPins'
+import { clampHolePitch, isAdjustable, snapToHoles } from '../lib/shelfPins'
 
 /** The part of the state that undo/redo rewinds. Selection isn't in it. */
 type Snapshot = {
@@ -414,22 +414,9 @@ export const useDesignStore = create<DesignState>()(
     }
 
     return {
-      pieces: [],
-      boxes: [],
+      ...newDesign(),
       canPaste: readClipboard() !== null,
       selectedIds: [],
-      thickness: DEFAULT_THICKNESS,
-      boardNames: {},
-      boardMaterials: {},
-      boardSheets: {},
-      joints: 'screws',
-      grainedBoards: [],
-      holePitch: DEFAULT_HOLE_PITCH,
-      boardColors: {},
-      edgeColors: {},
-      defaultColor: null,
-      unitDepth: DEFAULT_UNIT_DEPTH,
-      room: DEFAULT_ROOM,
       activeWall: 'back',
       wholeRoomShown: false,
 
@@ -804,20 +791,7 @@ export const useDesignStore = create<DesignState>()(
 
       loadProject: (project) =>
         set((state) => {
-          state.pieces = project.pieces
-          state.boxes = project.boxes ?? []
-          state.thickness = project.thickness
-          state.boardNames = project.boardNames ?? {}
-          state.boardMaterials = project.boardMaterials ?? {}
-          state.boardSheets = project.boardSheets ?? {}
-          state.joints = project.joints ?? 'screws'
-          state.grainedBoards = project.grainedBoards ?? []
-          state.holePitch = project.holePitch ?? DEFAULT_HOLE_PITCH
-          state.boardColors = project.boardColors ?? {}
-          state.edgeColors = project.edgeColors ?? {}
-          state.defaultColor = project.defaultColor ?? null
-          state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
-          state.room = project.room ?? DEFAULT_ROOM
+          Object.assign(state, designOf(project))
           state.activeWall = 'back'
           state.selectedIds = []
           state.past = []
@@ -828,20 +802,7 @@ export const useDesignStore = create<DesignState>()(
       replaceDesign: (project) =>
         set((state) => {
           record(state)
-          state.pieces = project.pieces
-          state.boxes = project.boxes
-          state.thickness = project.thickness
-          state.boardNames = project.boardNames ?? {}
-          state.boardMaterials = project.boardMaterials ?? {}
-          state.boardSheets = project.boardSheets ?? {}
-          state.joints = project.joints ?? 'screws'
-          state.grainedBoards = project.grainedBoards ?? []
-          state.holePitch = project.holePitch
-          state.boardColors = project.boardColors ?? {}
-          state.edgeColors = project.edgeColors ?? {}
-          state.unitDepth = project.unitDepth
-          state.defaultColor = project.defaultColor ?? null
-          state.room = project.room
+          Object.assign(state, designOf(project))
           keepActiveWall(state)
           state.selectedIds = []
         }),
