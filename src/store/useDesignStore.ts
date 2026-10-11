@@ -6,6 +6,7 @@ import { BOARDS, DEFAULT_THICKNESS, DEFAULT_UNIT_DEPTH, MAX_THICKNESS, PLACEMENT
 import { type ProjectData, clampUnitDepth, cleanBoardName } from '../lib/project'
 import { BOX_HEIGHT, BOX_WIDTH, normalizeBox, rebuildBox, withBoxPanels, withPanelFinish } from '../lib/box'
 import { readClipboard, writeClipboard } from '../lib/clipboard'
+import { newId } from '../lib/ids'
 import { DEFAULT_ROOM, activeWalls, clampRoomSize, wallOf } from '../lib/room'
 import { cleanSheet } from '../lib/sheets'
 import type { Look } from '../lib/looks'
@@ -180,11 +181,6 @@ type DesignState = {
 /** The primary selected part: the inspector shows it. A string or null, so it's safe as a selector. */
 export const selectedIdOf = (state: { selectedIds: string[] }) => state.selectedIds.at(-1) ?? null
 
-const nextId = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2)
-
 export const useDesignStore = create<DesignState>()(
   immer((set, get) => {
     /**
@@ -288,13 +284,13 @@ export const useDesignStore = create<DesignState>()(
 
       for (const piece of copied.pieces.filter((candidate) => !candidate.boxId)) {
         const { wall: _wall, ...rest } = piece
-        const moved = { ...rest, ...onActiveWall(state), id: nextId(), x: piece.x + dx }
+        const moved = { ...rest, ...onActiveWall(state), id: newId(), x: piece.x + dx }
         const copy = normalizePiece(moved, state.thickness)
         state.pieces.push(copy)
         pasted.push(copy.id)
       }
       for (const box of copied.boxes) {
-        const id = nextId()
+        const id = newId()
         const { wall: _wall, ...rest } = box
         const placed = normalizeBox(
           { ...rest, ...onActiveWall(state), id, x: box.x + dx },
@@ -369,7 +365,7 @@ export const useDesignStore = create<DesignState>()(
     const placeBox = (state: DesignState, box: Omit<Box, 'id'>, startColor = true) => {
       record(state)
       const bounds = wallBounds(state)
-      const id = nextId()
+      const id = newId()
       const { wall: _wall, ...rest } = box
       const placed = normalizeBox(
         {
@@ -444,7 +440,7 @@ export const useDesignStore = create<DesignState>()(
       addPiece: (kind, options) =>
         set((state) => {
           record(state)
-          const base = createPiece(kind, nextId(), state.thickness, state.unitDepth)
+          const base = createPiece(kind, newId(), state.thickness, state.unitDepth)
           const piece: Piece = {
             ...base,
             ...options,
@@ -572,7 +568,7 @@ export const useDesignStore = create<DesignState>()(
           const copy = onHoles(
             state,
             normalizePiece(
-              { ...source, id: nextId(), x: source.x + source.width + PLACEMENT_GAP },
+              { ...source, id: newId(), x: source.x + source.width + PLACEMENT_GAP },
               state.thickness,
             ),
           )

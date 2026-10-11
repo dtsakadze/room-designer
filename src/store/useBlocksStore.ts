@@ -8,6 +8,7 @@ import {
   onBlocksChange,
   storeBlocks,
 } from '../lib/blocks'
+import { newId } from '../lib/ids'
 import type { Box, Piece, Thickness } from '../types'
 
 /**
@@ -24,11 +25,6 @@ type BlocksState = {
   /** Re-reads the blocks, after another tab changed them. */
   refresh: () => void
 }
-
-const newId = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2)
 
 export const useBlocksStore = create<BlocksState>()((set, get) => {
   const keep = (blocks: StoredBlock[]) => {

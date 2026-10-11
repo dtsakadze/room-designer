@@ -8,6 +8,8 @@ import {
   readProject,
   toProjectData,
 } from '../lib/project'
+import { newId } from '../lib/ids'
+import { freeName } from '../lib/names'
 import { type StoredProject, browserStorage, requestPersistentStorage } from '../lib/storage'
 import type { Piece, Room } from '../types'
 import { DEFAULT_ROOM } from '../lib/room'
@@ -261,7 +263,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       await saveNow()
       const names = get().projects.map((project) => project.name)
       const design = from?.design ?? emptyDesign()
-      const record = newRecord(from?.name ?? untitledName(names), design)
+      const record = newRecord(from?.name ?? freeName(DEFAULT_NAME, names), design)
       await storage.put(record)
       // It's made either way; it's only not opened if another switch came after.
       set({ projects: [summarize(record), ...get().projects] })
@@ -296,7 +298,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       const copy: StoredProject = {
         ...source,
         id: newId(),
-        name: copyName(source.name, names),
+        name: freeName(`${source.name} copy`, names),
         createdAt: now,
         updatedAt: now,
       }
@@ -373,25 +375,3 @@ function summaryOf(
 
 const sortByEdited = <T extends { updatedAt: string }>(list: T[]) =>
   [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-
-/** "Untitled project", then "Untitled project 2", 3, … skipping names in use. */
-function untitledName(taken: string[]) {
-  if (!taken.includes(DEFAULT_NAME)) return DEFAULT_NAME
-  let n = 2
-  while (taken.includes(`${DEFAULT_NAME} ${n}`)) n++
-  return `${DEFAULT_NAME} ${n}`
-}
-
-const newId = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2)
-
-/** "Kitchen copy", then "Kitchen copy 2", 3, … skipping names in use. */
-function copyName(name: string, taken: string[]) {
-  const base = `${name} copy`
-  if (!taken.includes(base)) return base
-  let n = 2
-  while (taken.includes(`${base} ${n}`)) n++
-  return `${base} ${n}`
-}
