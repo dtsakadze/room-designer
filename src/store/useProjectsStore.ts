@@ -225,11 +225,6 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
         })
 
         let records = await storage.list()
-        if (records.length === 0) {
-          const first = newRecord(DEFAULT_NAME, emptyDesign())
-          await storage.put(first)
-          records = [first]
-        }
 
         // Only a project that reads cleanly is opened. Opening one that doesn't
         // (made by a newer version, or damaged) as an empty design would let the
@@ -243,6 +238,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
           b.record.updatedAt.localeCompare(a.record.updatedAt),
         )[0]
         let current = readable.find(({ record }) => record.id === lastId) ?? newest
+        // Nothing to open (no projects yet, or none that reads): start an empty one.
         if (!current) {
           const design = emptyDesign()
           const first = newRecord(DEFAULT_NAME, design)
