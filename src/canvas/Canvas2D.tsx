@@ -416,6 +416,8 @@ export function Canvas2D() {
     handle: Handle,
     target: { id: string; boxId: string | null; origin: Rect },
   ) => {
+    // Right-drag pans, even when it starts on a handle, as it does on a part.
+    if (event.button !== 0) return
     event.stopPropagation()
     const svg = svgRef.current
     const inverse = svg && screenToSvgMatrix(svg)
