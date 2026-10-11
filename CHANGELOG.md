@@ -29,6 +29,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Hanging rods now hang halfway between the back and the front of the unit in the side, top and 3D views and the clash check, where hangers fit, instead of against the back panel. A Z you typed yourself is kept.
 - Cut list CSV downloads are safer to open in Excel or Google Sheets: a board name starting with =, +, - or @ (which a spreadsheet would run as a formula) now gets a ' in front, so it shows as plain text.
 - Export view works for a project whose name has a non-breaking space in it (Option+Space on a Mac, or pasted from a web page): the SVG used to be a broken file and the PNG silently didn't download. If a PNG ever can't be made, you're now told so.
+- Duplicating a box (⌘D, or Duplicate in the Selected panel) now keeps its panels' colours, edge banding and grain, as pasting it already did, instead of giving the copy plain panels or the new-part colour.
 
 ## 1.11.0 — 2026-10-10
 

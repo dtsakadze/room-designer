@@ -542,7 +542,19 @@ export const useDesignStore = create<DesignState>()(
           if (!source) return
           const box = state.boxes.find((candidate) => candidate.id === source.boxId)
           if (box) {
+            const panels = state.pieces.filter((piece) => piece.boxId === box.id)
             placeBox(state, box)
+            // Its panels are rebuilt, so they take the original's colours,
+            // banding and grain by role (panel ids are `<box id>:<role>`), not
+            // the new-part colour: a copy should look like what was copied.
+            const copyId = state.boxes.at(-1)!.id
+            state.pieces = state.pieces.map((piece) => {
+              if (piece.boxId !== copyId) return piece
+              const from = panels.find((panel) => panel.id === piece.id.replace(copyId, box.id))
+              if (!from) return piece
+              const { color, bands, grain } = from
+              return normalizePiece({ ...piece, color, bands, grain }, state.thickness)
+            })
             return
           }
           record(state)

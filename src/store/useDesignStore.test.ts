@@ -46,6 +46,25 @@ describe('copy and paste', () => {
     expect(findClashes(store().pieces, store().thickness).size).toBe(0)
   })
 
+  it('duplicates a box with its panels’ colours and banding, not the new-part colour', () => {
+    store().setDefaultColor('#abcdef')
+    store().addBox()
+    const box = store().boxes[0]
+    store().setPieceColors([`${box.id}:left`], '#123456')
+    store().updatePiece(`${box.id}:left`, { bands: [] })
+    store().setPieceColors([`${box.id}:top`], null)
+    const finish = (id: string) => {
+      const { color, bands, grain } = byId(id)
+      return { color, bands, grain }
+    }
+    store().duplicatePiece(`${box.id}:left`)
+    const copy = store().boxes[1]
+    for (const role of ['left', 'right', 'top', 'bottom', 'back']) {
+      expect(finish(`${copy.id}:${role}`)).toEqual(finish(`${box.id}:${role}`))
+    }
+    store().setDefaultColor(null)
+  })
+
   it('pastes into another project, taking that project’s board thickness', () => {
     store().addPiece('vertical')
     store().addBox()
