@@ -74,6 +74,13 @@ let timer: ReturnType<typeof setTimeout> | undefined
 let applying = false
 /** The browser is asked to keep the data once per session. */
 let persistAsked = false
+/**
+ * Counts project switches (open or create). Each waits on storage, so two
+ * started close together could finish out of order and leave one project on
+ * screen and another stored as the one to reopen. The newest wins: an older
+ * one that finds it's been overtaken stops before switching.
+ */
+let switches = 0
 
 export const useProjectsStore = create<ProjectsState>()((set, get) => {
   /**
@@ -264,21 +271,26 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
 
     createProject: async (from) => {
       if (!usable()) return
+      const turn = ++switches
       await saveNow()
       const names = get().projects.map((project) => project.name)
       const design = from?.design ?? emptyDesign()
       const record = newRecord(from?.name ?? untitledName(names), design)
       await storage.put(record)
-      await storage.setCurrentId(record.id)
-      set({ projects: [summarize(record), ...get().projects], currentId: record.id })
+      // It's made either way; it's only not opened if another switch came after.
+      set({ projects: [summarize(record), ...get().projects] })
+      if (turn !== switches) return
+      set({ currentId: record.id })
       apply(design)
+      await storage.setCurrentId(record.id)
     },
 
     openProject: async (id) => {
       if (!usable() || id === get().currentId) return
+      const turn = ++switches
       await saveNow()
       const record = await storage.get(id)
-      if (!record) return
+      if (!record || turn !== switches) return
       // Never open what can't be read: autosave would then overwrite it.
       const design = parseProject(record.design)
       if (!design) return

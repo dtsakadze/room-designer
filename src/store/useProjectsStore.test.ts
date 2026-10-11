@@ -11,6 +11,8 @@ const memory = vi.hoisted(() => ({
   currentId: null as string | null,
   legacy: undefined as unknown,
   failing: false,
+  /** How long storing the project to reopen takes, in ms, to let switches overlap. */
+  slowCurrentId: 0,
   /** Each app's change listener, to tell the others (other tabs) about writes. */
   listeners: [] as { owner: object; listener: (id: string) => void }[],
 }))
@@ -38,7 +40,10 @@ vi.mock('../lib/storage', () => {
         tell(id)
       },
       getCurrentId: async () => memory.currentId,
-      setCurrentId: async (id) => void (memory.currentId = id),
+      setCurrentId: async (id) => {
+        memory.currentId = id
+        if (memory.slowCurrentId) await new Promise((resolve) => setTimeout(resolve, memory.slowCurrentId))
+      },
       migrateLegacyDesign: async (convert) => {
         if (memory.legacy === undefined) return
         const project = convert(memory.legacy)
@@ -91,6 +96,7 @@ beforeEach(() => {
   memory.legacy = undefined
   memory.failing = false
   memory.listeners = []
+  memory.slowCurrentId = 0
   stubLocalStorage()
   page = stubPageEvents()
 })
@@ -255,6 +261,25 @@ describe('another tab', () => {
     expect(b.projects().currentId).toBe('b')
     expect(b.projects().projects.map((p) => p.id)).toEqual(['b'])
     expect(memory.records.has('a')).toBe(false)
+  })
+})
+
+describe('switching projects quickly', () => {
+  it('ends on the project asked for last, on screen and as the one to reopen', async () => {
+    memory.records.set('a', record('a', 'Hall', '2026-09-01T00:00:00Z', design(2)))
+    memory.records.set('b', record('b', 'Kitchen', '2026-09-05T00:00:00Z'))
+    memory.currentId = 'b'
+    const { projects, design: open } = await start()
+    memory.slowCurrentId = 100
+    const making = projects().createProject()
+    const opening = projects().openProject('a')
+    await vi.advanceTimersByTimeAsync(500)
+    await Promise.all([making, opening])
+    expect(projects().currentId).toBe('a')
+    expect(memory.currentId).toBe('a')
+    expect(open().pieces).toHaveLength(2)
+    // The new project was still made, just not opened.
+    expect(projects().projects).toHaveLength(3)
   })
 })
 
