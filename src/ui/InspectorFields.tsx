@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react'
 import { useUnitLabel } from '../store/useSettingsStore'
 import type { SideWall, Wall } from '../types'
 import { NumberField } from './NumberField'
+import { Segmented } from './Segmented'
 import { WallField } from './WallField'
 
 /** A titled block of the Selected panel; `aside` sits at the right of the title (a switch, a button). */
@@ -117,19 +118,7 @@ export function ChoiceRow<T extends string>({
 }) {
   return (
     <OptionRow label={label} info={info}>
-      <span className="unit-switch" role="radiogroup" aria-label={label}>
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={value === option.value}
-            onClick={() => onChange(option.value)}
-          >
-            {option.text}
-          </button>
-        ))}
-      </span>
+      <Segmented label={label} value={value} options={options} onChange={onChange} />
     </OptionRow>
   )
 }

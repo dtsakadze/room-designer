@@ -3,6 +3,7 @@ import { DEFAULT_CEILING_HEIGHT, LAYOUT_LABELS, type Layout, WALL_LABELS, layout
 import { useDesignStore } from '../store/useDesignStore'
 import type { Room, SideWall, Wall } from '../types'
 import { NumberField } from './NumberField'
+import { Segmented } from './Segmented'
 
 /**
  * Which walls of the room the wardrobe runs along, and the room's size. A
@@ -36,39 +37,29 @@ export function RoomSettings() {
   return (
     <section className="section">
       <div className="stack">
-        <div className="unit-switch wide-switch" role="radiogroup" aria-label="Walls">
-            {(Object.keys(LAYOUT_LABELS) as Layout[]).map((option) => (
-              <button
-                key={option}
-                type="button"
-                role="radio"
-                aria-checked={layout === option}
-                onClick={() => change(walls(option))}
-              >
-                {LAYOUT_LABELS[option]}
-              </button>
-            ))}
-        </div>
+        <Segmented
+          label="Walls"
+          layout="wide"
+          value={layout}
+          options={(Object.keys(LAYOUT_LABELS) as Layout[]).map((option) => ({ value: option, text: LAYOUT_LABELS[option] }))}
+          onChange={(option) => change(walls(option))}
+        />
 
         {layout === 'l' && (
           <div className="field">
             <span className="field-label">Side wall</span>
-            <span className="unit-switch" role="radiogroup" aria-label="Side wall">
-              {(['left', 'right'] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={room[option]}
-                  onClick={() => {
-                    setSide(option)
-                    change(walls('l', option))
-                  }}
-                >
-                  {option === 'left' ? 'Left' : 'Right'}
-                </button>
-              ))}
-            </span>
+            <Segmented
+              label="Side wall"
+              value={room.left ? 'left' : 'right'}
+              options={[
+                { value: 'left', text: 'Left' },
+                { value: 'right', text: 'Right' },
+              ]}
+              onChange={(option) => {
+                setSide(option)
+                change(walls('l', option))
+              }}
+            />
           </div>
         )}
 

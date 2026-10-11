@@ -6,6 +6,7 @@ import type { Piece } from '../types'
 import { InfoTip } from './InspectorFields'
 import { CollapsibleSection } from './CollapsibleSection'
 import { ColorField } from './ColorField'
+import { Segmented } from './Segmented'
 
 /**
  * The Finish section of the Selected panel: the colour of these parts
@@ -103,19 +104,13 @@ export function FinishFields({ piece }: { piece: Piece }) {
       {grained && (
         <div className="finish">
           <span className="field-label">{isDrawer ? 'Front grain' : 'Grain'}</span>
-          <span className="unit-switch wide-switch" role="radiogroup" aria-label="Grain">
-            {faceDimensions(axis).map((dimension) => (
-              <button
-                key={dimension}
-                type="button"
-                role="radio"
-                aria-checked={grain === dimension}
-                onClick={() => updatePiece(piece.id, { grain: dimension })}
-              >
-                {GRAIN_LABELS[dimension]}
-              </button>
-            ))}
-          </span>
+          <Segmented
+            label="Grain"
+            layout="wide"
+            value={grain}
+            options={faceDimensions(axis).map((dimension) => ({ value: dimension, text: GRAIN_LABELS[dimension] }))}
+            onChange={(dimension) => updatePiece(piece.id, { grain: dimension })}
+          />
         </div>
       )}
     </>

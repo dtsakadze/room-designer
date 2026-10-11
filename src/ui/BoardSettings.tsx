@@ -17,6 +17,7 @@ import { ColorField } from './ColorField'
 import { useEditBatch } from './useEditBatch'
 import { BOARD_FILLS } from '../canvas/colors'
 import { DEFAULT_HOLE_PITCH } from '../lib/shelfPins'
+import { Segmented } from './Segmented'
 
 /** The unit lengths are shown in: a preference of this browser, not the project. */
 export function UnitSettings() {
@@ -26,19 +27,13 @@ export function UnitSettings() {
   return (
     <section className="section">
       <h2>Units</h2>
-      <div className="unit-switch wide-switch" role="radiogroup" aria-label="Units">
-        {UNIT_ORDER.map((option) => (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={unit === option}
-            onClick={() => setUnit(option)}
-          >
-            {UNITS[option].label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Units"
+        layout="wide"
+        value={unit}
+        options={UNIT_ORDER.map((option) => ({ value: option, text: UNITS[option].label }))}
+        onChange={setUnit}
+      />
     </section>
   )
 }
@@ -122,41 +117,32 @@ function BoardFields({ board, example }: { board: BoardKey; example: string }) {
       <BoardNameField board={board} example={example} />
       <div className="field-group">
         <span className="field-label">Made of</span>
-        <div className="unit-switch two-columns" role="radiogroup" aria-label={`${label} material`}>
-          {(Object.keys(MATERIAL_LABELS) as BoardMaterial[]).map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="radio"
-              aria-checked={material === option}
-              onClick={() => setBoardMaterial(board, option)}
-            >
-              {MATERIAL_LABELS[option]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label={`${label} material`}
+          layout="columns"
+          value={material}
+          options={(Object.keys(MATERIAL_LABELS) as BoardMaterial[]).map((option) => ({
+            value: option,
+            text: MATERIAL_LABELS[option],
+          }))}
+          onChange={(option) => setBoardMaterial(board, option)}
+        />
         {board === 'body' && (
           <p className="hint">Shelves are checked against how far it spans without sagging.</p>
         )}
       </div>
       <div className="field-group">
         <span className="field-label">Bought as</span>
-        <div className="unit-switch wide-switch" role="radiogroup" aria-label={`${label} is bought`}>
-          {[
-            ['Cut to size', false],
-            ['Whole sheets', true],
-          ].map(([text, sheets]) => (
-            <button
-              key={String(text)}
-              type="button"
-              role="radio"
-              aria-checked={!!sheet === sheets}
-              onClick={() => setBoardSheet(board, sheets ? (sheet ?? DEFAULT_SHEETS[material]) : null)}
-            >
-              {String(text)}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label={`${label} is bought`}
+          layout="wide"
+          value={!!sheet}
+          options={[
+            { value: false, text: 'Cut to size' },
+            { value: true, text: 'Whole sheets' },
+          ]}
+          onChange={(sheets) => setBoardSheet(board, sheets ? (sheet ?? DEFAULT_SHEETS[material]) : null)}
+        />
         <p className="hint">
           {sheet
             ? 'The cut list also shows how the parts fit on the sheets.'
@@ -260,20 +246,14 @@ export function NewPartSettings() {
       <h2>New parts</h2>
       <div className="stack">
         <NumberField label="Depth" value={unitDepth} onChange={setUnitDepth} />
-        <div className="unit-switch wide-switch" role="radiogroup" aria-label="Depth preset">
-          {DEPTH_PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              type="button"
-              role="radio"
-              aria-checked={unitDepth === preset.depth}
-              onClick={() => setUnitDepth(preset.depth)}
-            >
-              {/* The unit is in the Depth field above; with it, the two don't fit. */}
-              {preset.label} {num(preset.depth)}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Depth preset"
+          layout="wide"
+          value={unitDepth}
+          // The unit is in the Depth field above; with it, the two don't fit.
+          options={DEPTH_PRESETS.map((preset) => ({ value: preset.depth, text: `${preset.label} ${num(preset.depth)}` }))}
+          onChange={setUnitDepth}
+        />
         <ColorField
           label="Colour"
           value={defaultColor}

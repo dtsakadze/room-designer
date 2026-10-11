@@ -2,6 +2,7 @@ import { useDialog } from './useDialog'
 import { type CutListRow, describeHardware } from '../lib/cutList'
 import { type CutListReport, type CutListRun, groupName } from '../lib/cutListReport'
 import { boardName } from '../lib/defaults'
+import { Segmented } from './Segmented'
 import { SheetLayouts } from './SheetLayouts'
 import { UNITS } from '../lib/units'
 import { cutListCsv, hardwareCsv } from '../lib/csv'
@@ -49,23 +50,15 @@ export function CutListPanel({ onClose }: { onClose: () => void }) {
         </div>
         <div className="cut-list-view-actions">
           {sideWalls && (
-            <span className="unit-switch" role="radiogroup" aria-label="List">
-              {[
-                ['Whole room', false],
-                ['By wall', true],
-              ].map(([text, value]) => (
-                <button
-                  key={String(text)}
-                  type="button"
-                  role="radio"
-                  aria-checked={byWall === value}
-                  title={value ? 'A list for each wall of the room, to build one run at a time' : undefined}
-                  onClick={() => setByWall(value as boolean)}
-                >
-                  {String(text)}
-                </button>
-              ))}
-            </span>
+            <Segmented
+              label="List"
+              value={byWall}
+              options={[
+                { value: false, text: 'Whole room' },
+                { value: true, text: 'By wall', title: 'A list for each wall of the room, to build one run at a time' },
+              ]}
+              onChange={setByWall}
+            />
           )}
           {report.whole.groups.length > 0 && <CsvButtons report={report} />}
           <button

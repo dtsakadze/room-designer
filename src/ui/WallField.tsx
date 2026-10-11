@@ -1,6 +1,7 @@
 import { activeWalls, hasSideWalls } from '../lib/room'
 import { useDesignStore } from '../store/useDesignStore'
 import type { SideWall, Wall } from '../types'
+import { Segmented } from './Segmented'
 
 const SHORT_LABELS: Record<Wall, string> = { left: 'Left', back: 'Back', right: 'Right' }
 
@@ -22,19 +23,12 @@ export function WallField({
   return (
     <div className="field">
       <span className="field-label">Wall</span>
-      <span className="unit-switch" role="radiogroup" aria-label="Wall">
-        {activeWalls(room).map((option) => (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={wall === option}
-            onClick={() => onChange(option === 'back' ? undefined : option)}
-          >
-            {SHORT_LABELS[option]}
-          </button>
-        ))}
-      </span>
+      <Segmented
+        label="Wall"
+        value={wall}
+        options={activeWalls(room).map((option) => ({ value: option, text: SHORT_LABELS[option] }))}
+        onChange={(option) => onChange(option === 'back' ? undefined : option)}
+      />
     </div>
   )
 }

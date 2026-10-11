@@ -5,6 +5,7 @@ import { PAPER, type PaperSize } from '../lib/drawing'
 import { useDesignStore } from '../store/useDesignStore'
 import { useProjectsStore } from '../store/useProjectsStore'
 import { type PrintOptions, PrintDocument } from './PrintDocument'
+import { Segmented } from './Segmented'
 
 const PAPER_KEY = 'room-designer:print-paper'
 const LINES_KEY = 'room-designer:print-lines-only'
@@ -98,26 +99,19 @@ export function PrintDialog({ onClose }: { onClose: () => void }) {
           </label>
           <div className="field">
             <span className="field-label">Paper</span>
-            <span className="unit-switch" role="radiogroup" aria-label="Paper">
-              {(Object.keys(PAPER) as PaperSize[]).map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  role="radio"
-                  aria-checked={options.paper === size}
-                  onClick={() => {
-                    choose({ paper: size })
-                    try {
-                      localStorage.setItem(PAPER_KEY, size)
-                    } catch {
-                      // Still used for this print.
-                    }
-                  }}
-                >
-                  {PAPER[size].label}
-                </button>
-              ))}
-            </span>
+            <Segmented
+              label="Paper"
+              value={options.paper}
+              options={(Object.keys(PAPER) as PaperSize[]).map((size) => ({ value: size, text: PAPER[size].label }))}
+              onChange={(size) => {
+                choose({ paper: size })
+                try {
+                  localStorage.setItem(PAPER_KEY, size)
+                } catch {
+                  // Still used for this print.
+                }
+              }}
+            />
           </div>
           <p className="hint">
             Landscape. To get a PDF, choose Save as PDF as the printer.
