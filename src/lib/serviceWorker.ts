@@ -71,7 +71,16 @@ self.addEventListener('fetch', (event) => {
     )
     return
   }
-  event.respondWith(caches.match(request, { ignoreVary: true }).then((saved) => saved || fetch(request)))
+  // This version's own copy first: a plain caches.match searches the oldest
+  // cache first, which for the files whose names don't change between builds
+  // (icons, the manifest) would give the previous version's.
+  event.respondWith(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.match(request, { ignoreVary: true }))
+      .then((own) => own || caches.match(request, { ignoreVary: true }))
+      .then((saved) => saved || fetch(request)),
+  )
 })
 `
 }

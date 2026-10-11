@@ -113,6 +113,13 @@ describe('service worker', () => {
     expect(w.network).toHaveBeenCalledWith(`${PAGE}something-else.png`)
   })
 
+  it('serves this version’s copy of a file whose name doesn’t change, not an older version’s', async () => {
+    const w = worker(3000, { 'boardcut-1000': [`${PAGE}manifest.webmanifest`] })
+    await w.run('install')
+    w.setOnline(false)
+    expect(String(await w.run('fetch', w.request(`${PAGE}manifest.webmanifest`)))).toBe(`network ${PAGE}manifest.webmanifest`)
+  })
+
   it('finds saved files for requests that carry an Origin header, as Chrome sends for scripts and styles', async () => {
     const w = worker(2000)
     await w.run('install')
