@@ -328,7 +328,7 @@ describe('fit between sides', () => {
     store().undo()
     expect(byId(plinth).x).toBe(-1000)
 
-    store().removePiece(left)
+    store().removePieces([left])
     const before = store().past.length
     store().fitBetweenSides(plinth)
     expect(store().past.length).toBe(before)
@@ -635,10 +635,10 @@ describe('changing parts', () => {
     store().addPiece('shelf')
     const shelf = selected()!
     store().addBox()
-    store().removePiece(selected()!)
+    store().removePieces([selected()!])
     expect(store().boxes).toHaveLength(0)
     expect(ids()).toEqual([shelf])
-    store().removePiece(shelf)
+    store().removePieces([shelf])
     expect(store().pieces).toHaveLength(0)
     expect(selected()).toBeNull()
   })

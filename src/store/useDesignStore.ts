@@ -92,7 +92,7 @@ type DesignState = {
   separateBox: (id: string) => void
   /**
    * On a box's panel, only a move, edge banding and grain apply: a move moves
-   * the whole box (the same goes for `duplicatePiece` and `removePiece`), while
+   * the whole box (the same goes for `duplicatePiece` and `removePieces`), while
    * banding and grain are the panel's own.
    */
   updatePiece: (id: string, patch: Partial<Omit<Piece, 'id' | 'kind'>>) => void
@@ -110,7 +110,6 @@ type DesignState = {
    */
   fitBetweenSides: (id: string) => void
   duplicatePiece: (id: string) => void
-  removePiece: (id: string) => void
   select: (id: string | null) => void
   /** Adds a part to the selection, or takes it out if it's already in (⌘-click). */
   toggleSelect: (id: string) => void
@@ -585,22 +584,6 @@ export const useDesignStore = create<DesignState>()(
           )
           state.pieces.push(copy)
           state.selectedIds = [copy.id]
-        }),
-
-      removePiece: (id) =>
-        set((state) => {
-          const piece = state.pieces.find((candidate) => candidate.id === id)
-          if (!piece) return
-          record(state)
-          if (piece.boxId) {
-            // Deleting any panel of a box deletes the box.
-            state.boxes = state.boxes.filter((box) => box.id !== piece.boxId)
-            state.pieces = state.pieces.filter((candidate) => candidate.boxId !== piece.boxId)
-            state.selectedIds = []
-            return
-          }
-          state.pieces = state.pieces.filter((candidate) => candidate.id !== id)
-          state.selectedIds = state.selectedIds.filter((selected) => selected !== id)
         }),
 
       select: (id) =>

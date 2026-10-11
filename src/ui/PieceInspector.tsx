@@ -61,7 +61,7 @@ export function PieceInspector() {
   const selectedId = useDesignStore(selectedIdOf)
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
-  const removePiece = useDesignStore((s) => s.removePiece)
+  const removePieces = useDesignStore((s) => s.removePieces)
   const boxes = useDesignStore((s) => s.boxes)
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
   const boardColors = useDesignStore((s) => s.boardColors)
@@ -90,7 +90,7 @@ export function PieceInspector() {
       <InspectorHeader
         title={pieceLabel(piece)}
         onDuplicate={() => duplicatePiece(piece.id)}
-        onDelete={() => removePiece(piece.id)}
+        onDelete={() => removePieces([piece.id])}
       />
       <div className="inspector-body">
         {/* Problems first, so they're seen before anything else. */}

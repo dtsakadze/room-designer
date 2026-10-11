@@ -20,7 +20,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
   const updateBox = useDesignStore((s) => s.updateBox)
   const separateBox = useDesignStore((s) => s.separateBox)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
-  const removePiece = useDesignStore((s) => s.removePiece)
+  const removePieces = useDesignStore((s) => s.removePieces)
   const setPieceColors = useDesignStore((s) => s.setPieceColors)
   const boardColors = useDesignStore((s) => s.boardColors)
   // Filtered here, not in the selector: a selector that returns a new array
@@ -37,7 +37,7 @@ export function BoxInspector({ box, panelId }: { box: Box; panelId: string }) {
       <InspectorHeader
         title="Box"
         onDuplicate={() => duplicatePiece(panelId)}
-        onDelete={() => removePiece(panelId)}
+        onDelete={() => removePieces([panelId])}
       />
       <div className="inspector-body">
         <OverhangNote ids={panels.map((piece) => piece.id)} />
