@@ -32,23 +32,30 @@ export const isAdjustable = (piece: Piece) => piece.kind === 'shelf' && !piece.f
 /** Panels drilled for shelf pins: sides and dividers. */
 const isDrilled = (piece: Piece) => piece.kind === 'vertical' || piece.kind === 'divider'
 
+/** Whether a panel stands at a shelf's height, so the shelf can rest on its holes. */
+const reaches = (panel: Piece, shelf: Piece) => panel.y <= shelf.y && shelf.y < panel.y + panel.height
+
 /**
  * The panels either side of a shelf whose holes it rests on, on its own wall:
  * the side or divider whose face its left end meets, and the one its right
  * end meets. Where several do (panels stacked above each other), the one
- * reaching the shelf's height wins.
+ * reaching the shelf's height wins. A panel only reaching some other height
+ * counts only when neither side reaches the shelf's (a shelf dragged above
+ * the unit still finds a top hole), so a short divider below a shelf that
+ * the full-height side opposite holds doesn't pull it down to its holes.
  */
 export function shelfPanels(shelf: Piece, pieces: Piece[]) {
   const wall = wallOf(shelf)
   const drilled = pieces.filter(
     (piece) => piece.id !== shelf.id && isDrilled(piece) && wallOf(piece) === wall,
   )
-  const best = (candidates: Piece[]) =>
-    candidates.find((p) => p.y <= shelf.y && shelf.y < p.y + p.height) ?? candidates[0] ?? null
-  return {
-    left: best(drilled.filter((p) => Math.abs(p.x + p.width - shelf.x) <= REACH)),
-    right: best(drilled.filter((p) => Math.abs(p.x - (shelf.x + shelf.width)) <= REACH)),
-  }
+  const best = (candidates: Piece[]) => candidates.find((p) => reaches(p, shelf)) ?? candidates[0] ?? null
+  const left = best(drilled.filter((p) => Math.abs(p.x + p.width - shelf.x) <= REACH))
+  const right = best(drilled.filter((p) => Math.abs(p.x - (shelf.x + shelf.width)) <= REACH))
+  const leftReaches = !!left && reaches(left, shelf)
+  const rightReaches = !!right && reaches(right, shelf)
+  if (leftReaches === rightReaches) return { left, right }
+  return { left: leftReaches ? left : null, right: rightReaches ? right : null }
 }
 
 /**

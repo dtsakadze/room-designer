@@ -40,6 +40,17 @@ describe('shelf pins', () => {
     expect(snapToHoles(shelf(5000), [left, right], 32)).toBe(2052)
   })
 
+  it('rests on the side that reaches its height, not a short divider on the other end', () => {
+    const low = piece('low', 'divider', { x: -300, y: 118, height: 900 })
+    const high = shelf(1500, { x: -282 })
+    expect(shelfPanels(high, [low, right, high])).toEqual({ left: null, right })
+    expect(snapToHoles(high, [low, right, high], 32)).toBe(1508)
+    expect(holeLines([low, right, high], 32).map((line) => line.panel.id)).toEqual(['right'])
+    // Above both, it still finds a top hole rather than counting from the floor.
+    const above = shelf(2500)
+    expect(shelfPanels(above, [low, right, above])).toEqual({ left: low, right })
+  })
+
   it('counts holes up from the floor with no panel to rest on', () => {
     expect(snapToHoles(shelf(530), [], 32)).toBe(544)
     expect(snapToHoles(shelf(10), [], 32)).toBe(0)
