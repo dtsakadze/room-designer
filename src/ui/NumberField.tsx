@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { UNITS, formatNumber, fromUnit, parseLength } from '../lib/units'
+import { UNITS, formatNumber, fromUnit, parseLength, parseTyped } from '../lib/units'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useEditBatch } from './useEditBatch'
 
@@ -23,7 +23,8 @@ type NumberFieldProps = {
  * it. Range is not enforced here — the store normalises every piece.
  *
  * Lengths are in mm, shown and typed in the unit from the settings; a comma
- * works as the decimal separator too. Up and down arrows step the value by
+ * works as the decimal separator too, unless it can only be grouping
+ * thousands ("1,200" mm; see `parseTyped`). Up and down arrows step the value by
  * the unit's smallest shown amount (1 mm in mm, cm and m), ten times that
  * with Shift, as a number input would.
  */
@@ -50,9 +51,9 @@ export function NumberField({
 
   const step = (direction: 1 | -1, large: boolean) => {
     const size = 10 ** -UNITS[unit].decimals * (large ? 10 : 1)
-    const parsed = Number(text.replace(',', '.'))
+    const parsed = parseTyped(text, unit)
     // From what's typed, if it's a number, so a half-typed edit carries on.
-    const shown = text.trim() !== '' && Number.isFinite(parsed) ? parsed : Number(formatNumber(value, unit))
+    const shown = Number.isFinite(parsed) ? parsed : Number(formatNumber(value, unit))
     const next = fromUnit(Number((shown + direction * size).toFixed(UNITS[unit].decimals)), unit)
     if (!Number.isFinite(next)) return
     stepped.current = true

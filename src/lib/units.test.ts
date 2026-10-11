@@ -49,4 +49,14 @@ describe('units', () => {
     expect(parseLength('1e308', 'cm')).toBeNull()
     expect(parseLength('1e308', 'in')).toBeNull()
   })
+
+  it('reads a comma as thousands where it can’t be a decimal comma', () => {
+    expect(parseLength('1,200', 'mm')).toBe(1200)
+    expect(parseLength('-1,200', 'mm')).toBe(-1200)
+    expect(parseLength('1,200', 'cm')).toBe(12)
+    expect(parseLength('1,200,000', 'mm')).toBe(1_200_000)
+    expect(parseLength('1,200.5', 'cm')).toBe(12005)
+    expect(parseLength('12,5', 'mm')).toBe(12.5)
+    expect(parseLength('1,2', 'm')).toBe(1200)
+  })
 })

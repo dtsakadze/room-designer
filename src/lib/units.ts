@@ -22,13 +22,28 @@ export const isUnit = (value: unknown): value is Unit =>
 export const fromUnit = (value: number, unit: Unit) => value * UNITS[unit].mm
 
 /**
+ * A typed number in `unit`, or NaN. A comma works as the decimal separator
+ * ("116,4" cm), except where it can only be grouping thousands: "1,200" in
+ * mm (which has no decimals), several groups ("1,200,000"), or with a decimal
+ * point as well ("1,200.5").
+ */
+export function parseTyped(text: string, unit: Unit) {
+  const trimmed = text.trim()
+  if (trimmed === '') return Number.NaN
+  const grouped =
+    trimmed.includes('.') ||
+    /^[-+]?\d{1,3}(,\d{3}){2,}$/.test(trimmed) ||
+    (UNITS[unit].decimals === 0 && /^[-+]?\d{1,3}(,\d{3})+$/.test(trimmed))
+  return Number(grouped ? trimmed.replaceAll(',', '') : trimmed.replace(',', '.'))
+}
+
+/**
  * Typed text as millimetres, or null while it isn't a usable length yet
  * (empty, half-typed, or so big it overflows to Infinity once in mm: 1e308 cm
- * is a number, but 1e309 mm isn't). A comma works as the decimal separator.
+ * is a number, but 1e309 mm isn't).
  */
 export function parseLength(text: string, unit: Unit) {
-  if (text.trim() === '') return null
-  const mm = fromUnit(Number(text.replace(',', '.')), unit)
+  const mm = fromUnit(parseTyped(text, unit), unit)
   return Number.isFinite(mm) ? mm : null
 }
 

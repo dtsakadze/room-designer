@@ -36,6 +36,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - The hardware list no longer counts too many fixings: a unit whose sides go down to the floor gets no adjustable feet just because a divider stands on its raised bottom, and a middle board with a divider under it no longer counts as a unit's top (which doubled the anti-tip brackets and wall anchors).
 - Double door leaves and sliding door panels are now whole millimetres, rounded down, so the cut list sizes always fit: a 1200 mm double door's leaves are 598 each instead of 599, which made the pair 1 mm wider than the door. The end panels of a sliding set stay flush with its ends.
 - A very narrow set of sliding doors (narrower than the overlap between its panels) no longer draws its panels sticking out to the left of the set; the overlap shrinks to fit.
+- Typing a length with a thousands comma, like 1,200 in millimetres, now gives 1200 mm instead of 1.2 mm. A comma still works as a decimal point where that's what it must mean, like 116,4 in centimetres.
 
 ## 1.11.0 — 2026-10-10
 
