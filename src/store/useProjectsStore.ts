@@ -3,6 +3,7 @@ import { DEFAULT_THICKNESS } from '../lib/defaults'
 import {
   type ProjectData,
   type ReadProblem,
+  opensIntact,
   parseProject,
   readProject,
   toProjectData,
@@ -90,7 +91,7 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
     const data = toProjectData(design)
     // A bug that left the design broken must never overwrite the last good
     // save, so it's checked like any load before it's written.
-    if (!readProject(data).ok) {
+    if (!opensIntact(data)) {
       console.error('Not autosaving a design that fails its own checks', data)
       set({ saveStatus: 'unavailable' })
       return

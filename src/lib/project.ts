@@ -247,6 +247,19 @@ export function readProject(input: unknown): ReadResult {
   return project ? { ok: true, project } : { ok: false, problem: 'invalid' }
 }
 
+/**
+ * Whether a design about to be saved would open again with nothing lost.
+ * `readProject` drops broken parts rather than failing, so a design holding
+ * one (a NaN size from a bug) would otherwise save, and the part vanish on
+ * the next load: autosave must never write that over the last good save.
+ */
+export function opensIntact(data: ProjectData) {
+  const result = readProject(data)
+  if (!result.ok) return false
+  const ids = (list: { id: string }[]) => list.map((item) => item.id).sort().join('\n')
+  return ids(result.project.pieces) === ids(data.pieces) && ids(result.project.boxes) === ids(data.boxes)
+}
+
 /** `readProject` for callers that only need the project: null when it can't be opened. */
 export function parseProject(data: unknown): ProjectData | null {
   const result = readProject(data)

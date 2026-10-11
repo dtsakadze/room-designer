@@ -175,6 +175,18 @@ describe('autosave', () => {
     expect(readStored(projects().currentId!).room.left).toBe(true)
   })
 
+  it('keeps the last good save rather than one that would lose a part', async () => {
+    const { projects, design: open } = await start()
+    open().addPiece('shelf')
+    await vi.advanceTimersByTimeAsync(500)
+    const { useDesignStore } = await import('./useDesignStore')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    useDesignStore.setState({ pieces: [...open().pieces, { ...open().pieces[0], id: 'broken', x: Number.NaN }] })
+    await vi.advanceTimersByTimeAsync(500)
+    expect(readStored(projects().currentId!).pieces).toHaveLength(1)
+    expect(projects().saveStatus).toBe('unavailable')
+  })
+
   it('doesn’t count opening a project as a change', async () => {
     const { projects } = await start()
     expect(projects().saveStatus).toBe('saved')

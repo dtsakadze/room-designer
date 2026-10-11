@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FORMAT_VERSION, readProject, toProjectData } from './project'
+import { FORMAT_VERSION, opensIntact, readProject, toProjectData } from './project'
 import { DEFAULT_ROOM } from './room'
 import { MAX_LENGTH, MAX_PIECES, MAX_THICKNESS } from './defaults'
 import type { Piece } from '../types'
@@ -536,5 +536,24 @@ describe('readProject', () => {
     if (!result.ok) throw new Error("the edited save didn't open")
     expect(result.project.pieces).toHaveLength(count)
     expect(result.project.boardMaterials).toEqual({ back: 'mdf' })
+  })
+})
+
+describe('opensIntact', () => {
+  const opened = () => {
+    const result = readProject(fixture('v3-room'))
+    if (!result.ok) throw new Error("v3-room didn't open")
+    return result.project
+  }
+
+  it('passes a design that opens again with every part', () => {
+    const project = opened()
+    expect(opensIntact(toProjectData(project))).toBe(true)
+  })
+
+  it('fails a design with a part that opening would drop', () => {
+    const project = opened()
+    const broken = { ...project.pieces.find((piece) => !piece.boxId)!, id: 'broken', x: Number.NaN }
+    expect(opensIntact(toProjectData({ ...project, pieces: [...project.pieces, broken] }))).toBe(false)
   })
 })
