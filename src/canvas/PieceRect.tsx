@@ -4,6 +4,7 @@ import { ACCESSORIES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorFronts, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
 import { ACCESSORY_FILLS, CLASH, PANE_FILLS, SELECTED, SPAN_WARNING } from './colors'
+import { accessoryLines } from './marks'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -69,6 +70,19 @@ export const PieceRect = memo(function PieceRect({
     onPointerEnter: () => onHoverChange(piece.id),
     onPointerLeave: () => onHoverChange(null),
   }
+  /** A layer over the whole part that clicks go through: grain, the clash red, the hover blue. */
+  const overlay = (fill: string, opacity?: number) => (
+    <rect
+      x={piece.x}
+      y={y}
+      width={piece.width}
+      height={piece.height}
+      rx={rx}
+      fill={fill}
+      fillOpacity={opacity}
+      style={{ pointerEvents: 'none' }}
+    />
+  )
 
   return (
     <g>
@@ -87,17 +101,7 @@ export const PieceRect = memo(function PieceRect({
         style={{ cursor: editable ? 'move' : 'pointer' }}
         {...handlers}
       />
-      {grain && (
-        <rect
-          x={piece.x}
-          y={y}
-          width={piece.width}
-          height={piece.height}
-          rx={rx}
-          fill={`url(#grain-${grain})`}
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
+      {grain && overlay(`url(#grain-${grain})`)}
       {screws &&
         // Keyed by end, not position: on a shelf 2 × SCREW_INSET wide both sit at one x.
         [piece.x + SCREW_INSET, piece.x + piece.width - SCREW_INSET].map((cx, end) => (
@@ -115,30 +119,8 @@ export const PieceRect = memo(function PieceRect({
         <PaneSheen piece={piece} y={y} />
       )}
       {doorMarks && piece.kind === 'door' && <DoorMarks piece={piece} y={y} unit={unit} />}
-      {clashing && (
-        <rect
-          x={piece.x}
-          y={y}
-          width={piece.width}
-          height={piece.height}
-          rx={rx}
-          fill={CLASH}
-          fillOpacity={0.3}
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
-      {showHover && (
-        <rect
-          x={piece.x}
-          y={y}
-          width={piece.width}
-          height={piece.height}
-          rx={rx}
-          fill={SELECTED}
-          fillOpacity={0.08}
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
+      {clashing && overlay(CLASH, 0.3)}
+      {showHover && overlay(SELECTED, 0.08)}
       {labelled && (
         <text
           x={piece.x + piece.width / 2}
@@ -271,38 +253,15 @@ function Sheen({
   )
 }
 
-/**
- * What an accessory looks like from the front, as simple lines: bars for a
- * trouser rack, upright hooks for ties and belts, a wire grid for a basket,
- * slats for a shoe rack (slanted on the angled shelf).
- */
+/** An accessory from the front, as simple lines (see `accessoryLines`), with its type's name when it fits. */
 function AccessoryMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
   const pad = Math.min(piece.width, piece.height) * 0.14
-  const [x0, x1] = [piece.x + pad, piece.x + piece.width - pad]
-  const [y0, y1] = [y + pad, y + piece.height - pad]
-  const across = (count: number): [number, number, number, number][] =>
-    Array.from({ length: count }, (_, i) => {
-      const at = y0 + ((y1 - y0) * i) / (count - 1)
-      return [x0, at, x1, at]
-    })
-  const up = (count: number): [number, number, number, number][] =>
-    Array.from({ length: count }, (_, i) => {
-      const at = x0 + ((x1 - x0) * i) / (count - 1)
-      return [at, y0, at, y1]
-    })
-  const lines: [number, number, number, number][] =
-    piece.accessory === 'trouser'
-      ? across(5)
-      : piece.accessory === 'tie'
-        ? up(9)
-        : piece.accessory === 'shoes-pullout'
-          ? across(3)
-          : piece.accessory === 'shoes-angled'
-            ? Array.from({ length: 5 }, (_, i): [number, number, number, number] => {
-                const at = x0 + ((x1 - x0) * i) / 4
-                return [at, y1, Math.min(x1, at + (x1 - x0) / 8), y0]
-              })
-            : [...across(4), ...up(10)]
+  const lines = accessoryLines(piece.accessory, {
+    x0: piece.x + pad,
+    y0: y + pad,
+    x1: piece.x + piece.width - pad,
+    y1: y + piece.height - pad,
+  })
   // The type's name across the middle, when it fits at the size the other labels are.
   const word = ACCESSORIES.find((accessory) => accessory.type === piece.accessory)?.short
   const text = unit * 13
