@@ -34,9 +34,11 @@ type DesignState = {
   pieces: Piece[]
   /** Carcasses whose panels (tagged with `boxId`) live in `pieces`. */
   boxes: Box[]
-  /** The part the inspector shows, and the last one clicked. */
-  selectedId: string | null
-  /** Every selected part (the primary one included); more than one for a multi-selection. */
+  /**
+   * Every selected part; more than one for a multi-selection. The last is the
+   * primary one, the part the inspector shows and the last one clicked
+   * (`selectedIdOf`).
+   */
   selectedIds: string[]
   thickness: Thickness
   /** What each board is, for the cut list. */
@@ -182,6 +184,9 @@ type DesignState = {
   endBatch: () => void
 }
 
+/** The primary selected part: the inspector shows it. A string or null, so it's safe as a selector. */
+export const selectedIdOf = (state: { selectedIds: string[] }) => state.selectedIds.at(-1) ?? null
+
 const nextId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
@@ -224,9 +229,6 @@ export const useDesignStore = create<DesignState>()(
       state.room = snapshot.room
       const ids = new Set(snapshot.pieces.map((piece) => piece.id))
       state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
-      if (state.selectedId && !ids.has(state.selectedId)) {
-        state.selectedId = state.selectedIds.at(-1) ?? null
-      }
       // Undoing a move to another wall puts the part back on its old one: the
       // view goes with it, so the selection is never a part that isn't drawn.
       followSelection(state)
@@ -249,7 +251,8 @@ export const useDesignStore = create<DesignState>()(
      * a selection there.
      */
     const followSelection = (state: DesignState) => {
-      const piece = state.pieces.find((candidate) => candidate.id === state.selectedId)
+      const primary = selectedIdOf(state)
+      const piece = state.pieces.find((candidate) => candidate.id === primary)
       if (piece) state.activeWall = wallOf(piece)
       if (!state.wholeRoomShown) keepSelectionOnWall(state)
     }
@@ -259,9 +262,6 @@ export const useDesignStore = create<DesignState>()(
         state.pieces.filter((piece) => wallOf(piece) === state.activeWall).map((piece) => piece.id),
       )
       state.selectedIds = state.selectedIds.filter((id) => onWall.has(id))
-      if (state.selectedId && !onWall.has(state.selectedId)) {
-        state.selectedId = state.selectedIds.at(-1) ?? null
-      }
     }
 
     /** Where new parts on the wall being edited go: right of everything already on it. */
@@ -325,7 +325,6 @@ export const useDesignStore = create<DesignState>()(
       state.pieces = placed.map((piece) => (pasted.includes(piece.id) ? onHoles(state, piece, placed) : piece))
 
       state.selectedIds = pasted
-      state.selectedId = pasted.at(-1) ?? null
     }
 
     /** Applies a change to a box and rebuilds its panels, if anything changed. */
@@ -360,8 +359,7 @@ export const useDesignStore = create<DesignState>()(
       if (state.defaultColor) {
         for (const piece of state.pieces) if (piece.boxId === id) piece.color = state.defaultColor
       }
-      state.selectedId = `${id}:left`
-      state.selectedIds = [state.selectedId]
+      state.selectedIds = [`${id}:left`]
     }
 
     /** Ids plus, for any box panel among them, every other panel of that box. */
@@ -379,7 +377,6 @@ export const useDesignStore = create<DesignState>()(
       pieces: [],
       boxes: [],
       canPaste: readClipboard() !== null,
-      selectedId: null,
       selectedIds: [],
       thickness: DEFAULT_THICKNESS,
       boardNames: {},
@@ -423,7 +420,6 @@ export const useDesignStore = create<DesignState>()(
           }
           if (state.defaultColor) piece.color = state.defaultColor
           state.pieces.push(onHoles(state, normalizePiece(piece, state.thickness)))
-          state.selectedId = piece.id
           state.selectedIds = [piece.id]
         }),
 
@@ -571,7 +567,6 @@ export const useDesignStore = create<DesignState>()(
             ),
           )
           state.pieces.push(copy)
-          state.selectedId = copy.id
           state.selectedIds = [copy.id]
         }),
 
@@ -584,18 +579,15 @@ export const useDesignStore = create<DesignState>()(
             // Deleting any panel of a box deletes the box.
             state.boxes = state.boxes.filter((box) => box.id !== piece.boxId)
             state.pieces = state.pieces.filter((candidate) => candidate.boxId !== piece.boxId)
-            state.selectedId = null
             state.selectedIds = []
             return
           }
           state.pieces = state.pieces.filter((candidate) => candidate.id !== id)
           state.selectedIds = state.selectedIds.filter((selected) => selected !== id)
-          if (state.selectedId === id) state.selectedId = state.selectedIds.at(-1) ?? null
         }),
 
       select: (id) =>
         set((state) => {
-          state.selectedId = id
           state.selectedIds = id ? [id] : []
           followSelection(state)
         }),
@@ -604,19 +596,15 @@ export const useDesignStore = create<DesignState>()(
         set((state) => {
           if (state.selectedIds.includes(id)) {
             state.selectedIds = state.selectedIds.filter((selected) => selected !== id)
-            if (state.selectedId === id) state.selectedId = state.selectedIds.at(-1) ?? null
           } else {
             state.selectedIds.push(id)
-            state.selectedId = id
             followSelection(state)
           }
         }),
 
       selectMany: (ids, add = false) =>
         set((state) => {
-          const next = add ? [...new Set([...state.selectedIds, ...ids])] : ids
-          state.selectedIds = next
-          state.selectedId = next.at(-1) ?? null
+          state.selectedIds = add ? [...new Set([...state.selectedIds, ...ids])] : ids
           followSelection(state)
         }),
 
@@ -666,7 +654,6 @@ export const useDesignStore = create<DesignState>()(
           state.boxes = state.boxes.filter((box) => !doomedBoxes.has(box.id))
           state.pieces = state.pieces.filter((piece) => !doomed.has(piece.id))
           state.selectedIds = []
-          state.selectedId = null
         }),
 
       setPieceColors: (ids, color) =>
@@ -817,9 +804,6 @@ export const useDesignStore = create<DesignState>()(
           state.pieces = state.pieces.filter((piece) => kept.has(wallOf(piece)))
           const ids = new Set(state.pieces.map((piece) => piece.id))
           state.selectedIds = state.selectedIds.filter((id) => ids.has(id))
-          if (state.selectedId && !ids.has(state.selectedId)) {
-            state.selectedId = state.selectedIds.at(-1) ?? null
-          }
           keepActiveWall(state)
         }),
 
@@ -842,7 +826,6 @@ export const useDesignStore = create<DesignState>()(
           record(state)
           state.pieces = []
           state.boxes = []
-          state.selectedId = null
           state.selectedIds = []
         }),
 
@@ -863,7 +846,6 @@ export const useDesignStore = create<DesignState>()(
           state.unitDepth = project.unitDepth ?? DEFAULT_UNIT_DEPTH
           state.room = project.room ?? DEFAULT_ROOM
           state.activeWall = 'back'
-          state.selectedId = null
           state.selectedIds = []
           state.past = []
           state.future = []
@@ -888,7 +870,6 @@ export const useDesignStore = create<DesignState>()(
           state.defaultColor = project.defaultColor ?? null
           state.room = project.room
           keepActiveWall(state)
-          state.selectedId = null
           state.selectedIds = []
         }),
 

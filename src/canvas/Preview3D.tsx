@@ -6,7 +6,7 @@ import { bandsOf, grainOf } from '../lib/edges'
 import { roomAxisOf } from '../lib/grain'
 import { pieceSolids, wallDepthStart } from '../lib/geometry'
 import { type RoomBox, hasSideWalls, roomBox, wallOf } from '../lib/room'
-import { useDesignStore } from '../store/useDesignStore'
+import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useClashes } from '../ui/useClashes'
 import type { BoardKey, Dimension, Edge, Piece, Room, Thickness } from '../types'
@@ -37,7 +37,7 @@ export default function Preview3D() {
   const showDoors = useSettingsStore((s) => s.showDoors)
   const thickness = useDesignStore((s) => s.thickness)
   const room = useDesignStore((s) => s.room)
-  const selectedId = useDesignStore((s) => s.selectedId)
+  const selectedId = useDesignStore(selectedIdOf)
   const boardColors = useDesignStore((s) => s.boardColors)
   const edgeColors = useDesignStore((s) => s.edgeColors)
   const grainedBoards = useDesignStore((s) => s.grainedBoards)

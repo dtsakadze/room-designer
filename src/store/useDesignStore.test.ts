@@ -4,9 +4,10 @@ import { LOOKS, STANDARD_LOOK } from '../lib/looks'
 import { toProjectData } from '../lib/project'
 import { DEFAULT_THICKNESS, MAX_THICKNESS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { wallOf } from '../lib/room'
-import { useDesignStore } from './useDesignStore'
+import { selectedIdOf, useDesignStore } from './useDesignStore'
 
 const store = () => useDesignStore.getState()
+const selected = () => selectedIdOf(store())
 const emptyProject = (body = DEFAULT_THICKNESS.body) =>
   toProjectData({ pieces: [], boxes: [], thickness: { ...DEFAULT_THICKNESS, body } })
 
@@ -146,9 +147,9 @@ describe('walls', () => {
     store().setRoom({ left: true })
     store().setActiveWall('left')
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     store().setActiveWall('back')
-    expect(store().selectedId).toBeNull()
+    expect(selected()).toBeNull()
     store().select(id)
     expect(store().activeWall).toBe('left')
   })
@@ -156,7 +157,7 @@ describe('walls', () => {
   it('moves a whole box to another wall', () => {
     store().setRoom({ right: true })
     store().addBox()
-    const panel = store().selectedId!
+    const panel = selected()!
     store().updatePiece(panel, { wall: 'right' })
     expect(store().pieces.every((piece) => piece.wall === 'right')).toBe(true)
     expect(store().activeWall).toBe('right')
@@ -206,11 +207,11 @@ describe('moving several parts', () => {
 
   it('leaves parts on other walls, and records nothing for no movement', () => {
     store().addPiece('shelf')
-    const back = store().selectedId!
+    const back = selected()!
     store().setRoom({ left: true })
     store().setActiveWall('left')
     store().addPiece('shelf')
-    const left = store().selectedId!
+    const left = selected()!
     const before = store().pieces.find((piece) => piece.id === back)!.x
     store().movePieces([back, left], 100, 0)
     expect(store().pieces.find((piece) => piece.id === back)!.x).toBe(before)
@@ -226,7 +227,7 @@ describe('doors', () => {
 
   it('changes a door’s options, each as an undo step', () => {
     store().addPiece('door')
-    const id = store().selectedId!
+    const id = selected()!
     const door = () => store().pieces.find((piece) => piece.id === id)!
     store().updatePiece(id, { hinge: 'right' })
     expect(door().hinge).toBe('right')
@@ -310,12 +311,12 @@ describe('fit between sides', () => {
 
   it('fills the gap between the sides as one undo step, and does nothing without sides', () => {
     store().addPiece('vertical')
-    const left = store().selectedId!
+    const left = selected()!
     store().updatePiece(left, { x: -1200 })
     store().addPiece('vertical')
-    store().updatePiece(store().selectedId!, { x: 29 })
+    store().updatePiece(selected()!, { x: 29 })
     store().addPiece('plinth')
-    const plinth = store().selectedId!
+    const plinth = selected()!
     store().updatePiece(plinth, { x: -1000, y: 20 })
     const steps = store().past.length
     store().fitBetweenSides(plinth)
@@ -342,7 +343,7 @@ describe('adjustable shelves', () => {
     store().addBox()
     const box = store().boxes[0]
     store().addPiece('shelf')
-    const shelf = store().selectedId!
+    const shelf = selected()!
     store().updatePiece(shelf, { x: box.x + 18, width: box.width - 36, y: 500 })
     return { box, shelf }
   }
@@ -469,7 +470,7 @@ describe('undo and redo', () => {
 
   it('undoes a batch of changes (a drag, typing) as one step', () => {
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     const steps = store().past.length
     store().beginBatch()
     for (const x of [10, 20, 30]) store().updatePiece(id, { x })
@@ -481,7 +482,7 @@ describe('undo and redo', () => {
 
   it('makes the rest of a drag its own step after an undo in the middle of it', () => {
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     store().updatePiece(id, { x: 100 })
     store().beginBatch()
     store().updatePiece(id, { x: 200 })
@@ -498,32 +499,32 @@ describe('undo and redo', () => {
 
   it('keeps at most 200 steps', () => {
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     for (let x = 1; x <= 250; x++) store().updatePiece(id, { x })
     expect(store().past).toHaveLength(200)
   })
 
   it('keeps a selection that still exists, and drops one that doesn’t', () => {
     store().addPiece('shelf')
-    const first = store().selectedId!
+    const first = selected()!
     store().addPiece('divider')
-    store().selectMany([first, store().selectedId!])
+    store().selectMany([first, selected()!])
     store().undo()
     expect(store().selectedIds).toEqual([first])
-    expect(store().selectedId).toBe(first)
+    expect(selected()).toBe(first)
   })
 
   it('takes the view along when undo moves the selected part to another wall', () => {
     store().setRoom({ left: true })
     store().setActiveWall('left')
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     store().updatePiece(id, { wall: undefined })
     expect(store().activeWall).toBe('back')
     store().undo()
     expect(byId(id).wall).toBe('left')
     expect(store().activeWall).toBe('left')
-    expect(store().selectedId).toBe(id)
+    expect(selected()).toBe(id)
     store().redo()
     expect(store().activeWall).toBe('back')
   })
@@ -541,9 +542,9 @@ describe('adding parts', () => {
 
   it('selects a new part and places it right of everything, on the floor', () => {
     store().addPiece('vertical')
-    const first = byId(store().selectedId!)
+    const first = byId(selected()!)
     store().addPiece('vertical')
-    const second = byId(store().selectedId!)
+    const second = byId(selected()!)
     expect(store().selectedIds).toEqual([second.id])
     expect(second.x).toBe(first.x + first.width + 100)
     expect(second.y).toBe(0)
@@ -566,7 +567,7 @@ describe('adding parts', () => {
     store().addBox()
     expect(store().boxes).toHaveLength(1)
     expect(store().pieces).toHaveLength(5)
-    expect(store().selectedId).toBe(`${store().boxes[0].id}:left`)
+    expect(selected()).toBe(`${store().boxes[0].id}:left`)
   })
 })
 
@@ -575,7 +576,7 @@ describe('changing parts', () => {
 
   it('changes a part, normalised, as one undo step', () => {
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     store().updatePiece(id, { width: 640.4, height: 99 })
     // A shelf's height is its board thickness.
     expect(byId(id)).toMatchObject({ width: 640, height: 18 })
@@ -583,7 +584,7 @@ describe('changing parts', () => {
 
   it('records nothing for a change that changes nothing', () => {
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     const steps = store().past.length
     store().updatePiece(id, { x: byId(id).x })
     store().updatePiece(id, { height: 50 })
@@ -619,35 +620,35 @@ describe('changing parts', () => {
 
   it('duplicates a part next to it, or a whole box clear of everything', () => {
     store().addPiece('shelf')
-    const shelf = byId(store().selectedId!)
+    const shelf = byId(selected()!)
     store().duplicatePiece(shelf.id)
-    const copy = byId(store().selectedId!)
+    const copy = byId(selected()!)
     expect(copy.id).not.toBe(shelf.id)
     expect(copy).toMatchObject({ x: shelf.x + shelf.width + 100, y: shelf.y, width: shelf.width })
     store().addBox()
-    store().duplicatePiece(store().selectedId!)
+    store().duplicatePiece(selected()!)
     expect(store().boxes).toHaveLength(2)
     expect(store().pieces).toHaveLength(2 + 10)
   })
 
   it('deletes a part, or the whole box when one of its panels is deleted', () => {
     store().addPiece('shelf')
-    const shelf = store().selectedId!
+    const shelf = selected()!
     store().addBox()
-    store().removePiece(store().selectedId!)
+    store().removePiece(selected()!)
     expect(store().boxes).toHaveLength(0)
     expect(ids()).toEqual([shelf])
     store().removePiece(shelf)
     expect(store().pieces).toHaveLength(0)
-    expect(store().selectedId).toBeNull()
+    expect(selected()).toBeNull()
   })
 
   it('deletes several parts at once, whole boxes included, as one undo step', () => {
     store().addPiece('shelf')
-    const shelf = store().selectedId!
+    const shelf = selected()!
     store().addBox()
     store().addPiece('divider')
-    const divider = store().selectedId!
+    const divider = selected()!
     store().removePieces([shelf, `${store().boxes[0].id}:back`])
     expect(ids()).toEqual([divider])
     store().undo()
@@ -668,7 +669,7 @@ describe('selection', () => {
 
   it('selects one part, or none', () => {
     store().addPiece('shelf')
-    const id = store().selectedId!
+    const id = selected()!
     store().select(null)
     expect(store().selectedIds).toEqual([])
     store().select(id)
@@ -677,23 +678,23 @@ describe('selection', () => {
 
   it('adds a part to the selection with ⌘-click, or takes it out', () => {
     store().addPiece('shelf')
-    const a = store().selectedId!
+    const a = selected()!
     store().addPiece('divider')
-    const b = store().selectedId!
+    const b = selected()!
     store().select(a)
     store().toggleSelect(b)
     expect(store().selectedIds).toEqual([a, b])
-    expect(store().selectedId).toBe(b)
+    expect(selected()).toBe(b)
     store().toggleSelect(b)
     expect(store().selectedIds).toEqual([a])
-    expect(store().selectedId).toBe(a)
+    expect(selected()).toBe(a)
   })
 
   it('selects many, or adds them to the selection without repeats', () => {
     store().addPiece('shelf')
-    const a = store().selectedId!
+    const a = selected()!
     store().addPiece('divider')
-    const b = store().selectedId!
+    const b = selected()!
     store().selectMany([a])
     store().selectMany([a, b], true)
     expect(store().selectedIds).toEqual([a, b])
@@ -702,10 +703,10 @@ describe('selection', () => {
   it('keeps to one wall unless the whole room is shown', () => {
     store().setRoom({ left: true })
     store().addPiece('shelf')
-    const back = store().selectedId!
+    const back = selected()!
     store().setActiveWall('left')
     store().addPiece('divider')
-    const left = store().selectedId!
+    const left = selected()!
     store().select(back)
     store().toggleSelect(left)
     expect(store().selectedIds).toEqual([left])
@@ -718,7 +719,7 @@ describe('selection', () => {
     expect(store().selectedIds).toEqual([back, left])
     store().setWholeRoomShown(false)
     expect(store().selectedIds).toEqual([left])
-    expect(store().selectedId).toBe(left)
+    expect(selected()).toBe(left)
   })
 
   it('isn’t part of the undo history', () => {
@@ -734,17 +735,17 @@ describe('colours', () => {
 
   it('colours a box’s panels together, and goes back to the standard look', () => {
     store().addBox()
-    store().setPieceColors([store().selectedId!], '#445566')
+    store().setPieceColors([selected()!], '#445566')
     expect(store().pieces.every((piece) => piece.color === '#445566')).toBe(true)
-    store().setPieceColors([store().selectedId!], null)
+    store().setPieceColors([selected()!], null)
     expect(store().pieces.some((piece) => 'color' in piece)).toBe(false)
   })
 
   it('records nothing when the colour is already set', () => {
     store().addPiece('shelf')
-    store().setPieceColors([store().selectedId!], '#445566')
+    store().setPieceColors([selected()!], '#445566')
     const steps = store().past.length
-    store().setPieceColors([store().selectedId!], '#445566')
+    store().setPieceColors([selected()!], '#445566')
     expect(store().past.length).toBe(steps)
   })
 
@@ -834,7 +835,7 @@ describe('opening another design', () => {
     store().setActiveWall('left')
     store().addPiece('shelf')
     store().loadProject(emptyProject())
-    expect(store()).toMatchObject({ activeWall: 'back', selectedId: null, selectedIds: [] })
+    expect(store()).toMatchObject({ activeWall: 'back', selectedIds: [] })
   })
 })
 

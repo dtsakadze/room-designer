@@ -475,3 +475,8 @@ Drawers' `extension` and `overlay` were added to v4 too (2026-09-28): v4 hadn't 
 *Decision*: the image is built on `nginxinc/nginx-unprivileged:alpine` instead of `nginx:alpine`, and nginx listens on 8080 inside the container (an ordinary user can't use ports below 1024); `docker-compose.yml` maps 8080 to 8080.
 *Why*: in the stock image nginx's main process runs as root, so a hole in nginx would mean root in the container. It's the same nginx, kept by the same people.
 *Instead of*: port 80 inside the container. Anyone running the image with `-p …:80` has to change it to `-p …:8080`.
+
+**The primary selection is derived, not stored** (2026-10-11)
+*Decision*: the design store keeps only `selectedIds`; the primary part (the one the inspector shows, the last clicked) is its last entry, read through `selectedIdOf`.
+*Why*: every action already kept `selectedId` equal to `selectedIds.at(-1)`, and five places repeated the "drop missing ids, re-pick the primary" code to keep them in step.
+*Instead of*: a separate `selectedId` field.

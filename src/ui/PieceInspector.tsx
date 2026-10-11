@@ -20,7 +20,7 @@ import { swingConflicts } from '../lib/swing'
 import { drawerParts, runnerLength } from '../lib/drawer'
 import { useUnitLabel, useUnits } from '../store/useSettingsStore'
 import type { Piece, PieceKind } from '../types'
-import { useDesignStore } from '../store/useDesignStore'
+import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { boardOf, faceColor } from '../canvas/colors'
 import { BoxInspector } from './BoxInspector'
 import { CollapsibleSection } from './CollapsibleSection'
@@ -58,7 +58,7 @@ const OPTION_TITLES: Partial<Record<PieceKind, string>> = {
  */
 export function PieceInspector() {
   const pieces = useDesignStore((s) => s.pieces)
-  const selectedId = useDesignStore((s) => s.selectedId)
+  const selectedId = useDesignStore(selectedIdOf)
   const updatePiece = useDesignStore((s) => s.updatePiece)
   const duplicatePiece = useDesignStore((s) => s.duplicatePiece)
   const removePiece = useDesignStore((s) => s.removePiece)

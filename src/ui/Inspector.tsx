@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useDesignStore } from '../store/useDesignStore'
+import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { useLayoutStore } from '../store/useLayoutStore'
 import { MultiInspector } from './MultiInspector'
 import { PieceInspector } from './PieceInspector'
@@ -9,7 +9,7 @@ import { PieceInspector } from './PieceInspector'
  * started when nothing is. Beside the canvas so it's always in view while editing.
  */
 export function Inspector() {
-  const selectedId = useDesignStore((s) => s.selectedId)
+  const selectedId = useDesignStore(selectedIdOf)
   const selectedIds = useDesignStore((s) => s.selectedIds)
 
   // A newly selected part shows its panel in full, even if the last one was folded.

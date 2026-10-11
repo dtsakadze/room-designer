@@ -4,7 +4,7 @@ import type { Piece } from '../types'
 import { BOARD, SNAP } from '../lib/defaults'
 import { type Gap, type Rect, contentBounds, snapToMiddle } from '../lib/geometry'
 import { WALL_LABELS, activeWalls, hasSideWalls, wallLength, wallOf } from '../lib/room'
-import { useDesignStore } from '../store/useDesignStore'
+import { selectedIdOf, useDesignStore } from '../store/useDesignStore'
 import { CutListPanel } from '../ui/CutListPanel'
 import { EditButtons } from '../ui/EditButtons'
 import { ShortcutsPanel } from '../ui/ShortcutsPanel'
@@ -172,7 +172,7 @@ export function Canvas2D() {
     () => (showDoors ? allPieces : allPieces.filter((piece) => piece.kind !== 'door')),
     [allPieces, showDoors],
   )
-  const selectedId = useDesignStore((s) => s.selectedId)
+  const selectedId = useDesignStore(selectedIdOf)
   const selectedIds = useDesignStore((s) => s.selectedIds)
   const select = useDesignStore((s) => s.select)
   const toggleSelect = useDesignStore((s) => s.toggleSelect)
