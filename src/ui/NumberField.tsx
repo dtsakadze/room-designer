@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { UNITS, formatNumber, fromUnit } from '../lib/units'
-import { useDesignStore } from '../store/useDesignStore'
 import { useSettingsStore } from '../store/useSettingsStore'
+import { useEditBatch } from './useEditBatch'
 
 type NumberFieldProps = {
   label: ReactNode
@@ -41,6 +41,7 @@ export function NumberField({
   // Set by an arrow step, so the field shows what the store made of it (it
   // may round, clamp or snap the value) even while it has focus.
   const stepped = useRef(false)
+  const batch = useEditBatch()
 
   useEffect(() => {
     if (!editing.current || stepped.current) setText(formatNumber(value, unit))
@@ -78,12 +79,12 @@ export function NumberField({
           onFocus={() => {
             editing.current = true
             // Typing "1", "16", "160" is one edit, so it undoes as one step.
-            useDesignStore.getState().beginBatch()
+            batch.begin()
           }}
           onChange={(event) => handleChange(event.target.value)}
           onBlur={() => {
             editing.current = false
-            useDesignStore.getState().endBatch()
+            batch.end()
             setText(formatNumber(value, unit))
           }}
           onKeyDown={(event) => {

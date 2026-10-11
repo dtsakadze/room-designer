@@ -14,6 +14,7 @@ import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { DEFAULT_SHEETS } from '../lib/sheets'
 import { NumberField } from './NumberField'
 import { ColorField } from './ColorField'
+import { useEditBatch } from './useEditBatch'
 import { BOARD_FILLS } from '../canvas/colors'
 import { DEFAULT_HOLE_PITCH } from '../lib/shelfPins'
 
@@ -295,6 +296,7 @@ function BoardNameField({ board, example }: { board: BoardKey; example: string }
   const setBoardName = useDesignStore((s) => s.setBoardName)
   const [text, setText] = useState(name)
   const [editing, setEditing] = useState(false)
+  const batch = useEditBatch()
   // Undo, or opening another project, changes the name under the field.
   const shown = editing ? text : name
 
@@ -310,7 +312,7 @@ function BoardNameField({ board, example }: { board: BoardKey; example: string }
       onFocus={() => {
         setText(name)
         setEditing(true)
-        useDesignStore.getState().beginBatch()
+        batch.begin()
       }}
       onChange={(event) => {
         setText(event.target.value)
@@ -318,7 +320,7 @@ function BoardNameField({ board, example }: { board: BoardKey; example: string }
       }}
       onBlur={() => {
         setEditing(false)
-        useDesignStore.getState().endBatch()
+        batch.end()
       }}
       onKeyDown={(event) => {
         if (event.key === 'Enter') event.currentTarget.blur()

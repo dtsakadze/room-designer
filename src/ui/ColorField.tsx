@@ -1,4 +1,4 @@
-import { useDesignStore } from '../store/useDesignStore'
+import { useEditBatch } from './useEditBatch'
 
 type ColorFieldProps = {
   label: string
@@ -26,6 +26,7 @@ export function ColorField({
   resetLabel = 'Reset',
   emptyLabel = 'Standard',
 }: ColorFieldProps) {
+  const batch = useEditBatch()
   return (
     <div className="field">
       <span className="field-label">{label}</span>
@@ -41,8 +42,8 @@ export function ColorField({
           type="color"
           aria-label={label}
           value={value ?? fallback}
-          onFocus={() => useDesignStore.getState().beginBatch()}
-          onBlur={() => useDesignStore.getState().endBatch()}
+          onFocus={batch.begin}
+          onBlur={batch.end}
           onChange={(event) => onChange(event.target.value)}
         />
       </span>

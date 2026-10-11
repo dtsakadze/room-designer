@@ -16,6 +16,7 @@ What changed in each release, newest first. The app shows this file in its "What
 - Sizes and positions now stop at 50 m and board thickness at 100 mm, so a damaged file or a mistyped huge number can no longer freeze the page. A file with more than 5,000 parts is shown as "Can't open" instead.
 - Keys no longer change the drawing behind a dropdown or an open window: Backspace in a dropdown such as Handle, or with Print, Settings or the cut list open, used to delete the selected part, and the arrows moved it instead of changing the dropdown. ⌘A, ⌘C, ⌘V, ⌘D and M also wait until the window is closed. The Shortcuts panel still lets you try them.
 - Undo in the middle of a drag no longer mixes up the history: the rest of the drag becomes its own step, and Redo can't jump back to a position from halfway through it.
+- Closing Settings with Esc while a field was focused no longer makes the next changes undo together as one step.
 
 ## 1.11.0 — 2026-10-10
 
