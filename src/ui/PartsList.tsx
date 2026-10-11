@@ -2,7 +2,7 @@ import { pieceLabel } from '../lib/defaults'
 import { WALL_LABELS, activeWalls, hasSideWalls, wallOf } from '../lib/room'
 import type { Piece } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
-import { useLayoutStore } from '../store/useLayoutStore'
+import { closeSidebar } from '../store/useLayoutStore'
 import { useUnits } from '../store/useSettingsStore'
 import { hasModifier } from './shortcuts'
 import { useClashes } from './useClashes'
@@ -53,7 +53,7 @@ export function PartsList() {
               if (hasModifier(event)) toggleSelect(piece.id)
               else {
                 select(piece.id)
-                useLayoutStore.getState().setSidebarOpen(false)
+                closeSidebar()
               }
             }}
           >
@@ -83,7 +83,7 @@ export function PartsList() {
   const show = (warningIds: string[]) => {
     const at = warningIds.indexOf(selectedIds.at(-1) ?? '')
     select(warningIds[(at + 1) % warningIds.length])
-    useLayoutStore.getState().setSidebarOpen(false)
+    closeSidebar()
   }
 
   return (

@@ -4,6 +4,7 @@ import { useBlocksStore } from '../store/useBlocksStore'
 import { useDesignStore } from '../store/useDesignStore'
 import { useLayoutStore } from '../store/useLayoutStore'
 import { DELETE_SHORTCUT, DUPLICATE_SHORTCUT } from './shortcuts'
+import { ICON_PROPS } from './icons'
 
 type InspectorHeaderProps = {
   title: string
@@ -11,18 +12,6 @@ type InspectorHeaderProps = {
   onDuplicate?: () => void
   onDelete: () => void
 }
-
-const ICON_PROPS = {
-  viewBox: '0 0 24 24',
-  width: 16,
-  height: 16,
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  'aria-hidden': true,
-} as const
 
 /**
  * The top of the Selected panel: what's selected, and what can be done with

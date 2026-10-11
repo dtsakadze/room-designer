@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useLayoutStore } from './useLayoutStore'
+import { closeSidebar, useLayoutStore } from './useLayoutStore'
 
 describe('useLayoutStore', () => {
   beforeEach(() => useLayoutStore.setState({ sidebarOpen: false, inspectorFolded: false, printOpen: false }))
@@ -14,6 +14,12 @@ describe('useLayoutStore', () => {
     useLayoutStore.getState().setInspectorFolded(true)
     expect(useLayoutStore.getState()).toMatchObject({ sidebarOpen: true, inspectorFolded: true })
     useLayoutStore.getState().setSidebarOpen(false)
+    expect(useLayoutStore.getState().sidebarOpen).toBe(false)
+  })
+
+  it('puts the sidebar away with closeSidebar', () => {
+    useLayoutStore.getState().setSidebarOpen(true)
+    closeSidebar()
     expect(useLayoutStore.getState().sidebarOpen).toBe(false)
   })
 

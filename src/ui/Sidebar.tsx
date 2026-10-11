@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { useLayoutStore } from '../store/useLayoutStore'
+import { closeSidebar, useLayoutStore } from '../store/useLayoutStore'
 import { CollapsibleSection } from './CollapsibleSection'
 import { ComponentPalette } from './ComponentPalette'
 import { PartsList } from './PartsList'
@@ -15,6 +15,7 @@ import { VersionInfo } from './WhatsNew'
 import { PrintDialog } from './PrintDialog'
 import { SettingsDialog, type SettingsPage } from './SettingsDialog'
 import { hasModifier } from './shortcuts'
+import { ICON_PROPS } from './icons'
 
 // The everyday states are a word next to the app name; the problems get a
 // line of their own, since they need doing something about.
@@ -61,7 +62,7 @@ export function Sidebar() {
             type="button"
             className="icon-button sidebar-close compact-only"
             aria-label="Close the sidebar"
-            onClick={() => useLayoutStore.getState().setSidebarOpen(false)}
+            onClick={closeSidebar}
           >
             ×
           </button>
@@ -89,13 +90,8 @@ export function Sidebar() {
             title="Settings: boards, look, construction, new parts, units"
             onClick={() => setSettings('last')}
           >
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+            <svg {...ICON_PROPS}>
               <path
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
                 d="M10.3 4.3c.4-1.8 3-1.8 3.4 0a1.7 1.7 0 0 0 2.6 1.1c1.5-.9 3.3.8 2.4 2.4a1.7 1.7 0 0 0 1 2.5c1.9.5 1.9 3 0 3.5a1.7 1.7 0 0 0-1 2.5c.9 1.6-.9 3.3-2.4 2.4a1.7 1.7 0 0 0-2.6 1.1c-.4 1.8-3 1.8-3.4 0a1.7 1.7 0 0 0-2.6-1.1c-1.5.9-3.3-.8-2.4-2.4a1.7 1.7 0 0 0-1-2.5c-1.9-.5-1.9-3 0-3.5a1.7 1.7 0 0 0 1-2.5c-.9-1.6.9-3.3 2.4-2.4a1.7 1.7 0 0 0 2.6-1.1z M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0"
               />
             </svg>

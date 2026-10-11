@@ -15,6 +15,7 @@ import { maxRodSpan, rodCentreSupports } from '../lib/spans'
 import { DoorOptions, DrawerOptions } from './FrontOptions'
 import { PieceWarnings } from './PieceWarnings'
 import { usePatch } from './usePatch'
+import { ICON_PROPS } from './icons'
 
 /**
  * The Selected panel for one part: problems first, then size and position
@@ -169,15 +170,8 @@ function FitButton({
       }
       onClick={() => fit && onFit(fit)}
     >
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-        <path
-          d="M3 5v14 M21 5v14 M7 12h10 M10 9l-3 3 3 3 M14 9l3 3-3 3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+      <svg {...ICON_PROPS}>
+        <path d="M3 5v14 M21 5v14 M7 12h10 M10 9l-3 3 3 3 M14 9l3 3-3 3" />
       </svg>
       {!fit ? 'Fit between sides: no sides here' : fits ? 'Fits between the sides' : 'Fit between sides'}
     </button>

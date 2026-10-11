@@ -25,3 +25,6 @@ export const useLayoutStore = create<LayoutState>()((set) => ({
   setInspectorFolded: (inspectorFolded) => set({ inspectorFolded }),
   setPrintOpen: (printOpen) => set({ printOpen }),
 }))
+
+/** Puts the sidebar away on a small screen, e.g. once something's been added from it, to show the drawing. */
+export const closeSidebar = () => useLayoutStore.getState().setSidebarOpen(false)
