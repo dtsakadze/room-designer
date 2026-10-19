@@ -4,6 +4,8 @@ import {
   DOOR_ANGLES,
   DOOR_LEAF_GAP,
   ACCESSORY_TYPES,
+  APPLIANCES,
+  APPLIANCE_TYPES,
   DOOR_OPEN_ANGLE,
   HANDLE_TYPES,
   MAX_LENGTH,
@@ -76,6 +78,9 @@ const OPTIONS: { [K in OptionKey]: (raw: Piece, kept: Piece) => Piece[K] | undef
   // An accessory is always one of the known kinds; anything else is a basket.
   accessory: (raw) =>
     raw.kind !== 'accessory' ? undefined : ACCESSORY_TYPES.includes(raw.accessory!) ? raw.accessory : 'basket',
+  // An appliance is always one of the known ones; anything else is a fridge.
+  appliance: (raw) =>
+    raw.kind !== 'appliance' ? undefined : APPLIANCE_TYPES.includes(raw.appliance!) ? raw.appliance : 'fridge',
   // Glass and mirror aren't board: none of a board's finish.
   bands: (raw, kept) => {
     const board = KINDS[raw.kind].board
@@ -295,7 +300,7 @@ const overlaps = (a: Edges, b: Edges) =>
  * of it. The exceptions: the plinth sits at the front, set back a little, a rail
  * runs along the front unless it's marked as a back rail, a hanging rod hangs
  * halfway between the back panel and the front, where hangers fit, trim and
- * accessories sit flush with the front edge, a door stands in
+ * accessories sit flush with the front edge, so do built-in appliances (the others stand against the wall), a door stands in
  * front of the unit (overlay) or just inside its front edge (inset), and so
  * does a drawer's front, its box behind it inside the unit.
  */
@@ -319,6 +324,11 @@ function depthStart(pieces: Piece[], thickness: Thickness) {
     }
     // A pull-out or shoe shelf starts at the front of the unit, not against the back.
     if (piece.kind === 'accessory') return Math.max(0, front - piece.depth)
+    // Built-in appliances line up with the front of the run they're in; the rest stand against the wall.
+    if (piece.kind === 'appliance') {
+      const builtIn = APPLIANCES.find((appliance) => appliance.type === piece.appliance)?.builtIn
+      return builtIn ? Math.max(0, front - piece.depth) : 0
+    }
     // Trim sits flush with the front edges of the unit, like an inset door.
     if (piece.kind === 'filler' || piece.kind === 'cornice') return Math.max(0, front - piece.depth)
     if (piece.kind === 'door') return piece.inset ? Math.max(0, front - piece.depth) : front

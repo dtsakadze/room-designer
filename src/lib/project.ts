@@ -22,7 +22,7 @@ import { DEFAULT_HOLE_PITCH, clampHolePitch } from './shelfPins'
  * checklist in docs/save-format.md. Never edit an existing step in
  * `MIGRATIONS`: saves in that version are out there.
  */
-export const FORMAT_VERSION = 18
+export const FORMAT_VERSION = 19
 
 type Raw = Record<string, unknown>
 
@@ -139,6 +139,11 @@ const MIGRATIONS: Record<number, (data: Raw) => Raw> = {
   // a fixed rod as before, so only the version changes; the bump makes an
   // older app refuse such a save rather than turn the lift back into supports.
   17: (data) => ({ ...data, formatVersion: 18 }),
+  // v19 adds the `appliance` part kind (fridge, washing machine, dishwasher,
+  // oven, microwave, gas stove, air vent), with its `appliance` type. Nothing
+  // older has any, so only the version changes; the bump makes an older app
+  // refuse such a save rather than drop them.
+  18: (data) => ({ ...data, formatVersion: 19 }),
 }
 
 /** Why a save couldn't be opened. */

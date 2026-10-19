@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { ACCESSORIES, KINDS, PANE_THICKNESS, pieceLabel } from '../lib/defaults'
+import { ACCESSORIES, APPLIANCES, KINDS, PANE_THICKNESS, pieceLabel } from '../lib/defaults'
 import { useUnitLabel, useUnits } from '../store/useSettingsStore'
 import type { Piece, PieceKind } from '../types'
 import { useDesignStore } from '../store/useDesignStore'
@@ -256,6 +256,26 @@ function AccessoryOptions({ piece }: { piece: Piece }) {
 }
 
 /**
+ * Which appliance this is, which only changes what it's called and how it's
+ * drawn; its size stays as set. A stand-in, so it's in neither list.
+ */
+function ApplianceOptions({ piece }: { piece: Piece }) {
+  const patch = usePatch(piece)
+  const kind = APPLIANCES.find((appliance) => appliance.type === piece.appliance)
+  return (
+    <SelectRow
+      label="Type"
+      info={`A stand-in to check the fit, not bought or cut: it isn't in the cut list or the hardware list. It starts at a standard size, so change it to your model's. ${
+        kind?.builtIn ? 'Built-in, so it starts flush with the front of the units around it.' : 'Starts against the wall.'
+      }`}
+      value={piece.appliance ?? APPLIANCES[0].type}
+      options={APPLIANCES.map((appliance) => ({ value: appliance.type, text: appliance.label }))}
+      onChange={(appliance) => patch({ appliance })}
+    />
+  )
+}
+
+/**
  * A filler strip or cornice and the ceiling: how far its top is below it, and
  * a button to close the gap (a filler grows up to it, a cornice moves up
  * until it touches).
@@ -315,4 +335,5 @@ const KIND_OPTIONS: Partial<
   filler: { title: 'Filler strip', Options: TrimOptions },
   cornice: { title: 'Cornice', Options: TrimOptions },
   accessory: { title: 'Accessory', Options: AccessoryOptions },
+  appliance: { title: 'Appliance', Options: ApplianceOptions },
 }

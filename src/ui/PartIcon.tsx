@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import type { AccessoryType, PieceKind } from '../types'
+import type { AccessoryType, ApplianceType, PieceKind } from '../types'
 
-export type IconName = Exclude<PieceKind, 'accessory'> | AccessoryType | 'box' | 'sliding'
+export type IconName = Exclude<PieceKind, 'accessory' | 'appliance'> | AccessoryType | ApplianceType | 'box' | 'sliding'
 
 // Each part is drawn filled inside a faint carcass outline, so a glance shows
 // where in the unit it goes. 24 × 24, the carcass at x 4–20, y 3–21.
@@ -78,6 +78,49 @@ const ICONS: Record<IconName, ReactNode> = {
     <>
       <path className="on" d="M4.5 17.5l15-4v1.8l-15 4z" />
       <path className="on" d="M7 16.2v-2.2h2l1.5 1.3z M13.5 14.5v-2.2h2l1.5 1.3z" />
+    </>
+  ),
+  fridge: (
+    <>
+      <rect className="on" x="6.5" y="3" width="11" height="18" />
+      <path className="on-cut" d="M6.5 8.5h11 M9 10v3 M9 5v1.5" strokeWidth="1" fill="none" />
+    </>
+  ),
+  washer: (
+    <>
+      <rect className="on" x="5.5" y="6" width="13" height="15" />
+      <circle className="on-cut" cx="12" cy="14.5" r="3.6" strokeWidth="1.2" fill="none" />
+    </>
+  ),
+  dishwasher: (
+    <>
+      <rect className="on" x="5.5" y="7" width="13" height="14" />
+      <path className="on-cut" d="M5.5 9.5h13 M9 14h6" strokeWidth="1.1" fill="none" />
+    </>
+  ),
+  oven: (
+    <>
+      <rect className="on" x="6" y="9" width="12" height="9" />
+      <path className="on-cut" d="M8 13.5h8v3H8z" strokeWidth="1" fill="none" />
+      <path className="on-cut" d="M8 10.7h1 M11.5 10.7h1 M15 10.7h1" strokeWidth="1.2" />
+    </>
+  ),
+  microwave: (
+    <>
+      <rect className="on" x="5.5" y="9" width="13" height="8" />
+      <path className="on-cut" d="M7 10.8h7v4.4H7z M16 10.8v4.4" strokeWidth="1" fill="none" />
+    </>
+  ),
+  stove: (
+    <>
+      <rect className="on" x="5.5" y="9" width="13" height="12" />
+      <path className="on-cut" d="M8 11h1 M11.5 11h1 M15 11h1 M8 14h8v4.5H8z" strokeWidth="1.1" fill="none" />
+    </>
+  ),
+  hood: (
+    <>
+      <path className="on" d="M6 14h12l-2.5-5h-7z" />
+      <rect className="on" x="10.5" y="4" width="3" height="5" />
     </>
   ),
 }

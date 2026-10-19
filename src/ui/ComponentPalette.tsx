@@ -1,4 +1,4 @@
-import { ACCESSORIES, KINDS, PIECE_GROUPS, accessoryDefaults, slidingDoorDefaults } from '../lib/defaults'
+import { ACCESSORIES, APPLIANCES, KINDS, PIECE_GROUPS, accessoryDefaults, applianceDefaults, slidingDoorDefaults } from '../lib/defaults'
 import { useDesignStore } from '../store/useDesignStore'
 import { closeSidebar } from '../store/useLayoutStore'
 import { useUnits } from '../store/useSettingsStore'
@@ -52,7 +52,17 @@ export function ComponentPalette({ onNewPartSettings }: { onNewPartSettings: () 
           <h2>{group.title}</h2>
           <div className="add-grid">
             {group.kinds.flatMap((kind) =>
-              kind === 'accessory'
+              kind === 'appliance'
+                ? APPLIANCES.map((appliance) => (
+                    <AddTile
+                      key={appliance.type}
+                      icon={appliance.type}
+                      label={appliance.short}
+                      title={appliance.label}
+                      onClick={() => addPiece('appliance', applianceDefaults(appliance.type))}
+                    />
+                  ))
+                : kind === 'accessory'
                 ? // One button for each type, each starting at its own size.
                   ACCESSORIES.map((accessory) => (
                     <AddTile

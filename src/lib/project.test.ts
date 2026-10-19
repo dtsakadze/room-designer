@@ -133,6 +133,23 @@ describe('readProject', () => {
     expect(old.project.pieces.some((piece) => 'z' in piece)).toBe(false)
   })
 
+  it('keeps appliances with their type, and turns an unknown type into a fridge', () => {
+    const result = readProject(fixture('v19-appliances'))
+    if (!result.ok) throw new Error("v19-appliances didn't open")
+    const types = result.project.pieces.filter((piece) => piece.kind === 'appliance').map((piece) => piece.appliance)
+    expect(types).toEqual(['fridge', 'stove', 'hood', 'oven'])
+    const bad = fixture('v19-appliances') as { pieces: { id: string; appliance?: unknown }[] }
+    bad.pieces.find((piece) => piece.id === 'stove')!.appliance = 'jacuzzi'
+    delete bad.pieces.find((piece) => piece.id === 'oven')!.appliance
+    bad.pieces.push({ id: 'shelf-typed', kind: 'shelf', appliance: 'oven', x: 0, y: 0, width: 500, height: 18, depth: 400 } as never)
+    const cleaned = readProject(bad)
+    if (!cleaned.ok) throw new Error("the edited save didn't open")
+    const appliance = (id: string) => cleaned.project.pieces.find((piece) => piece.id === id)?.appliance
+    expect([appliance('stove'), appliance('oven')]).toEqual(['fridge', 'fridge'])
+    // Only appliances have a type.
+    expect(cleaned.project.pieces.find((piece) => piece.id === 'shelf-typed')).not.toHaveProperty('appliance')
+  })
+
   it('keeps a rod’s pull-down lift, and only on rods', () => {
     const result = readProject(fixture('v18-lift'))
     if (!result.ok) throw new Error("v18-lift didn't open")

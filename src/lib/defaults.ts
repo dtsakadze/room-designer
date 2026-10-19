@@ -1,4 +1,4 @@
-import type { AccessoryType, BoardKey, BoardMaterial, Dimension, Edge, HandleType, JointType, PaneType, Piece, PieceKind, Thickness } from '../types'
+import type { AccessoryType, ApplianceType, BoardKey, BoardMaterial, Dimension, Edge, HandleType, JointType, PaneType, Piece, PieceKind, Thickness } from '../types'
 
 export const DEFAULT_THICKNESS: Thickness = { body: 18, back: 3, front: 18, drawer: 18 }
 
@@ -144,6 +144,46 @@ export function accessoryDefaults(type: AccessoryType): Partial<Piece> {
   return { accessory: type, width, height, depth }
 }
 
+/**
+ * The appliances that can be placed, to see how they fit a kitchen, with the
+ * usual size of each (a standard 600 mm one) and the height it's usually at
+ * above the floor. Built-in ones sit in a run of units, so they start flush
+ * with its front; the others stand against the wall. They're stand-ins: not
+ * boards or fittings, so they're in neither the cut list nor the hardware list.
+ */
+export const APPLIANCES: {
+  type: ApplianceType
+  label: string
+  /** A word or two to write on the drawing, where there's room. */
+  short: string
+  width: number
+  height: number
+  depth: number
+  /** Usual height of its bottom above the floor, in mm. */
+  y: number
+  builtIn: boolean
+}[] = [
+  { type: 'fridge', label: 'Fridge', short: 'Fridge', width: 600, height: 1850, depth: 650, y: 0, builtIn: false },
+  { type: 'washer', label: 'Washing machine', short: 'Washer', width: 600, height: 850, depth: 600, y: 0, builtIn: false },
+  { type: 'dishwasher', label: 'Dishwasher', short: 'Dishwasher', width: 600, height: 820, depth: 570, y: 0, builtIn: true },
+  { type: 'oven', label: 'Oven', short: 'Oven', width: 595, height: 595, depth: 550, y: 800, builtIn: true },
+  { type: 'microwave', label: 'Microwave', short: 'Microwave', width: 595, height: 390, depth: 400, y: 1400, builtIn: true },
+  { type: 'stove', label: 'Gas stove', short: 'Gas stove', width: 600, height: 850, depth: 600, y: 0, builtIn: false },
+  { type: 'hood', label: 'Air vent', short: 'Air vent', width: 600, height: 500, depth: 450, y: 1500, builtIn: false },
+]
+
+export const APPLIANCE_TYPES = APPLIANCES.map((appliance) => appliance.type)
+
+export const APPLIANCE_LABELS = Object.fromEntries(
+  APPLIANCES.map(({ type, label }) => [type, label]),
+) as Record<ApplianceType, string>
+
+/** The starting values for an appliance of this type. */
+export function applianceDefaults(type: ApplianceType): Partial<Piece> {
+  const { width, height, depth, y } = APPLIANCES.find((appliance) => appliance.type === type)!
+  return { appliance: type, width, height, depth, y }
+}
+
 /** Panels in a set of sliding doors, fewest first; two is the default. */
 export const SLIDING_PANELS = [2, 3, 4]
 /** How far neighbouring sliding panels overlap, so there's no gap to see through. */
@@ -198,8 +238,9 @@ export const SNAP = 10
  * A piece's name: tells fixed shelves from adjustable ones, front rails from
  * back, single doors from double.
  */
-export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double' | 'sliding' | 'accessory'>) {
+export function pieceLabel(piece: Pick<Piece, 'kind' | 'fixed' | 'railAt' | 'double' | 'sliding' | 'accessory' | 'appliance'>) {
   if (piece.kind === 'accessory') return piece.accessory ? ACCESSORY_LABELS[piece.accessory] : 'Accessory'
+  if (piece.kind === 'appliance') return piece.appliance ? APPLIANCE_LABELS[piece.appliance] : 'Appliance'
   if (piece.kind === 'shelf') return piece.fixed ? 'Fixed shelf' : 'Adjustable shelf'
   if (piece.kind === 'rail') return piece.railAt === 'back' ? 'Back rail' : 'Front rail'
   if (piece.kind === 'door') return piece.sliding ? 'Sliding doors' : piece.double ? 'Double door' : 'Door'
@@ -212,6 +253,8 @@ export const PIECE_GROUPS: { title: string; kinds: PieceKind[] }[] = [
   { title: 'Fronts and trim', kinds: ['door', 'cornice', 'filler'] },
   // Offered as one button for each type of accessory, see `ACCESSORIES`.
   { title: 'Accessories', kinds: ['accessory'] },
+  // Offered as one button for each appliance, see `APPLIANCES`.
+  { title: 'Appliances', kinds: ['appliance'] },
 ]
 
 /** What a part is as a whole, the same for every part of its kind. */
@@ -359,6 +402,13 @@ export const KINDS: Record<PieceKind, KindInfo> = {
     label: 'Accessory',
     // Sized by its type when added from Accessories; a basket otherwise.
     size: (inside, depth) => ({ width: inside, height: 200, depth: shelfDepth(depth) }),
+    bands: [],
+    grain: null,
+  },
+  appliance: {
+    label: 'Appliance',
+    // Sized by its type when added from Appliances; a fridge otherwise.
+    size: () => ({ width: 600, height: 1850, depth: 650 }),
     bands: [],
     grain: null,
   },

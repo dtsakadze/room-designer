@@ -12,6 +12,7 @@ export type PieceKind =
   | 'filler'
   | 'cornice'
   | 'accessory'
+  | 'appliance'
 
 /**
  * One board, seen head-on. Everything lives in a single 2D world measured in
@@ -78,6 +79,9 @@ export type BoardSheets = Partial<Record<BoardKey, SheetSetup>>
 /** The kinds of accessory that fit in a unit: bought as one fitting, not cut from board. */
 export type AccessoryType = 'trouser' | 'tie' | 'basket' | 'shoes-pullout' | 'shoes-angled'
 
+/** The kitchen appliances that can be placed to see how they fit: stand-ins of a standard size, not bought or cut. */
+export type ApplianceType = 'fridge' | 'washer' | 'dishwasher' | 'oven' | 'microwave' | 'stove' | 'hood'
+
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>
 
@@ -139,6 +143,8 @@ export type Piece = {
   lift?: boolean
   /** Accessories only: which kind it is (a pull-out trouser rack, a wire basket, a shoe rack, …). */
   accessory?: AccessoryType
+  /** Appliances only: which one it is (a fridge, an oven, a gas stove, an air vent, …). */
+  appliance?: ApplianceType
   /** Doors and drawers only: has no handle or knob. Absent means it has one. */
   noHandle?: boolean
   /**

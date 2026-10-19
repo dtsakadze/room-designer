@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- New Appliances group under Add, to see how a kitchen fits around them: fridge, washing machine, dishwasher, oven, microwave, gas stove and air vent. Each starts at a standard size and height (change it to your model's under Selected); the dishwasher, oven and microwave line up with the front of the units, the rest stand against the wall. They're only stand-ins, so they aren't in the cut list or the hardware list, but one that overlaps a unit is flagged like any other part.
+
 ## 1.13.0 — 2026-10-11
 
 - In an L- or U-shaped room, a door that would swing into the front panel of a set of sliding doors on another wall is now flagged. Only the back panel was checked before, so it could go unnoticed.

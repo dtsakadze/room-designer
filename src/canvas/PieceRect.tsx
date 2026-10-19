@@ -1,10 +1,10 @@
 import { type PointerEvent as ReactPointerEvent, memo } from 'react'
 import type { Piece } from '../types'
-import { ACCESSORIES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
+import { ACCESSORIES, APPLIANCES, SLIDING_TRACK_HEIGHT } from '../lib/defaults'
 import { doorFronts, slidingPanels } from '../lib/geometry'
 import { HANDLE_SIZE, handleOutsets } from './handles'
-import { ACCESSORY_FILLS, CLASH, PANE_FILLS, SELECTED, SPAN_WARNING } from './colors'
-import { accessoryLines } from './marks'
+import { ACCESSORY_FILLS, APPLIANCE_FILLS, CLASH, PANE_FILLS, SELECTED, SPAN_WARNING } from './colors'
+import { type Line, accessoryLines, applianceLines } from './marks'
 import { toSvgY } from './view'
 
 type PieceRectProps = {
@@ -115,6 +115,7 @@ export const PieceRect = memo(function PieceRect({
           />
         ))}
       {doorMarks && piece.kind === 'accessory' && <AccessoryMarks piece={piece} y={y} unit={unit} />}
+      {doorMarks && piece.kind === 'appliance' && <ApplianceMarks piece={piece} y={y} unit={unit} />}
       {doorMarks && piece.kind === 'door' && !piece.sliding && piece.pane && (
         <PaneSheen piece={piece} y={y} />
       )}
@@ -253,17 +254,9 @@ function Sheen({
   )
 }
 
-/** An accessory from the front, as simple lines (see `accessoryLines`), with its type's name when it fits. */
-function AccessoryMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+/** Simple lines for a part, with its type's name across the middle when it fits at the size the other labels are. */
+function TypeMarks({ piece, y, unit, lines, word, tint }: { piece: Piece; y: number; unit: number; lines: Line[]; word?: string; tint: string }) {
   const pad = Math.min(piece.width, piece.height) * 0.14
-  const lines = accessoryLines(piece.accessory, {
-    x0: piece.x + pad,
-    y0: y + pad,
-    x1: piece.x + piece.width - pad,
-    y1: y + piece.height - pad,
-  })
-  // The type's name across the middle, when it fits at the size the other labels are.
-  const word = ACCESSORIES.find((accessory) => accessory.type === piece.accessory)?.short
   const text = unit * 13
   const fits = !!word && piece.width > word.length * text * 0.62 + pad * 2 && piece.height > text * 1.5
   return (
@@ -278,8 +271,8 @@ function AccessoryMarks({ piece, y, unit }: { piece: Piece; y: number; unit: num
           textAnchor="middle"
           fontSize={text}
           fill="#2f3945"
-          // A halo in the box's own colour keeps the word clear of the lines behind it.
-          stroke={ACCESSORY_FILLS[piece.accessory!]}
+          // A halo in the part's own colour keeps the word clear of the lines behind it.
+          stroke={tint}
           strokeWidth={text / 3}
           paintOrder="stroke"
         >
@@ -287,5 +280,39 @@ function AccessoryMarks({ piece, y, unit }: { piece: Piece; y: number; unit: num
         </text>
       )}
     </g>
+  )
+}
+
+/** The area inside a part's edges that its marks are drawn in. */
+const marksArea = (piece: Piece, y: number) => {
+  const pad = Math.min(piece.width, piece.height) * 0.14
+  return { x0: piece.x + pad, y0: y + pad, x1: piece.x + piece.width - pad, y1: y + piece.height - pad }
+}
+
+/** An accessory from the front, as simple lines (see `accessoryLines`), with its type's name when it fits. */
+function AccessoryMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+  return (
+    <TypeMarks
+      piece={piece}
+      y={y}
+      unit={unit}
+      lines={accessoryLines(piece.accessory, marksArea(piece, y))}
+      word={ACCESSORIES.find((accessory) => accessory.type === piece.accessory)?.short}
+      tint={ACCESSORY_FILLS[piece.accessory!]}
+    />
+  )
+}
+
+/** An appliance from the front, as simple lines (see `applianceLines`), with its name when it fits. */
+function ApplianceMarks({ piece, y, unit }: { piece: Piece; y: number; unit: number }) {
+  return (
+    <TypeMarks
+      piece={piece}
+      y={y}
+      unit={unit}
+      lines={applianceLines(piece.appliance, marksArea(piece, y))}
+      word={APPLIANCES.find((appliance) => appliance.type === piece.appliance)?.short}
+      tint={APPLIANCE_FILLS[piece.appliance!]}
+    />
   )
 }
