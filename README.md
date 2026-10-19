@@ -81,7 +81,7 @@ Off and hidden unless the build has a Google client ID. Each project becomes a f
 Setup, all in one [Google Cloud](https://console.cloud.google.com/) project:
 
 1. **APIs & Services → Library:** enable *Google Drive API* and *Google Picker API*.
-2. **Google Auth Platform** (the consent screen, one per project): *Audience* External, then *Publish app*. *Data Access* → add the `drive.file` scope.
+2. **OAuth consent screen** (now called *Google Auth Platform*, one per project): *Audience* External, then *Publish app*. *Data Access* → add the `drive.file` scope.
 3. **Credentials → OAuth client ID**, type Web application. Add your site and `http://localhost:5173` under *Authorised JavaScript origins*. Copy the client ID.
 4. **Credentials → API key**, restricted to the Picker API. Copy it. Skip steps 4 and 5 to make the folder in My Drive instead of letting people choose.
 5. The project number is on the project's *Dashboard*.
