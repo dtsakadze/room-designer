@@ -37,6 +37,7 @@ export const APPLIANCE_FILLS: Record<ApplianceType, string> = {
   oven: '#b7bec6',
   microwave: '#c2c8cf',
   stove: '#bcc3ca',
+  hob: '#aeb5bd',
   hood: '#cdd2d8',
 }
 

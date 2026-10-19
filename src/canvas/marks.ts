@@ -99,6 +99,8 @@ const APPLIANCE_LINES: Record<ApplianceType, (area: Area) => Line[]> = {
     ]
   },
   stove: (area) => [...knobs(area, 4), ...outline(inset({ ...area, y0: area.y0 + (area.y1 - area.y0) * 0.2 }, 0.15))],
+  // Seen from the front it's a thin slab, so only its knobs show.
+  hob: (area) => knobs(area, 4),
   hood: (area) => across(inset(area, 0.2), 4),
 }
 

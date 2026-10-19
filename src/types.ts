@@ -80,7 +80,7 @@ export type BoardSheets = Partial<Record<BoardKey, SheetSetup>>
 export type AccessoryType = 'trouser' | 'tie' | 'basket' | 'shoes-pullout' | 'shoes-angled'
 
 /** The kitchen appliances that can be placed to see how they fit: stand-ins of a standard size, not bought or cut. */
-export type ApplianceType = 'fridge' | 'washer' | 'dishwasher' | 'oven' | 'microwave' | 'stove' | 'hood'
+export type ApplianceType = 'fridge' | 'washer' | 'dishwasher' | 'oven' | 'microwave' | 'stove' | 'hob' | 'hood'
 
 /** A colour (`#rrggbb`) per board, for the parts cut from it or their edge banding. Absent means the standard look. */
 export type BoardColors = Partial<Record<BoardKey, string>>

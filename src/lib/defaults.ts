@@ -169,6 +169,7 @@ export const APPLIANCES: {
   { type: 'oven', label: 'Oven', short: 'Oven', width: 595, height: 595, depth: 550, y: 800, builtIn: true },
   { type: 'microwave', label: 'Microwave', short: 'Microwave', width: 595, height: 390, depth: 400, y: 1400, builtIn: true },
   { type: 'stove', label: 'Gas stove', short: 'Gas stove', width: 600, height: 850, depth: 600, y: 0, builtIn: false },
+  { type: 'hob', label: 'Gas hob', short: 'Gas hob', width: 600, height: 50, depth: 520, y: 900, builtIn: true },
   { type: 'hood', label: 'Air vent', short: 'Air vent', width: 600, height: 500, depth: 450, y: 1500, builtIn: false },
 ]
 

@@ -117,6 +117,12 @@ const ICONS: Record<IconName, ReactNode> = {
       <path className="on-cut" d="M8 11h1 M11.5 11h1 M15 11h1 M8 14h8v4.5H8z" strokeWidth="1.1" fill="none" />
     </>
   ),
+  hob: (
+    <>
+      <rect className="on" x="4" y="11" width="16" height="2" />
+      <path className="on-line" d="M8 9.5h1 M11.5 9.5h1 M15 9.5h1" strokeWidth="1.2" fill="none" />
+    </>
+  ),
   hood: (
     <>
       <path className="on" d="M6 14h12l-2.5-5h-7z" />
