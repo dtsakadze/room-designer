@@ -49,8 +49,22 @@ function pwa(): Plugin {
   }
 }
 
+// Cloudflare and the Docker image serve public/privacy.html at /privacy; the
+// dev and preview servers would otherwise answer with the app's own page.
+function privacyPage(): Plugin {
+  const rewrite = (req: { url?: string }, _res: unknown, next: () => void) => {
+    if (req.url && /^\/privacy\/?(\?.*)?$/.test(req.url)) req.url = '/privacy.html'
+    next()
+  }
+  return {
+    name: 'privacy-page',
+    configureServer: (server) => void server.middlewares.use(rewrite),
+    configurePreviewServer: (server) => void server.middlewares.use(rewrite),
+  }
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), pwa(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
+  plugins: [react(), pwa(), privacyPage(), seo(readSiteUrl(loadEnv(mode, process.cwd(), '').SITE_URL))],
   define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative asset paths, so the build works from any folder on any host
   base: './',
