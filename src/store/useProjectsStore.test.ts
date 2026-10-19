@@ -373,6 +373,45 @@ describe('managing projects', () => {
   })
 })
 
+describe('syncing with Drive', () => {
+  it('saves a project from Drive under its id with Drive’s time, new or over an old one', async () => {
+    memory.records.set('a', record('a', 'Hall', '2026-09-01T00:00:00Z', design(1)))
+    memory.currentId = 'a'
+    const { projects } = await start()
+    await projects().saveSynced({ id: 'd', name: 'From Drive', design: design(3), updatedAt: '2026-10-01T00:00:00Z' })
+    expect(memory.records.get('d')).toMatchObject({ name: 'From Drive', updatedAt: '2026-10-01T00:00:00Z' })
+    expect(projects().projects.map((p) => p.name)).toEqual(['From Drive', 'Hall'])
+    // It's added, not opened.
+    expect(projects().currentId).toBe('a')
+
+    await projects().saveSynced({ id: 'd', name: 'Renamed in Drive', design: design(4), updatedAt: '2026-10-02T00:00:00Z' })
+    expect(projects().projects.filter((p) => p.id === 'd')).toHaveLength(1)
+    expect(memory.records.get('d')!.name).toBe('Renamed in Drive')
+  })
+
+  it('replaces the drawing when the project from Drive is the open one, without counting it as an edit', async () => {
+    memory.records.set('a', record('a', 'Hall', '2026-09-01T00:00:00Z', design(1)))
+    memory.currentId = 'a'
+    const { projects, design: open } = await start()
+    await projects().saveSynced({ id: 'a', name: 'Hall', design: design(5), updatedAt: '2026-10-01T00:00:00Z' })
+    expect(open().pieces).toHaveLength(5)
+    expect(projects().hasUnsavedEdits('a')).toBe(false)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(memory.records.get('a')!.updatedAt).toBe('2026-10-01T00:00:00Z')
+  })
+
+  it('knows when the open project has edits that are not saved yet, and saves them on flush', async () => {
+    const { projects, design: open } = await start()
+    const id = projects().currentId!
+    open().addPiece('shelf')
+    expect(projects().hasUnsavedEdits(id)).toBe(true)
+    expect(projects().hasUnsavedEdits('other')).toBe(false)
+    await projects().flush()
+    expect(projects().hasUnsavedEdits(id)).toBe(false)
+    expect(readStored(id).pieces).toHaveLength(1)
+  })
+})
+
 /** The design stored for a project, as saved. */
 function readStored(id: string) {
   return memory.records.get(id)!.design as ReturnType<typeof design>

@@ -4,14 +4,18 @@ import { BoardSettings, ConstructionSettings, NewPartSettings, UnitSettings } fr
 import { HangingGuideSettings } from './HangingGuideSettings'
 import { LookPicker } from './LookPicker'
 import { readPref, writePref } from '../lib/prefs'
+import { driveAvailable } from '../lib/driveConfig'
+import { DriveSettings } from './DriveSettings'
 
-export type SettingsPage = 'boards' | 'look' | 'construction' | 'new-parts' | 'preferences'
+export type SettingsPage = 'boards' | 'look' | 'construction' | 'new-parts' | 'drive' | 'preferences'
 
 const PAGES: { id: SettingsPage; title: string; content: () => ReactNode }[] = [
   { id: 'boards', title: 'Boards', content: () => <BoardSettings /> },
   { id: 'look', title: 'Look', content: () => <LookPicker /> },
   { id: 'construction', title: 'Construction', content: () => <ConstructionSettings /> },
   { id: 'new-parts', title: 'New parts', content: () => <NewPartSettings /> },
+  // Only in builds that have a Google client id (see driveConfig.ts).
+  ...(driveAvailable ? [{ id: 'drive' as const, title: 'Google Drive', content: () => <DriveSettings /> }] : []),
   {
     id: 'preferences',
     title: 'This browser',

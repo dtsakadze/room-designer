@@ -9,6 +9,12 @@ COPY . .
 # og:url (docker build --build-arg SITE_URL=https://example.com .)
 ARG SITE_URL=""
 ENV SITE_URL=$SITE_URL
+# Optional: the Google project that Drive sync goes through (see README). None
+# is a secret; they end up in the built page.
+ARG VITE_GOOGLE_CLIENT_ID=""
+ARG VITE_GOOGLE_API_KEY=""
+ARG VITE_GOOGLE_APP_ID=""
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID VITE_GOOGLE_API_KEY=$VITE_GOOGLE_API_KEY VITE_GOOGLE_APP_ID=$VITE_GOOGLE_APP_ID
 RUN pnpm build
 # nginx's copy of the security headers, made from the list for every path
 # ("/*") in public/_headers (Cloudflare's format), so there's one list to keep.

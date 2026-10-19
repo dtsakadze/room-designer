@@ -58,6 +58,20 @@ type ProjectsState = {
   duplicateProject: (id: string) => Promise<void>
   /** Deleting the open project moves to the most recent other one, or a new one. */
   deleteProject: (id: string) => Promise<void>
+
+  // What syncing with Google Drive needs (see `useDriveStore`).
+  /** Writes the open project's edits now instead of after the short wait. */
+  flush: () => Promise<void>
+  /** Whether this is the open project and has edits that aren't saved yet. */
+  hasUnsavedEdits: (id: string) => boolean
+  /** A project as it is in storage. */
+  readStored: (id: string) => Promise<StoredProject | undefined>
+  /**
+   * Saves a project that came from Drive, new or over the one with its id,
+   * with the time Drive says it was changed. The open project is not changed
+   * to another one, but if this is the open one its drawing is replaced.
+   */
+  saveSynced: (project: { id: string; name: string; design: ProjectData; updatedAt: string }) => Promise<void>
 }
 
 const DEFAULT_NAME = 'Untitled project'
@@ -324,6 +338,22 @@ export const useProjectsStore = create<ProjectsState>()((set, get) => {
       await storage.remove(id)
       set({ projects: get().projects.filter((project) => project.id !== id) })
       if (isOpen) await leaveCurrent()
+    },
+
+    flush: saveNow,
+
+    hasUnsavedEdits: (id) => pending && id === get().currentId,
+
+    readStored: (id) => storage.get(id),
+
+    saveSynced: async ({ id, name, design, updatedAt }) => {
+      if (!usable()) return
+      const existing = get().projects.find((project) => project.id === id)
+      const record = newRecord(name, design, existing?.createdAt ?? updatedAt)
+      const synced = { ...record, id, updatedAt }
+      await storage.put(synced)
+      set({ projects: sortByEdited([summarize(synced), ...get().projects.filter((project) => project.id !== id)]) })
+      if (id === get().currentId) apply(design)
     },
   }
 })

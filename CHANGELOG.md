@@ -4,6 +4,8 @@ What changed in each release, newest first. The app shows this file in its "What
 
 ## Unreleased
 
+- Sync with Google Drive (on builds that have it set up): Settings → Google Drive → Connect, then choose where the Boardcut folder goes. Every project becomes a file in it, updated after each change; a project made or changed on another device is fetched, a new project gets a new file, and deleting a project moves its file to the Drive trash. If a project changed in both places, Drive's version is kept as a copy. Boardcut can only see the files it makes, not the rest of your Drive. "Drive: …" next to Saved shows the state, and asks you to reconnect when Google's sign-in runs out.
+
 ## 1.14.0 — 2026-10-19
 
 - New Appliances group under Add, to see how a kitchen fits around them: fridge, washing machine, dishwasher, oven, microwave, gas stove, gas hob (the slim one that sits on the worktop) and air vent. Each starts at a standard size and height (change it to your model's under Selected); the dishwasher, oven and microwave line up with the front of the units, the rest stand against the wall. They're only stand-ins, so they aren't in the cut list or the hardware list, but one that overlaps a unit is flagged like any other part.

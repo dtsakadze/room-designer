@@ -7,12 +7,13 @@ import { useUndoShortcuts } from './ui/useUndoShortcuts'
 import { useProjectsStore } from './store/useProjectsStore'
 import { useDesignStore } from './store/useDesignStore'
 import { useLayoutStore } from './store/useLayoutStore'
+import { useDriveStore } from './store/useDriveStore'
 
 export default function App() {
   useUndoShortcuts()
 
   useEffect(() => {
-    void useProjectsStore.getState().init()
+    void useProjectsStore.getState().init().then(() => useDriveStore.getState().init())
   }, [])
 
   // On a small screen the panels slide over the drawing; these classes say

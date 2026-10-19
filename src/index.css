@@ -592,6 +592,27 @@ button kbd {
   opacity: 1;
 }
 
+/* The Drive sync's state beside the save status: a button that opens its settings. */
+.drive-status {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.drive-status:hover {
+  text-decoration: underline;
+}
+
+.drive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
 .add-button:disabled {
   opacity: 0.45;
   cursor: default;

@@ -74,6 +74,18 @@ Projects are stored in the browser's IndexedDB for the site's address, so:
 - Clearing site data in the browser deletes the projects.
 - Use **File → Save to file** (next to the project's name) to back up a project or move it to another browser or address, and **File → Open file…** to bring it back.
 
+## Sync with Google Drive (optional)
+
+A build can keep every project in a `Boardcut` folder in the person's Google Drive and update it on every change, both ways, with no server of ours: the browser talks to Google directly and can only see the files it made (the `drive.file` permission). It is off, and hidden, unless the build is given a Google client id. To set it up for your own copy:
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), make a project and turn on the **Google Drive API** and the **Google Picker API**.
+2. Under *APIs & Services → OAuth consent screen*, set up the app with the `drive.file` scope (not a sensitive scope, so Google needs no review), then publish it, or add yourself as a test user.
+3. Create an **OAuth client ID** of type *Web application* and add your site's address (and `http://localhost:5173` for development) under *Authorised JavaScript origins*.
+4. For choosing the folder, also create an **API key** limited to your site and the Picker API, and note the project number. Without these two the folder is made in My Drive.
+5. Build with `VITE_GOOGLE_CLIENT_ID`, and for the folder picker `VITE_GOOGLE_API_KEY` and `VITE_GOOGLE_APP_ID` (the project number), in the environment or a `.env` file. With Docker, pass them as `--build-arg`. None of them is a secret; they ship in the page.
+
+Then **Settings → Google Drive → Connect**. See `docs/decisions.md` for how it works.
+
 ## Docs
 
 Design decisions and the save format guide are in [docs/](docs/README.md).

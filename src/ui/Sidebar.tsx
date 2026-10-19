@@ -16,6 +16,7 @@ import { PrintDialog } from './PrintDialog'
 import { SettingsDialog, type SettingsPage } from './SettingsDialog'
 import { hasModifier } from './shortcuts'
 import { ICON_PROPS } from './icons'
+import { DRIVE_LABELS, useDriveStore } from '../store/useDriveStore'
 
 // The everyday states are a word next to the app name; the problems get a
 // line of their own, since they need doing something about.
@@ -30,6 +31,7 @@ const SAVE_LABELS: Record<SaveStatus, string> = {
 export function Sidebar() {
   const saveStatus = useProjectsStore((s) => s.saveStatus)
   const saveProblem = saveStatus === 'unavailable' || saveStatus === 'blocked'
+  const driveStatus = useDriveStore((s) => (s.connected ? s.status : null))
   const current = useProjectsStore((s) => s.projects.find((project) => project.id === s.currentId))
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [showProjects, setShowProjects] = useState(false)
@@ -71,6 +73,16 @@ export function Sidebar() {
             <span className="save-status" title="Saved in this browser">
               {SAVE_LABELS[saveStatus]}
             </span>
+          )}
+          {driveStatus && (
+            <button
+              type="button"
+              className={`save-status drive-status${driveStatus === 'reconnect' || driveStatus === 'error' ? ' save-status-error' : ''}`}
+              title="Google Drive sync: open its settings"
+              onClick={() => setSettings('drive')}
+            >
+              Drive: {DRIVE_LABELS[driveStatus]}
+            </button>
           )}
         </div>
         <div className="header-project">
