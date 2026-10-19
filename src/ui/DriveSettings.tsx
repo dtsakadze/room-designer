@@ -17,7 +17,7 @@ export function DriveSettings() {
           {canPickFolder
             ? ' You choose the folder it goes in.'
             : ' The folder is made in My Drive.'}{' '}
-          Boardcut can only see the files it makes there, not the rest of your Drive.
+          Boardcut can only see the files it makes there, not the rest of your Drive. <a href="privacy.html" target="_blank" rel="noreferrer">Privacy policy</a>.
         </p>
         <button type="button" className="ghost-button" disabled={busy} onClick={() => void connect()}>
           Connect Google Drive

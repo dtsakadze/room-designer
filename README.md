@@ -82,7 +82,7 @@ Setup, all in one [Google Cloud](https://console.cloud.google.com/) project:
 
 1. **APIs & Services → Library:** enable *Google Drive API* and *Google Picker API*.
 2. **OAuth consent screen** (now called *Google Auth Platform*, one per project):
-   - *Branding:* app name, support email, homepage URL, privacy policy URL (a public page on your own domain, also listed under *Authorized domains*). Google requires all four to publish.
+   - *Branding:* app name, support email, homepage URL, privacy policy URL (a public page on your own domain, also listed under *Authorized domains*). Google requires all four to publish. This app has a privacy page at `/privacy` (`public/privacy.html`): for another copy, set your own homepage and privacy URLs and edit the page.
    - *Data Access:* add the `drive.file` scope.
    - *Audience:* External, then *Publish app*. Until then (Testing mode) only the test users you list can sign in, up to 100, and they sign in again every 7 days. No Google review is needed for this scope.
 3. **Credentials → OAuth client ID**, type Web application. Add your site and `http://localhost:5173` under *Authorised JavaScript origins*. Copy the client ID.
